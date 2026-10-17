@@ -231,14 +231,11 @@ function lobby() {
   }
   h += `<div class="row"><button class="btn ghost" id="minus" ${n <= 4 ? "disabled" : ""}>− játékos</button><button class="btn ghost" id="plus" ${n >= 6 ? "disabled" : ""}>+ játékos</button></div>`;
   h += `</div>`;
-  h += `<div class="panel"><h3>4. Indulás</h3><label>Ennyi idő legyen a QR-kódok beolvasására</label><div class="chips">` +
-    [60, 90, 120, 180].map(g => `<span class="chip ${L.gather === g ? "on" : ""}" data-gather="${g}">${g < 120 ? g + " mp" : g / 60 + " perc"}</span>`).join("") +
-    `</div><p class="small muted">Utána minden telefonon egyszerre indul a játék.</p><div id="err" class="small" style="color:var(--red)"></div><button class="btn" id="go">Kártyák kiosztása</button></div>`;
+  h += `<div class="panel"><h3>4. Indulás</h3><p class="small muted">Mindenki beolvassa a saját QR-kódját, aztán együtt indítjátok: a játékvezető számol, 3, 2, 1, és mindenki egyszerre megnyomja az „Indul” gombot.</p><div id="err" class="small" style="color:var(--red)"></div><button class="btn" id="go">QR-kódok kiosztása</button></div>`;
   app.innerHTML = h;
   const save = () => ls("lobby", L);
   app.querySelectorAll("[data-st]").forEach(e => e.onclick = () => { L.story = e.dataset.st; save(); lobby(); });
   app.querySelectorAll("[data-mode]").forEach(e => e.onclick = () => { L.mode = +e.dataset.mode; save(); lobby(); });
-  app.querySelectorAll("[data-gather]").forEach(e => e.onclick = () => { L.gather = +e.dataset.gather; save(); lobby(); });
   app.querySelectorAll("[data-name]").forEach(e => e.oninput = () => { L.names[+e.dataset.name] = e.value; save(); });
   $("#plus").onclick = () => { L.names.push(""); L.pick = [...Array(L.names.length).keys()]; save(); lobby(); };
   $("#minus").onclick = () => { L.names.pop(); L.pick = [...Array(L.names.length).keys()]; save(); lobby(); };
@@ -247,7 +244,7 @@ function lobby() {
     const pick = [...Array(n).keys()]; for (let i = n - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [pick[i], pick[j]] = [pick[j], pick[i]]; }
     ensureAudio();
     const x = +(new URLSearchParams(location.search).get("x") || 1);
-    const base = {v: 3, s: L.story, m: L.mode, n: names, ch: pick, t0: Date.now() + L.gather * 1000 / x, x};
+    const base = {v: 3, s: L.story, m: L.mode, n: names, ch: pick, t0: Date.now(), x};  // t0 is only the game id; the clock starts when the players press "Indul"
     ls("deal", base);
     deal(base, 1);
   };
@@ -256,8 +253,7 @@ function deal(base, i) {
   const n = base.n.length;
   if (i >= n) { location.hash = "c=" + encodeCard({...base, p: 0}); return; }
   const S = STORIES.find(s => s.id === base.s);
-  app.innerHTML = `<div class="topbar"><div class="bar"><i id="gbar"></i></div><div class="steps"><span>Indulásig</span><b id="gleft"></b></div></div>
-    <h2 class="center">${esc(base.n[i])}</h2><p class="center muted">Olvasd be a telefonoddal. Csak a saját kódodat nézd!</p>
+  app.innerHTML = `<h2 class="center" style="margin-top:4vh">${esc(base.n[i])}</h2><p class="center muted">Olvasd be a telefonoddal. Csak a saját kódodat nézd!</p>
     <div class="center"><div class="qrbox" id="qr"></div></div>
     <p class="center small muted">${i}/${n - 1}</p>
     <button class="btn" id="next">${i < n - 1 ? "Következő játékos" : "Kész: saját lapom megnyitása"}</button>
@@ -265,15 +261,14 @@ function deal(base, i) {
   new QRCode($("#qr"), {text: cardUrl({...base, p: i}), width: 240, height: 240, correctLevel: QRCode.CorrectLevel.L});
   $("#next").onclick = () => deal(base, i + 1);
   $("#back").onclick = () => i > 1 ? deal(base, i - 1) : lobby();
-  const up = () => { if (!$("#gleft")) return clearInterval(t); const left = Math.max(0, (base.t0 - Date.now()) / 1000 * base.x); $("#gleft").textContent = Math.ceil(left) + " mp"; $("#gbar").style.width = (100 * left / L.gather) + "%"; };
-  const t = setInterval(up, 250); up();
 }
 
 /* ===================== game (every phone) ===================== */
 let P, S, ME, SLOT, NOW = () => Date.now();
-const ST = {userStep: 0, key: "", tipSeen: {}};
+const ST = {userStep: 0, key: "", tipSeen: {}, start: 0};
 function TL() {
-  let e = (NOW() - P.t0) / 1000 * P.x;
+  if (!ST.start) return {ph: "wait", left: 0};
+  let e = (NOW() - ST.start) / 1000 * P.x;
   if (e < 0) return {ph: "wait", left: -e};
   if (e < OVERTURE) return {ph: "ovr", e, left: OVERTURE - e};
   e -= OVERTURE;
@@ -297,10 +292,10 @@ function startGame(hash) {
   document.addEventListener("click", () => P.p === 0 && ensureAudio(), {capture: true});
   setInterval(loop, 200); loop();
 }
-const saveST = () => ls("st-" + P.t0 + "-" + P.p, {userStep: ST.userStep, tipSeen: ST.tipSeen});
+const saveST = () => ls("st-" + P.t0 + "-" + P.p, {userStep: ST.userStep, tipSeen: ST.tipSeen, start: ST.start});
 function loop() {
   const t = TL();
-  let key = t.ph;
+  let key = t.ph + (t.ph === "wait" ? (ST.start ? "1" : "0") : "");
   if (t.ph === "read") key += Math.max(t.ts, ST.userStep);
   if (t.ph === "tip") key += t.i;
   if (key !== ST.key) { ST.key = key; render(t); }
@@ -336,8 +331,10 @@ function update(t) {
 /* ---------- before start: no character yet ---------- */
 function waitView() {
   app.innerHTML = `<div class="center" style="padding-top:12vh"><h1>${esc(S.title)}</h1><p class="muted">${esc(S.world)}</p>
-    <div class="panel"><p>Szia, <b>${esc(P.n[P.p])}</b>! Először meghallgatjátok a történetet, utána kapja meg mindenki a karakterét.</p><p class="big" id="wleft"></p><p class="small muted">Minden telefonon egyszerre indul.</p></div>
+    <div class="panel"><p>Szia, <b>${esc(P.n[P.p])}</b>! Először meghallgatjátok a történetet, utána kapja meg mindenki a karakterét.</p>
+    ${ST.start ? `<p class="big" id="wleft"></p>` : `<p class="small">Ha mindenki beolvasta a kódját, ${P.p === 0 ? "számolj hangosan" : `${esc(P.n[0])} hangosan számol`}: 3, 2, 1, és mindenki egyszerre nyomja meg:</p><button class="btn" id="startb" style="font-size:1.3rem;padding:20px">Indul!</button>`}</div>
     ${P.p === 0 ? '<button class="btn ghost" id="snd">🔊 Hang bekapcsolása (narráció, zene)</button>' : ""}</div>`;
+  if ($("#startb")) $("#startb").onclick = () => { ensureAudio(); ST.start = Date.now() + 1000; saveST(); ST.key = ""; loop(); };
   if ($("#snd")) $("#snd").onclick = () => { ensureAudio(); tone(660, .3); $("#snd").textContent = "🔊 Hang bekapcsolva"; };
 }
 /* ---------- the story is told first ---------- */
