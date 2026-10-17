@@ -429,7 +429,7 @@ function charModal(slot) {
     <div class="kv"><b>Mindenki látta</b>${esc(c.dispute)}</div><div class="kv"><b>Mindenki tudja</b>${esc(c.weapon)}</div>`);
 }
 function mapModal() {
-  modal(`<h2>${esc(S.title)}: alaprajz</h2>${zoomable(`<img class="zoomimg" src="assets/${S.id}/map.jpg" onerror="this.onerror=null;this.src='assets/maps/${S.id}.png'">`)}<p class="small">${esc(S.mapNote)}</p>`);
+  modal(`<h2>${esc(S.title)}: alaprajz</h2>${zoomable(`<img class="zoomimg" src="assets/${S.id}/map.jpg" onerror="this.onerror=null;this.src='assets/maps/${S.id}.png'">`)}<p class="small">${esc(S.mapNote)}</p>${S.common ? `<p class="small" style="color:var(--gold2)">👁 ${esc(S.common)}</p>` : ""}`);
 }
 function notesModal() {
   const k = "notes-" + P.t0 + "-" + P.p, N = ls(k) || {text: "", sus: {}};
@@ -443,7 +443,7 @@ function notesModal() {
 }
 function overture() {
   const d = document.createElement("div"); d.className = "subs"; d.id = "subs";
-  d.innerHTML = `<h3>${esc(S.title)}</h3><p style="margin:0">${esc(S.intro)}</p>${P.p === 0 ? '<button class="btn ghost" id="narr" style="margin-top:10px">🔊 Narráció újra</button>' : ""}`;
+  d.innerHTML = `<h3>${esc(S.title)}</h3><p style="margin:0">${esc(S.intro)}</p>${S.common ? `<p style="margin:10px 0 0;color:var(--gold2)">👁 ${esc(S.common)}</p>` : ""}${P.p === 0 ? '<button class="btn ghost" id="narr" style="margin-top:10px">🔊 Narráció újra</button>' : ""}`;
   $("#scene").appendChild(d);
   if (P.p === 0) { ensureAudio(); narrate(S); $("#narr").onclick = () => narrate(S); }
 }
@@ -479,8 +479,8 @@ function voteFlow() {
     $("#me").onclick = () => { ensureAudio(); V.stage = "pick"; save(); voteFlow(); };
   } else if (V.stage === "pick") {
     let sel = null;
-    app.innerHTML = `<h2>${esc(P.n[V.i])}, ki a gyilkos?</h2><p class="small muted">A szavazatodat senki nem látja.</p><div class="grid">` +
-      P.ch.map((sl, j) => j === V.i ? "" : `<div class="c" data-j="${j}">${pimg(S, sl)}<b>${esc(S.chars[sl].name)}</b><br><span class="muted">${esc(P.n[j])}</span></div>`).join("") +
+    app.innerHTML = `<h2>${esc(P.n[V.i])}, ki a gyilkos?</h2><p class="small muted">A szavazatodat senki nem látja.${V.round2 ? " Második kör: csak a döntetlenben érintettek közül választhatsz." : ""}</p><div class="grid">` +
+      P.ch.map((sl, j) => j === V.i || (V.round2 && !V.cands.includes(j)) ? "" : `<div class="c" data-j="${j}">${pimg(S, sl)}<b>${esc(S.chars[sl].name)}</b><br><span class="muted">${esc(P.n[j])}</span></div>`).join("") +
       `</div><button class="btn" id="cast" disabled>Leadom a szavazatom</button>`;
     app.querySelectorAll(".grid .c").forEach(e => e.onclick = () => { sel = +e.dataset.j; app.querySelectorAll(".grid .c").forEach(x => x.classList.toggle("on", x === e)); $("#cast").disabled = false; });
     $("#cast").onclick = () => { V.votes[V.i] = sel; V.i++; V.stage = "pass"; save(); tone(520, .15); voteFlow(); };
@@ -492,8 +492,12 @@ function voteFlow() {
     const tally = Array(n).fill(0); Object.values(V.votes).forEach(j => tally[j]++);
     const max = Math.max(...tally), top = tally.map((c, j) => c === max ? j : -1).filter(j => j >= 0);
     let h = `<h1 class="center">Az ítélet</h1>`;
-    if (top.length > 1) {
-      h += `<p class="center">Döntetlen (${top.map(j => esc(P.n[j])).join(", ")}): senkit nem ítéltetek el.</p><p class="big" style="color:var(--red)">A gonoszok nyertek!</p>`;
+    if (top.length > 1 && !V.round2) {
+      h += `<p class="big">Döntetlen!</p><p class="center">${top.map(j => `<b>${esc(P.n[j])}</b> (${esc(S.chars[P.ch[j]].name)})`).join(" és ")} ugyanannyi szavazatot kapott.</p>
+        <p class="center">Még <b>3 perc</b> érvelés, aztán új titkos szavazás, de már csak közöttük.</p><button class="btn" id="extra">Indul a 3 perc</button>`;
+      V.cands = top;
+    } else if (top.length > 1) {
+      h += `<p class="center">Újra döntetlen (${top.map(j => esc(P.n[j])).join(", ")}): senkit nem ítéltetek el.</p><p class="big" style="color:var(--red)">A gonoszok nyertek!</p>`;
       V.outcome = "evil";
     } else {
       const j = top[0], r = roleOf(j), sl = P.ch[j], evil = r === "G" || r === "B";
@@ -506,8 +510,22 @@ function voteFlow() {
     if (V.outcome) h += `<button class="btn" id="fin">Megoldás és szerepek</button>`;
     app.innerHTML = h; save();
     tone(V.outcome === "good" ? 660 : 160, 1.2, "triangle", .3);
+    if ($("#extra")) $("#extra").onclick = () => { ensureAudio(); V.stage = "extra"; V.extraEnd = Date.now() + 180000 / P.x; save(); voteFlow(); };
     if ($("#g")) $("#g").onclick = () => { V.stage = "guess"; save(); voteFlow(); };
     if ($("#fin")) $("#fin").onclick = () => { V.stage = "final"; save(); voteFlow(); };
+  } else if (V.stage === "extra") {
+    app.innerHTML = `<div class="center" style="padding-top:4vh"><h1>Még 3 perc!</h1><p>Győzzétek meg egymást: ${V.cands.map(j => `<b>${esc(S.chars[P.ch[j]].name)}</b>`).join(" vagy ")}?</p>
+      <svg id="clock" viewBox="0 0 100 100" style="width:60vw;max-width:260px;height:auto"></svg><button class="btn" id="now">Kész, szavazzunk most</button></div>`;
+    const go = () => { clearInterval(V._t); V.stage = "pass"; V.i = 0; V.votes = {}; V.round2 = 1; save(); voteFlow(); };
+    $("#now").onclick = go;
+    let last = -1;
+    V._t = setInterval(() => {
+      if (!$("#now")) return clearInterval(V._t);
+      const rem = (V.extraEnd - Date.now()) / 1000 * P.x;
+      drawClock(rem / 180, false, rem <= 30);
+      if (rem <= 60) { const sec = Math.ceil(rem); if (sec !== last) { last = sec; tick(1 - rem / 60); } }
+      if (rem <= 0) go();
+    }, 200);
   } else if (V.stage === "guess") {
     let sel = null; const j0 = V.conv;
     app.innerHTML = `<h2>${esc(P.n[j0])}: ki a szemtanú?</h2><div class="grid">` +

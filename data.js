@@ -228,7 +228,8 @@ window.STORIES = [
 },
 "accTip": "Tipp (csak 6 főnél): a mérget nem a gyilkos lopta el. Valaki hozzáfért Morgana ládikójához, és odavitte a pincébe. Ha őt elkapjátok, az is győzelem.",
 "mapNote": "A borpincébe csak a konyhán át vezet lépcső. A kertből a konyha ajtaja látszik.",
-"full": true
+"full": true,
+"common": "Közösen megállapítjátok: Kay kupájában nadragulya volt. A kupát éjfél előtt a borpincében töltötték meg, a pincébe pedig csak a konyhán át lehet lejutni."
 },
 {
 "id": "S02",
@@ -458,7 +459,8 @@ window.STORIES = [
 },
 "accTip": "Tipp (csak 6 főnél): a hullakamrát valaki nyitva hagyta, pedig éjjel zárva van. Kinek van kulcsa?",
 "mapNote": "A hullakamra hátsó ajtaja a sikátorra nyílik. A laborból csak a folyosón át lehet az anatómiai terembe jutni.",
-"full": false
+"full": false,
+"common": ""
 },
 {
 "id": "S03",
@@ -688,7 +690,8 @@ window.STORIES = [
 },
 "accTip": "Tipp (csak 6 főnél): a fegyver nem a gyilkosé. Valaki levitte a kriptába, hogy a gyilkos megtalálja. Ha őt elkapjátok, az is győzelem.",
 "mapNote": "A kriptába a kápolnából vezet lépcső. A könyvtárba a toronyból és a nagyteremből is be lehet jutni.",
-"full": false
+"full": false,
+"common": ""
 },
 {
 "id": "S04",
@@ -918,7 +921,8 @@ window.STORIES = [
 },
 "accTip": "Tipp (csak 6 főnél): a tekercset nem a gyilkos hozta el. Valaki, akinek a könyvtárban bármi eltűnhet a keze ügyéből. Ha őt elkapjátok, az is győzelem.",
 "mapNote": "A csillagvizsgálóba csak a nagy lépcsőházon át lehet feljutni. A lépcsőházból a jóslóterem és a labor ajtaja is látszik.",
-"full": false
+"full": false,
+"common": ""
 },
 {
 "id": "S05",
@@ -1148,7 +1152,8 @@ window.STORIES = [
 },
 "accTip": "Tipp (csak 6 főnél): az ágyúlövés nem véletlen volt. Valaki elnyomta vele a zajt. Ha őt elkapjátok, az is győzelem.",
 "mapNote": "A konyhából keskeny lépcső visz fel a kapitány kajütjéhez. A raktérből a fogolykamra és a konyha is elérhető.",
-"full": false
+"full": false,
+"common": ""
 },
 {
 "id": "S06",
@@ -1378,7 +1383,8 @@ window.STORIES = [
 },
 "accTip": "Tipp (csak 6 főnél): a rádiószoba éjjel zárva van. Valaki nyitva hagyta. Ha őt elkapjátok, az is győzelem.",
 "mapNote": "A rádiószoba ablaka a sétafedélzetre néz. A szivarszalonból egy belső ajtó nyílik a rádiószobába.",
-"full": false
+"full": false,
+"common": ""
 },
 {
 "id": "S07",
@@ -1608,7 +1614,8 @@ window.STORIES = [
 },
 "accTip": "Tipp (csak 6 főnél): az aranyalma nem véletlenül gurult el éjfélkor. Valaki elterelte vele a figyelmet. Ha őt elkapjátok, az is győzelem.",
 "mapNote": "Az alvilági kapu a lakomaterem alatt nyílik. A kovácsműhely ajtajából a lakomaasztal vége látszik.",
-"full": false
+"full": false,
+"common": ""
 },
 {
 "id": "S08",
@@ -1845,7 +1852,8 @@ window.STORIES = [
 },
 "accTip": "Tipp (csak 6 főnél): a kamerák 23:20-kor nem maguktól álltak le. Valaki lekapcsolta őket. Ha őt elkapjátok, az is győzelem.",
 "mapNote": "A szerverterem üvegfala a biztonsági pultra és a nyitott irodára néz. A szerverterembe csak kártyával lehet belépni, és a belépés naplózódik, de ma éjjel a napló üres.",
-"full": false
+"full": false,
+"common": ""
 },
 {
 "id": "S09",
@@ -2075,7 +2083,8 @@ window.STORIES = [
 },
 "accTip": "Tipp (csak 6 főnél): Max mikrofonja nem magától némult el. Valaki a hangpultnál segített. Ha őt elkapjátok, az is győzelem.",
 "mapNote": "A toronylépcső tetejére a rendezői szobából és a nagyteremből is fel lehet jutni. A lépcső alja a konyha felé néz.",
-"full": false
+"full": false,
+"common": ""
 },
 {
 "id": "S10",
@@ -2312,6 +2321,7 @@ window.STORIES = [
 },
 "accTip": "Tipp (csak 6 főnél): a riasztás 23:58-kor nem magától kapcsolt ki. Valaki segített a gyilkosnak. Ha őt elkapjátok, az is győzelem.",
 "mapNote": "A B-zsilip vezérlőpultja a kupola-ablakból látszik. A gépházból szervizalagút vezet a zsiliphez.",
-"full": false
+"full": false,
+"common": ""
 }
 ];
