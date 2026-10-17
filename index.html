@@ -4,791 +4,543 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Éjféli Tanú</title>
-<meta name="description" content="Titkos szerepes gyilkosos nyomozós játék négy főre, egy telefonon.">
+<meta name="description" content="Titkos szerepes gyilkosos nyomozós partijáték 4-6 főre, mindenki a saját telefonján.">
 <meta name="theme-color" content="#121016">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="data.js"></script>
 <style>
 :root{
   --bg:#121016; --panel:#1c1922; --panel2:#25212d; --line:#3a3444;
   --text:#ece6dc; --muted:#a59cad; --gold:#d9b46a; --gold2:#f0d79c;
   --red:#d2554d; --green:#6fbf8a; --blue:#7aa7d9;
 }
-*{box-sizing:border-box}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;background:var(--bg);color:var(--text)}
 body{font-family:Inter,system-ui,-apple-system,sans-serif;font-size:16px;line-height:1.5;
   background:radial-gradient(ellipse at top,#2a2030 0%,var(--bg) 60%) fixed;min-height:100vh}
 #app{max-width:560px;margin:0 auto;padding:20px 16px calc(40px + env(safe-area-inset-bottom))}
 h1,h2,h3{font-family:"Playfair Display",Georgia,serif;margin:0 0 .4em;line-height:1.2}
-h1{font-size:2.2rem;color:var(--gold2);letter-spacing:.5px}
-h2{font-size:1.5rem;color:var(--gold2)}
-h3{font-size:1.1rem;color:var(--gold)}
+h1{font-size:2.2rem;color:var(--gold2)} h2{font-size:1.45rem;color:var(--gold2)} h3{font-size:1.05rem;color:var(--gold)}
 p{margin:.4em 0 .9em}
-.muted{color:var(--muted)}
-.small{font-size:.88rem}
-.center{text-align:center}
-.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;margin:12px 0}
-.btn{display:block;width:100%;border:0;border-radius:12px;padding:15px 16px;margin:10px 0;
-  font:600 1.05rem Inter,sans-serif;cursor:pointer;background:var(--gold);color:#1a1410;
-  -webkit-tap-highlight-color:transparent}
-.btn:active{transform:scale(.98)}
-.btn.ghost{background:transparent;color:var(--text);border:1px solid var(--line)}
-.btn.red{background:var(--red);color:#fff}
-.btn.small{padding:10px;font-size:.95rem}
-.row{display:flex;gap:10px}.row>*{flex:1}
-.scen{display:flex;gap:12px;align-items:center;padding:14px;border:1px solid var(--line);border-radius:12px;
-  margin:8px 0;cursor:pointer;background:var(--panel2)}
-.scen.sel{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold) inset}
-.scen .ic{font-size:2rem}
-.chip{display:inline-block;padding:7px 12px;border:1px solid var(--line);border-radius:99px;margin:4px 4px 0 0;cursor:pointer}
-.chip.sel{border-color:var(--gold);color:var(--gold2)}
-input[type=text]{width:100%;padding:11px 12px;border-radius:10px;border:1px solid var(--line);
-  background:var(--bg);color:var(--text);font:inherit}
-.namerow{display:flex;align-items:center;gap:10px;margin:8px 0}
-.namerow .lab{width:44%;font-weight:600}
-.story p{font-family:Georgia,serif;font-size:1.05rem}
-.role{border-radius:14px;padding:16px;margin:12px 0;text-align:center}
-.role.murd{background:linear-gradient(135deg,#4a1717,#2a0f12);border:1px solid var(--red)}
-.role.wit{background:linear-gradient(135deg,#1d3550,#141f2e);border:1px solid var(--blue)}
-.role.det{background:linear-gradient(135deg,#1f3a2a,#14231a);border:1px solid var(--green)}
-.role .big{font-family:"Playfair Display",serif;font-size:1.8rem;font-weight:800}
-.fact{padding:10px 12px;border-left:3px solid var(--gold);background:var(--panel2);border-radius:0 10px 10px 0;margin:8px 0}
-.fact.red{border-color:var(--red)}.fact.blue{border-color:var(--blue)}.fact.green{border-color:var(--green)}
-.timer{font-family:"Playfair Display",serif;font-size:4.2rem;text-align:center;color:var(--gold2);margin:8px 0 0;font-variant-numeric:tabular-nums}
-.bar{height:6px;background:var(--panel2);border-radius:9px;overflow:hidden;margin:6px 0 14px}
-.bar>i{display:block;height:100%;background:var(--gold)}
-.pick{display:flex;gap:12px;align-items:center;padding:14px;border:1px solid var(--line);border-radius:12px;margin:8px 0;
-  cursor:pointer;background:var(--panel2);font-weight:600}
-.pick .ic{font-size:1.7rem}
-.qr{display:flex;justify-content:center;background:#fff;padding:12px;border-radius:12px;width:max-content;margin:10px auto}
-table{width:100%;border-collapse:collapse;font-size:.9rem}
-td{padding:6px 4px;border-bottom:1px solid var(--line);vertical-align:top}
-.modal{position:fixed;inset:0;background:rgba(5,4,8,.88);display:flex;align-items:center;justify-content:center;padding:16px;z-index:9}
-.modal .panel{max-width:520px;width:100%;max-height:90vh;overflow:auto}
-.fade{animation:fade .5s ease}
-@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
-.pulse{animation:pulse 1.2s ease-in-out infinite}
-@keyframes pulse{50%{opacity:.35}}
-.pub{padding:10px 0;border-top:1px solid var(--line)}
-.tags{margin:4px 0}.tag{display:inline-block;font-size:.82rem;padding:3px 8px;border-radius:99px;background:var(--panel2);border:1px solid var(--line);margin:2px 4px 2px 0}
-.fact.gold{border-color:var(--gold2);background:#2e2718}
-.sec{border-radius:14px;padding:12px 14px;margin:14px 0;border:1px solid var(--line)}
-.sech{font-weight:700;letter-spacing:.5px;margin-bottom:8px}.sech span{display:block;font-weight:400;font-size:.8rem;color:var(--muted);letter-spacing:0}
-.pubsec{background:#16231b;border-color:#2f5a3d}.revsec{background:#29240f;border-color:#6b5a20}.secsec{background:#2a1416;border-color:#6e2a2a}
-.mis{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-top:1px solid var(--line)}.mis input{width:22px;height:22px;margin-top:3px;flex:none}
-ol{padding-left:1.2em}li{margin:.3em 0}
+.muted{color:var(--muted)} .small{font-size:.88rem} .center{text-align:center}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px;margin:12px 0}
+.btn{display:block;width:100%;padding:14px 16px;margin:10px 0;border:0;border-radius:12px;font:600 1.02rem Inter,sans-serif;
+  background:var(--gold);color:#1a1410;cursor:pointer}
+.btn.ghost{background:transparent;color:var(--gold2);border:1px solid var(--line)}
+.btn:disabled{opacity:.4}
+input,select{width:100%;padding:11px 12px;border-radius:10px;border:1px solid var(--line);background:var(--panel2);color:var(--text);font:1rem Inter,sans-serif}
+label{display:block;margin:8px 0 4px;color:var(--muted);font-size:.9rem}
+.row{display:flex;gap:8px;align-items:center}
+.row>*{flex:1}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{padding:9px 13px;border-radius:999px;border:1px solid var(--line);background:var(--panel2);cursor:pointer;font-size:.92rem}
+.chip.on{background:var(--gold);color:#1a1410;border-color:var(--gold)}
+.story{display:flex;gap:10px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:12px;margin:6px 0;cursor:pointer;background:var(--panel2)}
+.story.on{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold) inset}
+.badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.75rem;font-weight:600;background:#2f3a2f;color:var(--green)}
+.badge.red{background:#3a2424;color:#f19a92} .badge.blue{background:#22303f;color:var(--blue)} .badge.gold{background:#3a3020;color:var(--gold2)}
+.qrbox{background:#fff;padding:14px;border-radius:14px;display:inline-block;margin:10px auto}
+/* reading */
+.topbar{position:sticky;top:0;z-index:5;background:var(--bg);padding:10px 0 8px}
+.bar{height:10px;border-radius:99px;background:var(--panel2);overflow:hidden;position:relative}
+.bar>i{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(90deg,var(--gold),var(--gold2));border-radius:99px}
+.bar .tick{position:absolute;top:0;bottom:0;width:2px;background:var(--bg)}
+.steps{display:flex;justify-content:space-between;font-size:.8rem;color:var(--muted);margin-top:6px}
+.steps b{color:var(--gold2)}
+.pfp{width:96px;aspect-ratio:2/3;object-fit:cover;border-radius:12px;border:2px solid var(--gold);background:#2a2430}
+.kv{margin:10px 0}
+.kv b{display:block;color:var(--gold);font-size:.82rem;text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px}
+.role{font:800 1.6rem "Playfair Display",serif;letter-spacing:.04em}
+.role.G,.role.B{color:#f19a92} .role.S{color:var(--blue)} .role.N{color:var(--green)}
+/* scene */
+#scene{position:fixed;inset:0;overflow:hidden;background:#0d0b10}
+#scene .bg{position:absolute;inset:0;background-size:cover;background-position:center;filter:brightness(.62) saturate(.9)}
+#scene .bg.none{background:radial-gradient(ellipse at 50% 55%,#3a2a36 0%,#16121a 70%)}
+.hud{position:absolute;left:0;right:0;top:0;display:flex;justify-content:space-between;align-items:flex-start;padding:calc(10px + env(safe-area-inset-top)) 12px 0;z-index:3}
+.hbtn{width:52px;height:52px;border-radius:14px;border:1px solid #ffffff30;background:#00000070;color:#fff;font-size:1.5rem;display:grid;place-items:center;cursor:pointer;backdrop-filter:blur(4px)}
+.hright{display:flex;flex-direction:column;gap:8px}
+#clock{width:min(34vw,150px);height:min(34vw,150px);filter:drop-shadow(0 4px 16px #0009)}
+#clock.urgent{animation:pulse 1s infinite}
+#clock.paused{opacity:.75}
+@keyframes pulse{50%{transform:scale(1.05)}}
+.stage{position:absolute;left:0;right:0;top:calc(min(34vw,150px) + 30px);bottom:calc(10px + env(safe-area-inset-bottom));z-index:2}
+.victim{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);text-align:center;color:#e6c7c2;font-size:.8rem;pointer-events:none}
+.victim .vb{font-size:2.2rem;opacity:.7}
+.ch{position:absolute;width:min(22vw,104px);transform:translate(-50%,-50%);text-align:center;cursor:pointer}
+.ch img{width:100%;aspect-ratio:2/3;object-fit:cover;border-radius:12px;border:2px solid #ffffff55;box-shadow:0 6px 18px #000a;background:#2a2430}
+.ch span{display:block;font-size:.74rem;line-height:1.2;margin-top:4px;text-shadow:0 1px 4px #000;color:#fff}
+.ch.me img{border-color:var(--gold)}
+.subs{position:absolute;left:12px;right:12px;bottom:calc(14px + env(safe-area-inset-bottom));z-index:4;background:#000000b8;border:1px solid #ffffff22;border-radius:14px;padding:14px;max-height:46vh;overflow:auto}
+.modal{position:fixed;inset:0;z-index:20;background:#000000d8;display:flex;align-items:center;justify-content:center;padding:16px}
+.modal .box{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:16px;max-width:520px;width:100%;max-height:92vh;overflow:auto;position:relative}
+.modal .x{position:absolute;right:10px;top:8px;background:none;border:0;color:var(--muted);font-size:1.6rem;cursor:pointer}
+.zoomimg{width:100%;border-radius:12px;cursor:zoom-in;display:block}
+.zoomwrap{overflow:auto;border-radius:12px;max-height:60vh;touch-action:pan-x pan-y pinch-zoom}
+.zoomwrap.z .zoomimg{width:260%;max-width:none;cursor:zoom-out}
+.tipbox{border:2px solid var(--gold);text-align:left}
+.tipbox h2{color:var(--gold2)}
+textarea{width:100%;min-height:42vh;padding:12px;border-radius:12px;border:1px solid var(--line);background:#fbf6ea;color:#2b2233;font:1rem/1.5 Georgia,serif}
+.sus{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.sus button{border:1px solid var(--line);background:var(--panel2);color:var(--text);border-radius:999px;padding:6px 10px;font-size:.82rem}
+.sus button.s1{background:#4a2a26;border-color:var(--red)} .sus button.s2{background:#24382a;border-color:var(--green)}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.grid .c{text-align:center;font-size:.8rem}
+.grid img{width:100%;aspect-ratio:2/3;object-fit:cover;border-radius:10px;border:2px solid var(--line)}
+.grid .c.on img{border-color:var(--gold)}
+.evil{filter:sepia(.4) saturate(1.6) hue-rotate(-25deg) contrast(1.15) brightness(.8)}
+.flip{animation:flip 1.2s ease}
+@keyframes flip{0%{transform:rotateY(90deg)}100%{transform:rotateY(0)}}
+.big{font:800 2rem "Playfair Display",serif;text-align:center;margin:10px 0}
 </style>
 </head>
 <body>
 <div id="app"></div>
 <script>
 "use strict";
-/* ===================== Scenario data ===================== */
-const SCENARIOS = [
-{
-  id:"var", icon:"🏰", title:"Méreg a Holdkő-várban", era:"1462 ősze",
-  short:"Szüreti lakoma, megmérgezett gróf, bezárt várkapuk.",
-  crime:"a gróf dolgozószobája",
-  weapon:"Méreg a gróf borában.",
-  intro:[
-    "Holdkő vára, 1462 őszén. A szüreti lakoma véget ért, a vendégek szétszéledtek a várban. Ödön gróf visszavonult a dolgozószobájába, hogy megírja másnapi rendeleteit.",
-    "Negyed tizenkettőkor a szolgája holtan találta. Előtte egy félig üres serleg, a borban méreg.",
-    "A vár kapuit bezárták. Rajtatok kívül senki nem járt a gróf szobája közelében. Négyen vagytok, és egyikőtök gyilkos.",
-    "Hajnalig van időtök. Ha addig nem neveztek meg közösen valakit, a tettes elszökik a ködben."
-  ],
-  witnessLine:"Pár perccel negyed tizenkettő előtt a folyosó végéről láttad, ahogy valaki kisurran a gróf dolgozószobájából. Felismerted: {X} volt.",
-  chars:[
-    {name:"A Lovag", icon:"🛡️", bio:"A gróf hű kardja húsz éve. Büszke, nyers, és az életével tartozik a grófnak.",
-     rumor:"A lakomán hangosan összeveszett a gróffal, és az asztalra csapott.",
-     access:"A nyílhegyeihez farkasmérget tart a fegyvertárban.",
-     motive:"A gróf elvette a földedet, és a fiadat zálogként a királyi udvarba küldte."},
-    {name:"A Füvész", icon:"🌿", bio:"A vár gyógyítója, aki minden növény titkát ismeri.",
-     rumor:"A gróf a lakomán mindenki előtt kigúnyolta a főzeteit.",
-     access:"A gyógynövénykertben mérges növények is nőnek, és csak neki van kulcsa.",
-     motive:"A gróf azzal fenyegetett, hogy boszorkányként máglyára küld."},
-    {name:"A Dalnok", icon:"🎻", bio:"Vándor zenész, aki egy éve maradt a várban. Mindenkiről tud egy pletykát.",
-     rumor:"A gróf a lakoma közepén elhallgattatta, és megtagadta a fizetségét.",
-     access:"Altatócseppeket hord a táskájában, nagy adagban halálosak.",
-     motive:"A gróf rájött, hogy a szomszéd báró kémeként dolgozol."},
-    {name:"A Kincstárnok", icon:"🗝️", bio:"A vár pénzének őre. Pontos, hideg, és soha nem felejt el egy tartozást.",
-     rumor:"A lakoma előtt a gróf zárt ajtók mögé hívatta, és dühösen jött ki.",
-     access:"Nála vannak a raktár kulcsai, ahol a patkányméreg áll.",
-     motive:"A gróf rájött, hogy évek óta sikkasztasz a kincstárból."}
-  ],
-  cats:[
-    {label:"Ruhaujj", vals:[
-      {v:"vörös viaszfoltos", clue:"A gróf asztalán vörös pecsétviasz kenődött el. A tettes ruhaujja viaszos lett."},
-      {v:"kormos", clue:"A tettes nekidőlt a kandallónak, a párkányon elmosódott a korom. A ruhaujja kormos lett."},
-      {v:"borfoltos", clue:"A serlegből kilöttyent a bor. A tettes ruhaujja borfoltos lett."}]},
-    {label:"Illat", vals:[
-      {v:"rozmaring", clue:"A dolgozószobában erős rozmaringillat terjengett. A tettes hozta magával."},
-      {v:"füstszag", clue:"A dolgozószobában erős füstszag terjengett. A tettes hozta magával."},
-      {v:"levendula", clue:"A dolgozószobában erős levendulaillat terjengett. A tettes hozta magával."}]},
-    {label:"Csizma", vals:[
-      {v:"sáros", clue:"A szőnyegen sáros csizmanyomok vezetnek az ajtótól."},
-      {v:"szalmaszálas", clue:"A szőnyegen szalmaszálak maradtak egy csizma nyomában."},
-      {v:"lisztes", clue:"A szőnyegen lisztes csizmanyomok látszanak."}]}
-  ],
-  locs:[
-    {name:"Borpince", at:"a borpincében", toward:"a borpince felé",
-     secret:"A borpincében titokban a gróf legdrágább tokaji borát kóstolgattad, és két palackot el is rejtettél."},
-    {name:"Kápolna", at:"a kápolnában", toward:"a kápolna felé",
-     secret:"A kápolnában szerelmes levelet rejtettél a gyóntatószékbe a gróf lányának."},
-    {name:"Istálló", at:"az istállóban", toward:"az istálló felé",
-     secret:"Az istállóban felnyergeltél egy lovat: hajnalban szökni akartál az adósságaid elől."},
-    {name:"Bástya", at:"a bástyán", toward:"a bástya felé",
-     secret:"A bástyán egy idegen futárral találkoztál, aki pénzt adott neked egy lepecsételt levélért."},
-    {name:"Konyha", at:"a konyhában", toward:"a konyha felé",
-     secret:"A konyhában elcsentél egy ezüst gyertyatartót, és a köpenyed alá rejtetted."}
-  ]
-},
-{
-  id:"vonat", icon:"🚂", title:"Utolsó éjszaka a Duna Expresszen", era:"1925 novembere",
-  short:"Hóban vesztegelő éjszakai vonat, halott bankár.",
-  crime:"a bankár hálófülkéje",
-  weapon:"A bankár saját ezüst levélbontója.",
-  intro:[
-    "1925 novembere. A Duna Expressz Bécsből Budapestre tart a ködös éjszakában. Éjfél előtt a kalauz kopogtat Von Hagen bankár hálófülkéjén. Nem jön válasz.",
-    "A bankár holtan fekszik, mellkasában a saját ezüst levélbontója.",
-    "A vonat a havas pályán vesztegel. Senki nem szállt le és senki nem szállt fel. A kocsiban csak ti négyen utaztatok vele. Egyikőtök gyilkos.",
-    "Mire a vonat beér a Keleti pályaudvarra, meg kell neveznetek a tettest. Ha nem sikerül, a gyilkos eltűnik a reggeli tömegben."
-  ],
-  witnessLine:"Nem sokkal éjfél előtt a folyosó végéről láttad, ahogy valaki kilép a bankár hálófülkéjéből, és gyorsan behúzza maga mögött az ajtót. Felismerted: {X} volt.",
-  chars:[
-    {name:"Az Ezredes", icon:"🎖️", bio:"Nyugalmazott huszárezredes, aki a háború óta nem alszik jól.",
-     rumor:"Vacsoránál a bankár mindenki előtt megalázta, mire az ezredes felborította a poharát.",
-     access:"Délután a bankár fülkéjében kártyáztak, látta, hol tartja a levélbontót.",
-     motive:"A bankár csődbe vitte a családi birtokodat, és most a házadat is elárverezte volna."},
-    {name:"A Színész", icon:"🎭", bio:"Budapesti színpadi sztár, aki a színpadon kívül is mindig szerepet játszik.",
-     rumor:"A szalonkocsiban a bankár mindenki füle hallatára a múltjára célozgatott.",
-     access:"Délután a bankár fülkéjében dedikált, és kölcsönkérte a levélbontót egy borítékhoz.",
-     motive:"A bankár leveleket őrzött, amelyek tönkretették volna a karrieredet."},
-    {name:"Az Orvos", icon:"🩺", bio:"Bécsi orvos, konferenciára utazik. Nyugodt keze van, és sok titkot hallott már.",
-     rumor:"Az étkezőkocsiban a bankár kiabálva követelt tőle egy receptet.",
-     access:"Ő kötötte be délután a bankár ujját a fülkéjében. Pontosan tudja, hova kell szúrni.",
-     motive:"A bankár tudta, hogy egy titkos kísérleted egy beteg halálával végződött."},
-    {name:"Az Újságíró", icon:"📰", bio:"Szemfüles riporter, aki hetek óta a bankár után nyomoz.",
-     rumor:"Egész este a bankárt fotózta, mire a bankár kitépte a kezéből a jegyzetfüzetét.",
-     access:"Délután fél órát interjúzott a bankár fülkéjében, a levélbontó karnyújtásnyira volt.",
-     motive:"A bankár lefizette a szerkesztődet, és azzal fenyegetett, hogy börtönbe juttat."}
-  ],
-  cats:[
-    {label:"Kesztyű", vals:[
-      {v:"fekete bőrkesztyű", clue:"Fekete bőrszál akadt a levélbontó markolatán. A tettes fekete bőrkesztyűt viselt."},
-      {v:"fehér cérnakesztyű", clue:"Fehér cérnaszál akadt a levélbontó markolatán. A tettes fehér cérnakesztyűt viselt."},
-      {v:"nincs kesztyűje", clue:"A levélbontó markolatán friss, csupasz ujjnyomok vannak. A tettes nem viselt kesztyűt."}]},
-    {label:"Mandzsetta", vals:[
-      {v:"szivarhamus", clue:"A fülke szőnyegén friss szivarhamu. A tettes mandzsettája hamus lett."},
-      {v:"tintafoltos", clue:"A bankár asztalán felborult a tintatartó. A tettes mandzsettája tintás lett."},
-      {v:"rúzsfoltos", clue:"A bankár gallérján rúzsnyom van, ugyanez kenődött a tettes mandzsettájára."}]},
-    {label:"Illat", vals:[
-      {v:"pézsmás kölni", clue:"A fülkében pézsmás kölni illata terjengett. A tettes hozta magával."},
-      {v:"ibolyaparfüm", clue:"A fülkében ibolyaparfüm illata terjengett. A tettes hozta magával."},
-      {v:"kámforszag", clue:"A fülkében orvosságos kámforszag terjengett. A tettes hozta magával."}]}
-  ],
-  locs:[
-    {name:"Étkezőkocsi", at:"az étkezőkocsiban", toward:"az étkezőkocsi felé",
-     secret:"Az étkezőkocsiban kártyáztál, csaltál, és elnyerted egy pincér egész havi fizetését."},
-    {name:"Poggyászkocsi", at:"a poggyászkocsiban", toward:"a poggyászkocsi felé",
-     secret:"A poggyászkocsiban feltörted egy utastárs bőröndjét, és elvittél belőle egy köteg levelet."},
-    {name:"Szalonkocsi", at:"a szalonkocsiban", toward:"a szalonkocsi felé",
-     secret:"A szalonkocsiban titkos randevúd volt valakivel, akivel senki nem láthat együtt."},
-    {name:"Kalauzfülke", at:"a kalauzfülkében", toward:"a kalauzfülke felé",
-     secret:"A kalauzfülkében lefizetted a kalauzt, hogy Budapest előtt leszállhass egy menetrenden kívüli megállóban."},
-    {name:"Hátsó peron", at:"a hátsó peronon", toward:"a hátsó peron felé",
-     secret:"A hátsó peronról egy csomagot dobtál le egy sötétben várakozó ismeretlennek."}
-  ]
-},
-{
-  id:"villa", icon:"🌩️", title:"Vihar a balatoni villában", era:"napjainkban",
-  short:"Születésnapi buli, áramszünet, halott nagybácsi.",
-  crime:"a könyvtár",
-  weapon:"Valaki meglökte, és a márvány kandallópárkányba verte a fejét.",
-  intro:[
-    "Augusztus vége, Balatonfüred. Bálint bácsi a nyolcvanadik születésnapját ünnepli a tóparti villában. Éjfél előtt vihar csap le, elmegy az áram.",
-    "Mire a generátor beindul, Bálint bácsit holtan találják a könyvtárban, a kandalló előtt. Valaki meglökte, és beverte a fejét a márványpárkányba.",
-    "A vihar miatt senki nem jöhetett és senki nem mehetett. A villában csak ti négyen voltatok vele. Egyikőtök gyilkos.",
-    "A rendőrség hajnalban ér ki. Addig nektek kell kideríteni, ki volt, különben a tettes eltünteti a nyomokat."
-  ],
-  witnessLine:"Amikor visszajött az áram, a folyosó végéről láttad, ahogy valaki kisiet a könyvtárból. Felismerted: {X} volt.",
-  chars:[
-    {name:"A Séf", icon:"🍳", bio:"A család régi szakácsa. Mindent tud, ami a konyhában elhangzik.",
-     rumor:"Vacsora alatt Bálint bácsi visszaküldte a főételt, és mindenki előtt lehordta.",
-     access:"Esténként ő vitte be Bálint bácsinak a whiskyt a könyvtárba.",
-     motive:"Bálint bácsi kirúgott volna, és feljelentett volna a hamis számláid miatt."},
-    {name:"Az Influenszer", icon:"📱", bio:"A család fekete báránya, kétszázezer követővel és nulla megtakarítással.",
-     rumor:"A torta után élő adásban viccelődött Bálint bácsin, aki ezért rákiabált.",
-     access:"Ismeri a könyvtár rejtett ajtaját a terasz felől, gyerekkorában ott bújt el.",
-     motive:"Bálint bácsi még ezen a héten kitagadott volna a végrendeletéből."},
-    {name:"Az Ügyvéd", icon:"⚖️", bio:"A család ügyvédje harminc éve. Ő őrzi a végrendeletet.",
-     rumor:"Éjfél előtt fél órával a könyvtárba hívták a végrendelet miatt, és feszülten jött ki.",
-     access:"Nála van a könyvtár pótkulcsa a páncélszekrény miatt.",
-     motive:"Bálint bácsi rájött, hogy a vagyonkezelésből a saját számládra utaltál."},
-    {name:"A Kertész", icon:"🌱", bio:"Mogorva kertész, aki a villa minden zugát ismeri.",
-     rumor:"Délután hallották, ahogy a kertben a telek eladásáról veszekednek Bálint bácsival.",
-     access:"Ő zárja este a teraszajtókat, mindegyikhez van kulcsa.",
-     motive:"Bálint bácsi eladta volna a telket, amit évekkel ezelőtt neked ígért."}
-  ],
-  cats:[
-    {label:"Cipő", vals:[
-      {v:"sáros", clue:"A parkettán sáros, vizes lábnyomok vezetnek a teraszajtótól."},
-      {v:"homokos", clue:"A szőnyegen homokszemek vannak. A tettes a part felől jött."},
-      {v:"fűszálas", clue:"A parkettán nedves fűszálak vannak. A tettes a kerten át jött."}]},
-    {label:"Illat", vals:[
-      {v:"édes parfüm", clue:"A könyvtárban erős, édes parfüm illata terjengett. A tettesé."},
-      {v:"dohányfüst", clue:"A könyvtárban friss dohányfüst szaga terjengett. A tettesé."},
-      {v:"klórszag", clue:"A könyvtárban medenceklór szaga terjengett. A tettesé."}]},
-    {label:"Ruha", vals:[
-      {v:"vörösboros folt", clue:"Az ajtókilincsen vörösbor van. A tettes ruhája is borfoltos lett."},
-      {v:"tortakrémes", clue:"Az ajtókilincsen tortakrém van. A tettes ruhája is krémes lett."},
-      {v:"olajfoltos", clue:"Az ajtókilincsen gépolaj van. A tettes ruhája is olajfoltos lett."}]}
-  ],
-  locs:[
-    {name:"Stég", at:"a stégen", toward:"a stég felé",
-     secret:"A stégen a viharban egy idegen motorcsónakostól átvettél egy vastag borítékot."},
-    {name:"Garázs", at:"a garázsban", toward:"a garázs felé",
-     secret:"A garázsban kölcsönvetted Bálint bácsi veterán autóját, és már egy csúnya karcolás is van rajta."},
-    {name:"Borospince", at:"a borospincében", toward:"a borospince felé",
-     secret:"A borospincében egy drága bort olcsóra cseréltél, a jót el akartad adni."},
-    {name:"Vendégszoba", at:"az emeleti vendégszobában", toward:"az emeleti vendégszoba felé",
-     secret:"Az emeleti vendégszobában átkutattad a fiókokat, és lefotóztál egy végrendelet-tervezetet."},
-    {name:"Terasz", at:"a teraszon", toward:"a terasz felé",
-     secret:"A teraszon titokban telefonáltál valakivel, akiről a család nem tudhat."}
-  ]
+/* ===================== constants ===================== */
+const READ = [30, 30, 60];          // seconds for the three card steps (total 2:00)
+const OVERTURE = 45;                // narration window before the clock starts
+const TIP = 30;                     // seconds a private tip stays on screen, clock paused
+const TIPS_AT = {15: [450], 30: [1200, 600], 60: [2700, 1800, 900]};  // remaining seconds
+const ROUND = "ABC";
+const STORE = "et3-";
+
+/* ===================== helpers ===================== */
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
+const app = document.getElementById("app");
+function ls(k, v) {
+  try { if (v === undefined) return JSON.parse(localStorage.getItem(STORE + k) || "null"); localStorage.setItem(STORE + k, JSON.stringify(v)); } catch (e) { return null; }
 }
-];
-
-/* ===================== Game generation (pure, deterministic) ===================== */
-function rngFrom(seed){let a=seed>>>0;return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);
-  t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
-function shuffle(arr,r){const a=arr.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
-function pickOne(arr,r){return arr[Math.floor(r()*arr.length)]}
-
-function generate(seed, scId){
-  const sc = SCENARIOS.find(s=>s.id===scId) || SCENARIOS[0];
-  const r = rngFrom(seed);
-  const seats=[0,1,2,3];
-  const murderer = Math.floor(r()*4);
-  const others = shuffle(seats.filter(s=>s!==murderer), r);
-  const witness = others[0];
-  const dets = [others[1], others[2]];
-  const innocents = seats.filter(s=>s!==murderer);
-
-  // clue order: k0 public at half time (murderer knows it), k1 -> dets[0], k2 -> dets[1]
-  const clueOrder = shuffle([0,1,2], r);
-  // murder values per category, and public appearance values for everyone
-  const mv = [0,1,2].map(()=>Math.floor(r()*3));
-  let vals;
-  for(let tries=0;tries<2000;tries++){
-    vals = seats.map(s => s===murderer ? mv.slice() : [0,1,2].map(()=>Math.floor(r()*3)));
-    const m = (s,c)=>vals[s][c]===mv[c];
-    const noFull = innocents.every(s=>!(m(s,0)&&m(s,1)&&m(s,2)));
-    const herrings = [0,1,2].every(c=>innocents.some(s=>m(s,c)));
-    const detsNeedHalf = innocents.some(s=>m(s,clueOrder[1])&&m(s,clueOrder[2]));
-    if(noFull && herrings && detsNeedHalf) break;
-  }
-
-  // locations: innocents get distinct secret locations, murderer was at the crime scene
-  const locOrder = shuffle([0,1,2,3,4], r);
-  const loc = {}; innocents.forEach((s,i)=>loc[s]=locOrder[i]);
-  loc[murderer] = -1;
-  const alibi = locOrder[3];
-
-  // sightings: everyone saw one innocent (not themselves) heading to where they really were
-  const sight = {};
-  seats.forEach(s=>{ sight[s] = pickOne(innocents.filter(x=>x!==s), r); });
-
-  return {sc, seedBase:seed>>>0, murderer, witness, dets, vals, mv, clueOrder, loc, alibi, sight};
+function placeholder(name, evil) {
+  const ini = name.split(/\s+/).filter(w => /^[A-ZÁÉÍÓÖŐÚÜŰ]/.test(w)).map(w => w[0]).join("").slice(0, 2) || name[0];
+  const bg = evil ? "#4a1f22" : "#2c2534";
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 300'><rect width='200' height='300' fill='${bg}'/>` +
+    `<circle cx='100' cy='105' r='42' fill='#00000055'/><path d='M30 300 C30 200 170 200 170 300Z' fill='#00000055'/>` +
+    `<text x='100' y='122' font-family='Georgia' font-size='46' fill='#d9b46a' text-anchor='middle'>${ini}</text>` +
+    `<text x='100' y='282' font-family='Arial' font-size='15' fill='#a59cad' text-anchor='middle'>KÉP HELYE</text></svg>`;
+  return "data:image/svg+xml," + encodeURIComponent(svg).replace(/'/g, "%27");
+}
+function pimg(story, slot, opts = {}) {
+  const c = story.chars[slot];
+  const src = `assets/${story.id}/K${slot + 1}${opts.evil ? "_evil" : ""}.jpg`;
+  const fallback = opts.evil ? `assets/${story.id}/K${slot + 1}.jpg` : placeholder(c.name, false);
+  return `<img src="${src}" alt="${esc(c.name)}" class="${opts.cls || ""}${opts.evil ? " evilf" : ""}" ` +
+    `onerror="if(this.dataset.f){this.onerror=null;this.src='${placeholder(c.name, !!opts.evil)}'}else{this.dataset.f=1;this.src='${fallback}';${opts.evil ? "this.classList.add('evil');" : ""}}">`;
 }
 
-/* ===================== Card text ===================== */
-function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
-function who(g,names,s){const c=g.sc.chars[s];const n=(names&&names[s]||"").trim();return n?`${n} (${c.name})`:c.name}
-function roleOf(g,s){return s===g.murderer?"murd":s===g.witness?"wit":"det"}
-function clueText(g,k){return g.sc.cats[k].vals[g.mv[k]].clue}
-function secretOf(g,s){return g.sc.locs[s===g.murderer?g.alibi:g.loc[s]].secret}
-
-// public knowledge: what everybody can see and knows about everyone
-function publicHTML(g,names){
-  const sc=g.sc;
-  return `<div class="panel"><h3>👀 Amit mindenki lát és tud</h3>
-    <p class="small muted">Fegyver: ${esc(sc.weapon)} Tetthely: ${esc(sc.crime)}.</p>
-    ${sc.chars.map((c,s)=>`<div class="pub">
-      <div><b>${c.icon} ${esc(who(g,names,s))}</b></div>
-      <div class="tags">${sc.cats.map((cat,i)=>`<span class="tag">${esc(cat.label)}: <b>${esc(cat.vals[g.vals[s][i]].v)}</b></span>`).join("")}</div>
-      <div class="small">🗣️ ${esc(c.rumor)}</div>
-      <div class="small">🔑 ${esc(c.access)}</div></div>`).join("")}
-  </div>`;
+/* ===================== card link encoding ===================== */
+const KEY = "ejfeli-tanu-1462";
+function b64u(bytes) { let s = ""; bytes.forEach(b => s += String.fromCharCode(b)); return btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, ""); }
+function unb64u(str) { str = str.replace(/-/g, "+").replace(/_/g, "/"); while (str.length % 4) str += "="; const s = atob(str); return Uint8Array.from(s, c => c.charCodeAt(0)); }
+function encodeCard(obj) {
+  const raw = new TextEncoder().encode(JSON.stringify(obj));
+  const out = new Uint8Array(raw.length + 1); let sum = 0;
+  raw.forEach((b, i) => { out[i] = b ^ KEY.charCodeAt(i % KEY.length); sum = (sum + b * (i + 7)) & 255; });
+  out[raw.length] = sum; return b64u(out);
 }
-
-/* ===================== Half-time private info ===================== */
-// third-person motives (what a found letter says about someone) and physical traces of each secret
-const MOTIVE3 = {
-  var:["A gróf elvette a földjét, és a fiát zálogként a királyi udvarba küldte.",
-       "A gróf boszorkánysággal vádolta, és máglyával fenyegette.",
-       "A gróf gyanította, hogy a szomszéd báró kéme.",
-       "A gróf gyanította, hogy évek óta sikkaszt a kincstárból."],
-  vonat:["A bankár csődbe vitte a családi birtokát, és most a házát is elárverezte volna.",
-       "A bankár leveleket őrzött, amelyek tönkretennék a karrierjét.",
-       "A bankár tudta, hogy egy titkos kísérlete egy beteg halálával végződött.",
-       "A bankár lefizette a szerkesztőjét, és börtönnel fenyegette."],
-  villa:["Bálint bácsi ki akarta rúgni, és feljelenteni a hamis számlák miatt.",
-       "Bálint bácsi még ezen a héten kitagadta volna a végrendeletéből.",
-       "Bálint bácsi rájött, hogy a vagyonkezelésből a saját számlájára utalt.",
-       "Bálint bácsi eladta volna a telket, amit évekkel ezelőtt neki ígért."]
-};
-const TRACE = {
-  var:["a köpenye alatt két poros tokajis palack lapul",
-       "az ujjain friss tinta és gyertyaviasz van, mintha nemrég levelet írt volna",
-       "egy nyeregszíj lóg ki a táskájából, és lószagú a köpenye",
-       "egy idegen pecsétes erszény csilingel az övén",
-       "egy ezüst gyertyatartó domborodik a köpenye alatt"],
-  vonat:["a zsebe tömve gyűrött bankjegyekkel, és egy cinkelt kártyapakli lóg ki belőle",
-       "a kabátja alól egy köteg idegen levél kandikál ki",
-       "a zsebéből egy idegen monogramos zsebkendő lóg ki",
-       "a kalauz zavartan elfordul, valahányszor elhalad mellette",
-       "a kabátja vállán friss hó olvad, mintha nemrég kint lett volna"],
-  villa:["a nadrágszára csuromvizes, és egy vastag boríték dudorodik a zsebében",
-       "a kezén friss lakkpor van, és egy veterán autó kulcsa csörög a zsebében",
-       "egy pókhálós, drága borosüveget dugott a táskájába",
-       "a telefonján épp egy végrendelet fotója volt nyitva",
-       "idegesen törölt valamit a telefonja híváslistájáról"]
-};
-
-// everyone gets one new suspicious fact about someone else; everyone is targeted exactly once
-function halfPlan(g){
-  const r = rngFrom((g.seedBase ^ 0x9E3779B9)>>>0);
-  let perm;
-  do { perm = shuffle([0,1,2,3], r); } while(perm.some((t,s)=>t===s));
-  const kind = [0,1,2,3].map(()=> r()<0.5 ? "motive" : "trace");
-  return {perm, kind};
-}
-function halfHTML(g,names,s){
-  const hp=halfPlan(g), t=hp.perm[s], sc=g.sc;
-  let txt;
-  if(hp.kind[s]==="motive")
-    txt=`Egy félbehagyott levelet találtál az áldozat holmija között. <b>${esc(who(g,names,t))}</b> neve szerepel benne: „${esc(MOTIVE3[sc.id][t])}”`;
-  else {
-    const li = t===g.murderer ? g.alibi : g.loc[t];
-    txt=`<b>${esc(who(g,names,t))}</b>: észrevetted, hogy ${esc(TRACE[sc.id][li])}.`;
-  }
-  return `<div class="fact gold"><b>🕛 Félidős titkos információd:</b> ${txt}</div>`;
-}
-
-/* ===================== Secret missions ===================== */
-const MISSIONS = [
-  {t:"Titoktartó", d:"A játék végén a többiek tippelhetnek, mi a kínos titkod. Ha senki nem találja el, teljesítetted."},
-  {t:"Varázsszó", d:"Érd el, hogy valaki más hangosan kimondja ezt a szót: „{W}”. Te nem mondhatod ki előbb."},
-  {t:"Bűnbak", d:"Érd el, hogy valaki hangosan megvádoljon téged, de a végső vád ne rád essen."},
-  {t:"Kíváncsi", d:"Derítsd ki valaki más kínos titkát, és a játék végén mondd ki pontosan."},
-  {t:"Mesemondó", d:"Hazudj valamit arról, hol voltál vagy mit láttál, és a játék végéig senki ne leplezzen le."}
-];
-const WORDS = {var:["sárkány","tokaji","Mátyás király","boszorkány"], vonat:["Párizs","pezsgő","kalap","Orient"], villa:["Instagram","lángos","vitorlás","Tihany"]};
-function missionsFor(g){
-  const r = rngFrom((g.seedBase ^ 0x5bd1e995)>>>0);
-  const pool = shuffle([0,1,2,3,4], r), words = shuffle(WORDS[g.sc.id], r);
-  const out = {}; let i=0;
-  [0,1,2,3].forEach(s=>{ if(s!==g.murderer){ const k=pool[i++]; out[s]={t:MISSIONS[k].t, d:MISSIONS[k].d.replace("{W}",words[0])}; } });
-  return out;
-}
-
-/* ===================== Points ===================== */
-const POINTS_TEXT = "Ártatlan csapat győzelme: 2 pont mindhárom ártatlannak. Teljesített titkos küldetés: +1 pont (akkor is, ha a csapat veszít). Gyilkos győzelme: 4 pont. Ha a gyilkost elkapták, de eltalálta a Szemtanút: 2 pont.";
-function roundPoints(g,result,missionOk){
-  const p=[0,0,0,0];
-  if(result==="caught") [0,1,2,3].forEach(s=>{ if(s!==g.murderer) p[s]+=2; });
-  else if(result==="witness") p[g.murderer]+=2;
-  else p[g.murderer]+=4;
-  [0,1,2,3].forEach(s=>{ if(s!==g.murderer && missionOk && missionOk[s]) p[s]+=1; });
-  return p;
-}
-
-/* ===================== Character card (player's own phone) ===================== */
-function cardHTML(g,names,s){
-  const sc=g.sc, c=sc.chars[s], role=roleOf(g,s), mis=missionsFor(g)[s];
-  const R={murd:["Gyilkos","Te ölted meg. Senki nem tudja. Még."],
-           wit:["Szemtanú","Ártatlan vagy, és tudod a választ."],
-           det:["Nyomozó","Ártatlan vagy. Találd meg a gyilkost."]}[role];
-  let h=`<div class="center"><div style="font-size:3rem">${c.icon}</div><h2>${esc(who(g,names,s))}</h2>
-    <p class="muted small">${esc(c.bio)}</p></div>`;
-
-  // PUBLIC
-  h+=`<div class="sec pubsec"><div class="sech">🟢 NYILVÁNOS <span>ezt mindenki tudja rólad</span></div>
-    <div class="tags">${sc.cats.map((cat,i)=>`<span class="tag">${esc(cat.label)}: <b>${esc(cat.vals[g.vals[s][i]].v)}</b></span>`).join("")}</div>
-    <div class="small">🗣️ ${esc(c.rumor)}</div><div class="small">🔑 ${esc(c.access)}</div></div>`;
-
-  // REVEALABLE
-  let clue;
-  if(role==="murd") clue=`${esc(clueText(g,g.clueOrder[0]))} <span class="muted">Ezt a nyomot te hagytad. Mondhatod, hogy te találtad, félidőben úgyis mindenki megtudja.</span>`;
-  else if(role==="det") clue=esc(clueText(g, g.dets[0]===s ? g.clueOrder[1] : g.clueOrder[2]));
-  else clue=`Nem találtál nyomot. <span class="muted">Mondhatod, hogy találtál.</span>`;
-  const where = role==="murd" ? `Ezt mondod: ${esc(sc.locs[g.alibi].at)} voltál. Oda rajtad kívül senki nem ment.`
-                              : `A gyilkosság idején ${esc(sc.locs[g.loc[s]].at)} voltál. Rajtad kívül senki nem járt ott.`;
-  const t=g.sight[s];
-  h+=`<div class="sec revsec"><div class="sech">🟡 FELFEDHETŐ <span>bármikor elmondhatod, elhallgathatod, hazudhatsz is</span></div>
-    <div class="fact">📍 <b>Hol voltál:</b> ${where}</div>
-    <div class="fact">🔥 <b>Indítékod:</b> ${esc(c.motive)}</div>
-    <div class="fact">🤫 <b>Kínos titkod:</b> ${esc(secretOf(g,s))}</div>
-    <div class="fact">🔍 <b>Nyom:</b> ${clue}</div>
-    <div class="fact">👁️ <b>Amit láttál:</b> ${esc(who(g,names,t))} nem sokkal a gyilkosság előtt ${esc(sc.locs[g.loc[t]].toward)} ment.</div></div>`;
-
-  // SECRET
-  h+=`<div class="sec secsec"><div class="sech">🔴 TITKOS <span>ezt tilos kimondani</span></div>
-    <div class="role ${role}"><div class="small">A szereped</div><div class="big">${R[0]}</div><div class="small">${R[1]}</div></div>`;
-  if(role==="murd") h+=`<div class="fact red">Valójában a tetthelyen voltál: ${esc(sc.crime)}.</div>
-    <div class="fact red"><b>Célod:</b> ne nevezzenek meg. Ha mégis, egy esélyed marad: ha kitalálod, ki a Szemtanú, akkor is kapsz pontot. Titkos küldetésed nincs.</div>`;
-  if(role==="wit") h+=`<div class="fact blue">${esc(sc.witnessLine).replace("{X}","<b>"+esc(who(g,names,g.murderer))+"</b>")} <span class="muted">Célozhatsz rá, de nem mondhatod ki.</span></div>`;
-  if(role!=="murd") h+=`<div class="fact gold"><b>🎯 Titkos küldetésed: ${esc(mis.t)}.</b> ${esc(mis.d)}</div>
-    <div class="fact"><b>Célod:</b> ${role==="wit"?"vezesd rá a többieket a gyilkosra, de úgy, hogy ne derüljön ki, hogy te vagy a Szemtanú.":"a többiekkel közösen nevezzétek meg a gyilkost. Egy vádatok van."}</div>`;
-  h+=`<p class="small muted">${POINTS_TEXT}</p></div>`;
-  return h;
-}
-
-/* ===================== Card link encoding ===================== */
-const KEY="ejfeli-tanu-1462";
-function b64u(bytes){let s="";bytes.forEach(b=>s+=String.fromCharCode(b));return btoa(s).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"")}
-function unb64u(str){str=str.replace(/-/g,"+").replace(/_/g,"/");while(str.length%4)str+="=";const s=atob(str);return Uint8Array.from(s,c=>c.charCodeAt(0))}
-function encodeCard(obj){
-  const raw=new TextEncoder().encode(JSON.stringify(obj));
-  const out=new Uint8Array(raw.length+1);let sum=0;
-  raw.forEach((b,i)=>{out[i]=b^KEY.charCodeAt(i%KEY.length);sum=(sum+b*(i+7))&255});
-  out[raw.length]=sum;return b64u(out);
-}
-function decodeCard(str){
-  const d=unb64u(str);const raw=new Uint8Array(d.length-1);let sum=0;
-  for(let i=0;i<raw.length;i++){raw[i]=d[i]^KEY.charCodeAt(i%KEY.length);sum=(sum+raw[i]*(i+7))&255}
-  if(sum!==d[d.length-1]) throw new Error("bad");
+function decodeCard(str) {
+  const d = unb64u(str); const raw = new Uint8Array(d.length - 1); let sum = 0;
+  for (let i = 0; i < raw.length; i++) { raw[i] = d[i] ^ KEY.charCodeAt(i % KEY.length); sum = (sum + raw[i] * (i + 7)) & 255; }
+  if (sum !== d[d.length - 1]) throw new Error("bad");
   return JSON.parse(new TextDecoder().decode(raw));
 }
+function cardUrl(P) { return location.origin + location.pathname + "#c=" + encodeCard(P); }
 
-if(typeof module!=="undefined"){module.exports={SCENARIOS,generate,cardHTML,halfHTML,halfPlan,publicHTML,missionsFor,roundPoints,encodeCard,decodeCard}}
-
-/* ===================== UI ===================== */
-if(typeof document!=="undefined"){
-const app=document.getElementById("app");
-const STORE="ejfeli-tanu-v2";
-let G=null, tick=null, wakeLock=null;
-
-function save(){try{localStorage.setItem(STORE,JSON.stringify(G))}catch(e){}}
-function load(){try{return JSON.parse(localStorage.getItem(STORE)||"null")}catch(e){return null}}
-function clearSave(){try{localStorage.removeItem(STORE)}catch(e){}}
-function game(){return generate(G.seed,G.sc)}
-function newSeed(){const a=new Uint32Array(1);crypto.getRandomValues(a);return a[0]}
-function show(html){app.innerHTML=`<div class="fade">${html}</div>`;window.scrollTo(0,0)}
-function on(id,fn){const el=document.getElementById(id);if(el)el.onclick=fn}
-function beep(){try{const ctx=new (window.AudioContext||window.webkitAudioContext)();[0,0.25,0.5].forEach(t=>{
-  const o=ctx.createOscillator(),g=ctx.createGain();o.frequency.value=660;o.connect(g);g.connect(ctx.destination);
-  g.gain.setValueAtTime(0.25,ctx.currentTime+t);g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+t+0.22);
-  o.start(ctx.currentTime+t);o.stop(ctx.currentTime+t+0.24)})}catch(e){} try{navigator.vibrate&&navigator.vibrate([200,100,200])}catch(e){}}
-async function keepAwake(){try{if("wakeLock" in navigator&&!wakeLock){wakeLock=await navigator.wakeLock.request("screen");wakeLock.addEventListener("release",()=>wakeLock=null)}}catch(e){}}
-function modal(html){const m=document.createElement("div");m.className="modal";m.innerHTML=`<div class="panel fade">${html}</div>`;document.body.appendChild(m);return m}
-function pname(i){return (G.names[i]||"").trim()||`${i+1}. játékos`}
-
-const RULES=`<h3>Szabályok</h3><ol>
-<li>Négyen vagytok: <b>1 Gyilkos</b>, <b>1 Szemtanú</b>, <b>2 Nyomozó</b>. A játékvezető telefonja olvassa fel a történetet és a nyilvános infókat, a többiek QR-kóddal kapják meg a lapjukat a saját telefonjukra.</li>
-<li>A lapon három rész van. <b>🟢 Nyilvános:</b> ezt mindenki tudja rólad. <b>🟡 Felfedhető:</b> bármikor elmondhatod, elhallgathatod, hazudhatsz is róla. <b>🔴 Titkos:</b> a szereped és a küldetésed, ezeket tilos kimondani.</li>
-<li>Beszélgessetek, kérdezzetek, vádaskodjatok. <b>Bárki hazudhat.</b></li>
-<li>Félidőben az óra megáll, előkerül egy közös nyom, és mindenki 30 másodpercre megnyit a saját lapján egy új titkos információt valaki másról. Utána eltűnik, és az óra megy tovább.</li>
-<li><b>Vádemelés:</b> ha legalább hárman egyetértetek, nyomjátok meg a gombot. Csak egyszer lehet.</li>
-<li>Ha ártatlant vádoltok, vagy lejár az idő: <b>a Gyilkos nyer</b>.</li>
-<li>Ha a Gyilkost vádoljátok: van még egy esélye. Ha kitalálja, ki a Szemtanú, ő is kap pontot, az ártatlanok nem.</li>
-</ol><h3>Pontozás</h3><p class="small">${POINTS_TEXT} A bajnokság végén a legtöbb pontot gyűjtő játékos nyer.</p>`;
-
-/* ---- card-only view (opened from QR on a player's own phone) ---- */
-function cardView(hash){
-  let d;try{d=decodeCard(hash)}catch(e){show(`<div class="panel center"><h2>Hibás link</h2><p>Ez a lap nem olvasható.</p></div>`);return}
-  const g=generate(d.s,d.c), hk="ejfeli-half-"+d.s+"-"+d.p;
-  let opened=0; try{opened=+localStorage.getItem(hk)||0}catch(e){}
-  show(`<p class="center muted small">${g.sc.icon} ${esc(g.sc.title)} · Ezt a lapot csak te nézd.</p>
-    <div id="cover" class="panel center"><p>A lapod rejtve van.</p><button class="btn" id="reveal">Megmutatom</button></div>
-    <div id="card" style="display:none">${cardHTML(g,d.n,d.p)}<button class="btn ghost" id="hide">Elrejtem</button></div>
-    <div id="half" class="panel center"></div>`);
-  const half=document.getElementById("half");
-  let iv=null;
-  function drawHalf(){
-    clearInterval(iv);
-    const left = opened ? 30000-(Date.now()-opened) : null;
-    if(!opened){
-      half.innerHTML=`<button class="btn" id="openhalf">🕛 Félidős információ</button><p class="small muted">Csak akkor nyomd meg, amikor a játékvezető telefonján elindul a 30 másodperc. Utána eltűnik.</p>`;
-      on("openhalf",()=>{if(!confirm("Elindult a 30 másodperc a játékvezető telefonján?"))return;
-        opened=Date.now();try{localStorage.setItem(hk,String(opened))}catch(e){};drawHalf()});
-    } else if(left>0){
-      const paint=()=>{const l=30000-(Date.now()-opened);if(l<=0){drawHalf();return}
-        half.innerHTML=`<div class="timer pulse" style="font-size:2.6rem">${Math.ceil(l/1000)}</div>${halfHTML(g,d.n,d.p)}<p class="small muted">Jegyezd meg, mindjárt eltűnik.</p>`};
-      paint(); iv=setInterval(paint,250);
-      half.scrollIntoView({behavior:"smooth"});
-    } else {
-      half.innerHTML=`<p class="small muted">🕛 A félidős információ eltűnt. Remélem, megjegyezted.</p>`;
+/* ===================== audio (host phone only) ===================== */
+const AU = {ctx: null, master: null, music: null, tension: null, nodes: [], muted: false, lastTick: -1, mode: ""};
+function ensureAudio() {
+  try {
+    if (!AU.ctx) {
+      AU.ctx = new (window.AudioContext || window.webkitAudioContext)();
+      AU.master = AU.ctx.createGain(); AU.master.gain.value = .9; AU.master.connect(AU.ctx.destination);
     }
-  }
-  drawHalf();
-  on("reveal",()=>{document.getElementById("cover").style.display="none";document.getElementById("card").style.display="block"});
-  on("hide",()=>{document.getElementById("cover").style.display="block";document.getElementById("card").style.display="none";window.scrollTo(0,0)});
+    if (AU.ctx.state === "suspended") AU.ctx.resume();
+    if (window.speechSynthesis && !AU.warm) { AU.warm = 1; const u = new SpeechSynthesisUtterance(" "); u.volume = 0; speechSynthesis.speak(u); }
+  } catch (e) {}
 }
-
-/* ---- home ---- */
-function home(){
-  const saved=load();
-  let mode=(saved&&saved.tour&&!saved.tour.on)?"single":"tour", sel=(saved&&saved.sc)||"var", mins=(saved&&saved.minutes)||20;
-  const names=(saved&&saved.names)||["","","",""];
-  function draw(){
-    show(`<div class="center" style="margin:18px 0 8px"><div style="font-size:2.6rem">🕯️</div><h1>Éjféli Tanú</h1>
-      <p class="muted">Titkos szerepes gyilkosos nyomozás négy főre. Egy gyilkos, egy szemtanú, sok hazugság.</p></div>
-      ${saved&&saved.phase&&saved.phase!=="final"?`<button class="btn" id="resume">Folytatom a félbehagyott játékot</button>`:""}
-      <div class="panel"><h3>1. Játékosok</h3>
-        ${[0,1,2,3].map(i=>`<div class="namerow"><div class="lab">${i===0?"Te (ez a telefon)":(i+1)+". játékos"}</div>
-          <input type="text" maxlength="14" data-n="${i}" placeholder="Név" value="${esc(names[i]||"")}"></div>`).join("")}
-      </div>
-      <div class="panel"><h3>2. Mód</h3>
-        <span class="chip ${mode==="tour"?"sel":""}" data-mode="tour">🏆 Bajnokság: mind a 3 történet</span>
-        <span class="chip ${mode==="single"?"sel":""}" data-mode="single">Egy történet</span>
-        ${mode==="single"?SCENARIOS.map(s=>`<div class="scen ${s.id===sel?"sel":""}" data-sc="${s.id}"><div class="ic">${s.icon}</div>
-          <div><b>${esc(s.title)}</b><div class="small muted">${esc(s.era)} · ${esc(s.short)}</div></div></div>`).join(""):
-          `<p class="small muted" style="margin-top:10px">${SCENARIOS.map(s=>s.icon+" "+esc(s.title)).join("<br>")}</p>`}
-      </div>
-      <div class="panel"><h3>3. Idő körönként</h3>${[15,20,25,30].map(m=>`<span class="chip ${m===mins?"sel":""}" data-m="${m}">${m} perc</span>`).join("")}</div>
-      <button class="btn" id="start">Kezdjük</button>
-      <div class="panel">${RULES}</div>`);
-    app.querySelectorAll("[data-sc]").forEach(el=>el.onclick=()=>{grab();sel=el.dataset.sc;draw()});
-    app.querySelectorAll("[data-mode]").forEach(el=>el.onclick=()=>{grab();mode=el.dataset.mode;draw()});
-    app.querySelectorAll("[data-m]").forEach(el=>el.onclick=()=>{grab();mins=+el.dataset.m;draw()});
-    on("resume",()=>{G=saved;route()});
-    on("start",()=>{grab();
-      const list = mode==="tour" ? SCENARIOS.map(s=>s.id) : [sel];
-      G={names:names.slice(),minutes:mins,tour:{on:mode==="tour",list,idx:0,scores:[0,0,0,0],rounds:[]}};
-      newRound();});
-  }
-  function grab(){app.querySelectorAll("[data-n]").forEach(el=>names[+el.dataset.n]=el.value)}
-  draw();
+function tone(freq, dur, type = "sine", vol = .2, when = 0) {
+  if (!AU.ctx || AU.muted) return;
+  const t = AU.ctx.currentTime + when, o = AU.ctx.createOscillator(), g = AU.ctx.createGain();
+  o.type = type; o.frequency.value = freq; g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+  o.connect(g); g.connect(AU.master); o.start(t); o.stop(t + dur + .05);
 }
-function newRound(){
-  Object.assign(G,{seed:newSeed(),sc:G.tour.list[G.tour.idx],phase:"intro",deal:1,half:false,accused:null,result:null,late:false});
-  save();route();
+function noise(dur, vol = .2, hp = 2000, when = 0) {
+  if (!AU.ctx || AU.muted) return;
+  const t = AU.ctx.currentTime + when, len = Math.max(1, AU.ctx.sampleRate * dur), b = AU.ctx.createBuffer(1, len, AU.ctx.sampleRate), d = b.getChannelData(0);
+  for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len);
+  const s = AU.ctx.createBufferSource(), f = AU.ctx.createBiquadFilter(), g = AU.ctx.createGain();
+  f.type = "highpass"; f.frequency.value = hp; g.gain.value = vol; s.buffer = b; s.connect(f); f.connect(g); g.connect(AU.master); s.start(t);
 }
-function scoreTable(extra){
-  const order=[0,1,2,3].sort((a,b)=>G.tour.scores[b]-G.tour.scores[a]);
-  return `<table>${order.map((s,i)=>`<tr><td>${i===0&&G.tour.scores[s]>0?"👑":""}</td><td><b>${esc(pname(s))}</b></td><td class="center"><b>${G.tour.scores[s]}</b> pont${extra&&extra[s]?` <span class="muted">(+${extra[s]})</span>`:""}</td></tr>`).join("")}</table>`;
+const tick = loud => { noise(.03, .25 + loud * .5, 3500); tone(1800, .03, "square", .04 + loud * .08); };
+const chime = () => { tone(880, .9, "sine", .16); tone(1320, 1.1, "sine", .1, .12); };
+const drumroll = sec => { for (let i = 0; i < sec * 18; i++) noise(.05, .12 + i / (sec * 18) * .25, 300, i / 18); tone(110, 1.2, "triangle", .35, sec); };
+// Placeholder music: a story file assets/<id>/music.mp3 (and tension.mp3) wins when it exists, else a generated drone.
+function startMusic(story) {
+  if (AU.mode) return; AU.mode = "calm";
+  const a = new Audio(`assets/${story.id}/music.mp3`); a.loop = true; a.volume = .45;
+  a.play().then(() => { AU.music = a; }).catch(() => drone());
 }
-function roundLabel(){return G.tour.list.length>1?`${G.tour.idx+1}. történet a ${G.tour.list.length}-ból`:"Egy történet"}
-
-/* ---- intro: story + public info, read aloud by the host ---- */
-function intro(){
-  const g=game(), sc=g.sc;
-  show(`<p class="center muted small">${roundLabel()} · Olvasd fel hangosan</p>
-    <div class="panel story"><div class="center" style="font-size:2.4rem">${sc.icon}</div><h2 class="center">${esc(sc.title)}</h2>
-    ${sc.intro.map(p=>`<p>${esc(p)}</p>`).join("")}</div>
-    <div class="panel"><h3>Ki kicsoda?</h3>${sc.chars.map((c,i)=>`<p><b>${c.icon} ${esc(pname(i))}: ${esc(c.name)}</b><br><span class="small muted">${esc(c.bio)}</span></p>`).join("")}</div>
-    ${publicHTML(g,G.names)}
-    <button class="btn" id="go">Lapok kiosztása QR-kóddal</button>
-    ${G.tour.idx===0?`<button class="btn ghost" id="back">Vissza</button>`:""}`);
-  on("go",()=>{G.phase="deal";G.deal=1;save();route()});
-  on("back",()=>{clearSave();home()});
+function drone() {
+  if (!AU.ctx) return;
+  const g = AU.ctx.createGain(); g.gain.value = .05; const lp = AU.ctx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 500;
+  [55, 55.4, 82.4].forEach(f => { const o = AU.ctx.createOscillator(); o.type = "sawtooth"; o.frequency.value = f; o.connect(lp); o.start(); AU.nodes.push(o); });
+  const lfo = AU.ctx.createOscillator(), lg = AU.ctx.createGain(); lfo.frequency.value = .08; lg.gain.value = 250; lfo.connect(lg); lg.connect(lp.frequency); lfo.start();
+  lp.connect(g); g.connect(AU.master); AU.drone = g;
 }
-
-/* ---- deal: 3 QR pages, then the host's own card ---- */
-function deal(){
-  const g=game(), s=G.deal;
-  if(s<=3){
-    const url=location.origin+location.pathname+"#k="+encodeCard({s:G.seed,c:G.sc,p:s,n:G.names});
-    show(`<div class="panel center" style="margin-top:24px"><div style="font-size:2.6rem">${g.sc.chars[s].icon}</div>
-      <p class="muted">${s} / 3</p><h2>${esc(pname(s))}</h2><p>${esc(g.sc.chars[s].name)}</p>
-      <p class="small">Szkenneld be a saját telefonoddal. Ott lesz a lapod és a félidős információd is.</p>
-      <div class="qr" id="qr"></div></div>
-      <button class="btn" id="next">${s<3?"Következő":"Kész, mindhárman beszkennelték"}</button>`);
-    try{new QRCode(document.getElementById("qr"),{text:url,width:230,height:230,correctLevel:QRCode.CorrectLevel.L})}
-    catch(e){document.getElementById("qr").outerHTML=`<p class="small muted">A QR-kód nem töltött be. Link: <a href="${url}">${url}</a></p>`}
-    on("next",()=>{G.deal++;save();route()});
-  } else if(G.deal===4){
-    show(`<div class="panel center" style="margin-top:40px"><div style="font-size:3rem">${g.sc.chars[0].icon}</div>
-      <h2>Most a te lapod jön, ${esc(pname(0))}.</h2><p class="small muted">A többiek ne nézzenek oda.</p>
-      <button class="btn" id="see">Megnézem</button></div>`);
-    on("see",()=>{G.deal=5;save();route()});
-  } else {
-    show(`${cardHTML(g,G.names,0)}<button class="btn" id="done">Megjegyeztem, elrejtem</button>`);
-    on("done",()=>{G.phase="ready";save();route()});
-  }
-}
-
-function ready(){
-  show(`<div class="panel center" style="margin-top:40px"><div style="font-size:3rem">🕯️</div><h2>Mindenki tudja, ki kicsoda.</h2>
-    <p>Tegyétek le a telefont középre. Az óra indul, amint megnyomjátok.</p>
-    <button class="btn" id="go">Indul a nyomozás (${G.minutes} perc)</button></div>`);
-  on("go",()=>{G.phase="play";G.start=Date.now();G.half=false;G.pausedAt=null;G.halfPhase=null;save();keepAwake();route()});
-}
-
-function timeLeft(){const now=G.pausedAt||Date.now();return Math.max(0,G.start+G.minutes*60000-now)}
-function resumeClock(){if(G.pausedAt){G.start+=Date.now()-G.pausedAt;G.pausedAt=null}G.halfPhase="done";save()}
-function fmt(ms){const m=Math.floor(ms/60000),s=Math.floor(ms%60000/1000);return `${m}:${String(s).padStart(2,"0")}`}
-
-/* ---- play: timer + public table ---- */
-function play(){
-  const g=game(), total=G.minutes*60000;
-  show(`<p class="center muted small">${roundLabel()} · ${g.sc.icon} ${esc(g.sc.title)}</p>
-    <div class="timer" id="t">--:--</div><div class="bar"><i id="b"></i></div>
-    <div id="halfbox">${G.half?halfBox(g):""}</div>
-    <button class="btn red" id="acc">⚖️ Vádemelés</button>
-    <div class="row"><button class="btn ghost small" id="peek">Saját lapom</button><button class="btn ghost small" id="rules">Szabályok</button></div>
-    ${publicHTML(g,G.names)}
-    <button class="btn ghost small" id="quit">Kör feladása</button>`);
-  on("acc",()=>{G.phase="accuse";save();route()});
-  on("rules",()=>{const m=modal(RULES+`<button class="btn" id="x">Bezár</button>`);m.querySelector("#x").onclick=()=>m.remove()});
-  on("peek",()=>{const m=modal(`<p class="center">Ez ${esc(pname(0))} lapja. A többiek ne nézzenek oda.</p><button class="btn" id="y">Megnézem</button><button class="btn ghost" id="x">Mégsem</button>`);
-    m.querySelector("#x").onclick=()=>m.remove();
-    m.querySelector("#y").onclick=()=>{m.querySelector(".panel").innerHTML=cardHTML(g,G.names,0)+`<button class="btn" id="x2">Elrejtem</button>`;m.querySelector("#x2").onclick=()=>m.remove()}});
-  on("quit",()=>{if(confirm("Biztosan feladjátok? A gyilkos nyer.")){G.phase="end";G.result="giveup";save();route()}});
-  clearInterval(tick);
-  const f=()=>{
-    const left=timeLeft(), t=document.getElementById("t"); if(!t){clearInterval(tick);return}
-    t.textContent=fmt(left); document.getElementById("b").style.width=(100*left/total)+"%";
-    if(left<=60000)t.classList.add("pulse");
-    if(!G.half && left<=total/2){G.half=true;G.pausedAt=Date.now();G.halfPhase="wait";save();beep();document.getElementById("halfbox").innerHTML=halfBox(g);halfModal(g)}
-    if(left<=0){clearInterval(tick);beep();document.querySelectorAll(".modal").forEach(x=>x.remove());G.phase="timeout";save();route()}
-  };
-  tick=setInterval(f,500);f();
-  if(G.half&&G.halfPhase!=="done")halfModal(g);
-}
-function halfModal(g){
-  if(document.querySelector(".modal.halfm"))return;
-  const m=modal("");m.classList.add("halfm");const panel=m.querySelector(".panel");let iv=null;
-  function draw(){
-    clearInterval(iv);
-    if(G.halfPhase==="wait"){
-      panel.innerHTML=`<div class="center"><div style="font-size:2.4rem" class="pulse">🕛</div><h2>Félidő! Az óra megállt.</h2></div>
-        <div class="fact gold"><b>Új közös nyom:</b> ${esc(clueText(g,g.clueOrder[0]))}</div>
-        <p>Mindenki fogja a saját telefonját. Amikor elindítod, mindenki nyomja meg a lapján a <b>Félidős információ</b> gombot. <b>30 másodperc</b> van elolvasni, utána eltűnik, és az óra megy tovább.</p>
-        <button class="btn" id="go30">Indul a 30 másodperc</button>`;
-      panel.querySelector("#go30").onclick=()=>{G.halfPhase="read";G.readStart=Date.now();save();draw()};
-    } else {
-      let mine=false;
-      const paint=()=>{const l=30000-(Date.now()-G.readStart);
-        if(l<=0){clearInterval(iv);resumeClock();m.remove();return}
-        panel.innerHTML=`<div class="center"><div class="timer pulse">${Math.ceil(l/1000)}</div><p>Olvassátok a félidős információtokat.</p></div>
-          ${mine?halfHTML(g,G.names,0):`<button class="btn ghost" id="mine">${esc(pname(0))}, a te félidős infód</button>`}`;
-        const b=panel.querySelector("#mine");if(b)b.onclick=()=>{mine=true;paint()}};
-      paint();iv=setInterval(paint,250);
-    }
-  }
-  draw();
-}
-function halfBox(g){return `<div class="fact gold"><b>Félidős közös nyom:</b> ${esc(clueText(g,g.clueOrder[0]))}<br></div>`}
-
-function timeout(){
-  show(`<div class="panel center" style="margin-top:30px"><div style="font-size:3rem">⌛</div><h2>Lejárt az idő!</h2>
-    <p>Utolsó lehetőség: ha most azonnal megegyeztek, még vádat emelhettek. Ha nem, a gyilkos elszökik.</p>
-    <button class="btn red" id="acc">⚖️ Utolsó vádemelés</button><button class="btn ghost" id="lose">Nem tudunk dönteni</button></div>`);
-  on("acc",()=>{G.phase="accuse";G.late=true;save();route()});
-  on("lose",()=>{G.phase="end";G.result="time";save();route()});
-}
-
-/* ---- accusation ---- */
-function accuse(){
-  const g=game();
-  show(`<h2 class="center" style="margin-top:20px">⚖️ Vádemelés</h2><p class="center muted">Kit vádoltok? Legalább hárman kell, hogy egyetértsetek.</p>
-    ${g.sc.chars.map((c,i)=>`<div class="pick" data-p="${i}"><span class="ic">${c.icon}</span>${esc(who(g,G.names,i))}</div>`).join("")}
-    <button class="btn ghost" id="back">Mégsem, tovább nyomozunk</button>`);
-  app.querySelectorAll("[data-p]").forEach(el=>el.onclick=()=>{
-    const p=+el.dataset.p;
-    const m=modal(`<div class="center"><div style="font-size:2.6rem">${g.sc.chars[p].icon}</div><h2>${esc(who(g,G.names,p))}</h2>
-      <p>Legalább hárman egyetértetek? Ezt nem lehet visszavonni.</p></div>
-      <button class="btn red" id="y">Igen, őt vádoljuk</button><button class="btn ghost" id="n">Mégsem</button>`);
-    m.querySelector("#n").onclick=()=>m.remove();
-    m.querySelector("#y").onclick=()=>{m.remove();G.accused=p;G.phase="verdict";save();route()};
+function tensionOn(story) {
+  if (AU.mode === "tension") return; AU.mode = "tension";
+  const a = new Audio(`assets/${story.id}/tension.mp3`); a.loop = true; a.volume = .5;
+  a.play().then(() => { if (AU.music) AU.music.pause(); AU.tension = a; }).catch(() => {
+    if (AU.drone) AU.drone.gain.value = .08;
+    AU.pulse = setInterval(() => { tone(55, .35, "sine", .5); tone(110, .12, "triangle", .12); }, 750);
   });
-  on("back",()=>{G.phase=G.late?"timeout":"play";save();route()});
+}
+function stopMusic() {
+  [AU.music, AU.tension].forEach(a => a && a.pause()); clearInterval(AU.pulse);
+  AU.nodes.forEach(o => { try { o.stop(); } catch (e) {} }); AU.nodes = []; if (AU.drone) AU.drone.gain.value = 0; AU.mode = "done";
+}
+function narrate(story) {
+  const a = new Audio(`assets/${story.id}/narration.mp3`);
+  a.play().catch(() => {
+    if (!window.speechSynthesis) return;
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(story.intro); u.lang = "hu-HU"; u.rate = .95;
+    const v = speechSynthesis.getVoices().find(v => /^hu/i.test(v.lang)); if (v) u.voice = v;
+    speechSynthesis.speak(u);
+  });
 }
 
-function verdict(){
-  const g=game(), p=G.accused;
-  show(`<div class="panel center" style="margin-top:50px"><div style="font-size:3rem">${g.sc.chars[p].icon}</div>
-    <h2>${esc(who(g,G.names,p))}</h2><p class="pulse">felfedi a lapját...</p></div>`);
-  setTimeout(()=>{
-    if(p!==g.murderer){G.phase="end";G.result="wrong";save();route();return}
-    show(`<div class="role murd" style="margin-top:30px"><div class="big">Elkaptátok!</div>
-      <p>${esc(who(g,G.names,p))} a gyilkos.</p></div>
-      <div class="panel"><h3>De még nincs vége.</h3>
-      <p>Gyilkos, egy esélyed maradt: <b>ki volt a Szemtanú?</b> Ha eltalálod, 2 pontot kapsz, az ártatlanok semmit.</p>
-      <p class="small muted">Gondolkodj hangosan, ha akarsz. A döntés csak a tiéd.</p></div>
-      ${g.sc.chars.map((c,i)=>i===p?"":`<div class="pick" data-p="${i}"><span class="ic">${c.icon}</span>${esc(who(g,G.names,i))}</div>`).join("")}`);
-    beep();
-    app.querySelectorAll("[data-p]").forEach(el=>el.onclick=()=>{
-      const q=+el.dataset.p;
-      const m=modal(`<div class="center"><h2>${esc(who(g,G.names,q))}</h2><p>Ő a Szemtanú? Végső döntés.</p></div>
-        <button class="btn red" id="y">Igen</button><button class="btn ghost" id="n">Mégsem</button>`);
-      m.querySelector("#n").onclick=()=>m.remove();
-      m.querySelector("#y").onclick=()=>{m.remove();G.guess=q;G.phase="end";G.result=(q===g.witness)?"witness":"caught";save();route()};
-    });
-  },2600);
-}
-
-/* ---- end of a round: truth, missions, points ---- */
-function end(){
-  const g=game(), sc=g.sc, hp=halfPlan(g), mis=missionsFor(g);
-  const M=esc(who(g,G.names,g.murderer)), W=esc(who(g,G.names,g.witness));
-  const R={
-    caught:{c:"det",t:"Az ártatlanok nyertek!",d:`Elkaptátok a gyilkost, és a Szemtanú rejtve maradt. Ő volt az: ${W}.`},
-    witness:{c:"murd",t:"Döntetlen szagú vég",d:`Lelepleztétek ${M} személyét, de kitalálta, hogy ${W} volt a Szemtanú.`},
-    wrong:{c:"murd",t:"A gyilkos nyert!",d:`Ártatlant vádoltatok. A gyilkos ${M} volt.`},
-    time:{c:"murd",t:"A gyilkos nyert!",d:`Lejárt az idő, a gyilkos megszökött. ${M} volt az.`},
-    giveup:{c:"murd",t:"A gyilkos nyert!",d:`Feladtátok. A gyilkos ${M} volt.`}
-  }[G.result]||{c:"murd",t:"Vége",d:""};
-  const roleName=s=>s===g.murderer?"🔪 Gyilkos":s===g.witness?"👁️ Szemtanú":"🔎 Nyomozó";
-  const ok=G.missionOk||{};
-  show(`<div class="role ${R.c}" style="margin-top:24px"><div class="big">${R.t}</div><p>${R.d}</p></div>
-    <div class="panel"><h3>🎯 Titkos küldetések</h3><p class="small muted">Mindenki mondja el a küldetését. Közösen döntsétek el, kinek sikerült.</p>
-      ${[0,1,2,3].filter(s=>s!==g.murderer).map(s=>`<label class="mis"><input type="checkbox" data-ok="${s}" ${ok[s]?"checked":""}>
-        <span><b>${esc(pname(s))}: ${esc(mis[s].t)}</b><br><span class="small muted">${esc(mis[s].d)}</span></span></label>`).join("")}
-    </div>
-    <div class="panel"><h3>Pontok ebben a körben</h3><div id="pts"></div></div>
-    <button class="btn" id="save">Pontok rögzítése</button>
-    <div class="panel"><h3>A teljes igazság</h3><table>
-    ${sc.chars.map((c,s)=>`<tr><td>${c.icon}</td><td><b>${esc(who(g,G.names,s))}</b><br>${roleName(s)}<br>
-      <span class="small muted">📍 ${s===g.murderer?esc(sc.crime)+" (fedősztori: "+esc(sc.locs[g.alibi].name)+")":esc(sc.locs[g.loc[s]].name)}</span><br>
-      <span class="small">Titok: ${esc(secretOf(g,s))}</span></td></tr>`).join("")}
-    </table>
-    <h3 style="margin-top:14px">A nyomok</h3>${g.clueOrder.map((k,i)=>`<div class="small">• ${esc(clueText(g,k))} <span class="muted">(${i===0?"félidős közös nyom":"nála volt: "+esc(who(g,G.names,g.dets[i-1]))})</span></div>`).join("")}
-    <h3 style="margin-top:14px">Félidős gyanúk</h3>${[0,1,2,3].map(s=>`<div class="small">• ${esc(pname(s))} → ${esc(pname(hp.perm[s]))} (${hp.kind[s]==="motive"?"indíték":"árulkodó jel"})</div>`).join("")}
-    </div>`);
-  function upd(){
-    const sel={};app.querySelectorAll("[data-ok]").forEach(el=>sel[+el.dataset.ok]=el.checked);
-    G.missionOk=sel;save();
-    const p=roundPoints(g,G.result,sel);
-    document.getElementById("pts").innerHTML=`<table>${[0,1,2,3].map(s=>`<tr><td>${esc(pname(s))}</td><td class="center"><b>+${p[s]}</b></td></tr>`).join("")}</table>`;
-    return p;
+/* ===================== lobby (host) ===================== */
+const L = ls("lobby") || {story: "S01", mode: 30, names: ["", "", "", ""], pick: [0, 1, 2, 3], gather: 90};
+function lobby() {
+  const S = STORIES.find(s => s.id === L.story);
+  const n = L.names.length;
+  let h = `<h1>Éjféli Tanú</h1><p class="muted">Titkos szerepes gyilkosos partijáték 4-6 főre. Mindenki a saját telefonján játszik, ez a telefon a játékvezetőé (ő is játszik).</p>`;
+  h += `<div class="panel"><h3>1. Történet</h3>`;
+  STORIES.forEach(s => h += `<div class="story ${s.id === L.story ? "on" : ""}" data-st="${s.id}"><div><b>${esc(s.title)}</b> ${s.full ? '<span class="badge gold">teszt: teljesen kész</span>' : '<span class="badge">vázlat</span>'}<div class="small muted">${esc(s.world)}</div></div></div>`);
+  h += `</div><div class="panel"><h3>2. Játékidő</h3><div class="chips">` +
+    [15, 30, 60].map(m => `<span class="chip ${L.mode === m ? "on" : ""}" data-mode="${m}">${m} perc</span>`).join("") +
+    `</div><p class="small muted">15 perc: 1 titkos tipp · 30 perc: 2 · 60 perc: 3. Előtte 2 perc a saját lap elolvasására.</p></div>`;
+  h += `<div class="panel"><h3>3. Játékosok és karakterek</h3><p class="small muted">Az első a játékvezető (ezen a telefonon). A karakter dönti el a szerepet, de ezt senki nem tudja előre.</p>`;
+  for (let i = 0; i < n; i++) {
+    h += `<div class="row" style="margin:6px 0"><input data-name="${i}" placeholder="${i === 0 ? "Te (játékvezető)" : (i + 1) + ". játékos"}" value="${esc(L.names[i])}">` +
+      `<select data-pick="${i}">` + S.chars.slice(0, n).map((c, k) => `<option value="${k}" ${L.pick[i] === k ? "selected" : ""}>${esc(c.name)}</option>`).join("") + `</select></div>`;
   }
-  app.querySelectorAll("[data-ok]").forEach(el=>el.onchange=upd); upd();
-  on("save",()=>{const p=upd();
-    G.tour.scores=G.tour.scores.map((v,i)=>v+p[i]);
-    G.tour.rounds.push({sc:G.sc,pts:p,result:G.result});
-    G.lastPts=p;G.missionOk=null;G.phase="score";save();route()});
+  h += `<div class="row"><button class="btn ghost" id="minus" ${n <= 4 ? "disabled" : ""}>− játékos</button><button class="btn ghost" id="plus" ${n >= 6 ? "disabled" : ""}>+ játékos</button></div>`;
+  h += `<button class="btn ghost" id="shuffle">Karakterek véletlen kiosztása</button>`;
+  h += `<p class="small muted">${n} főnél ezek a karakterek játszanak: ${S.chars.slice(0, n).map(c => esc(c.name)).join(", ")}.</p></div>`;
+  h += `<div class="panel"><h3>4. Indulás</h3><label>Ennyi idő legyen a QR-kódok beolvasására</label><div class="chips">` +
+    [60, 90, 120, 180].map(g => `<span class="chip ${L.gather === g ? "on" : ""}" data-gather="${g}">${g < 120 ? g + " mp" : g / 60 + " perc"}</span>`).join("") +
+    `</div><p class="small muted">Utána minden telefonon egyszerre indul a játék.</p><div id="err" class="small" style="color:var(--red)"></div><button class="btn" id="go">Kártyák kiosztása</button></div>`;
+  app.innerHTML = h;
+  const save = () => ls("lobby", L);
+  app.querySelectorAll("[data-st]").forEach(e => e.onclick = () => { L.story = e.dataset.st; save(); lobby(); });
+  app.querySelectorAll("[data-mode]").forEach(e => e.onclick = () => { L.mode = +e.dataset.mode; save(); lobby(); });
+  app.querySelectorAll("[data-gather]").forEach(e => e.onclick = () => { L.gather = +e.dataset.gather; save(); lobby(); });
+  app.querySelectorAll("[data-name]").forEach(e => e.oninput = () => { L.names[+e.dataset.name] = e.value; save(); });
+  app.querySelectorAll("[data-pick]").forEach(e => e.onchange = () => { L.pick[+e.dataset.pick] = +e.value; save(); });
+  $("#plus").onclick = () => { L.names.push(""); L.pick = [...Array(L.names.length).keys()]; save(); lobby(); };
+  $("#minus").onclick = () => { L.names.pop(); L.pick = [...Array(L.names.length).keys()]; save(); lobby(); };
+  $("#shuffle").onclick = () => { const a = [...Array(n).keys()]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } L.pick = a; save(); lobby(); };
+  $("#go").onclick = () => {
+    const names = L.names.map((s, i) => s.trim() || (i === 0 ? "Játékvezető" : (i + 1) + ". játékos"));
+    if (new Set(L.pick).size !== n) { $("#err").textContent = "Minden játékos más karaktert kapjon."; return; }
+    ensureAudio();
+    const x = +(new URLSearchParams(location.search).get("x") || 1);
+    const base = {v: 3, s: L.story, m: L.mode, n: names, ch: L.pick.slice(0, n), t0: Date.now() + L.gather * 1000 / x, x};
+    ls("deal", base);
+    deal(base, 1);
+  };
+}
+function deal(base, i) {
+  const n = base.n.length;
+  if (i >= n) { location.hash = "c=" + encodeCard({...base, p: 0}); return; }
+  const S = STORIES.find(s => s.id === base.s);
+  app.innerHTML = `<div class="topbar"><div class="bar"><i id="gbar"></i></div><div class="steps"><span>Indulásig</span><b id="gleft"></b></div></div>
+    <h2 class="center">${esc(base.n[i])}</h2><p class="center muted">Olvasd be a telefonoddal. Csak a saját kódodat nézd!</p>
+    <div class="center"><div class="qrbox" id="qr"></div></div>
+    <p class="center small muted">${i}/${n - 1} · karakter: ${esc(S.chars[base.ch[i]].name)}</p>
+    <button class="btn" id="next">${i < n - 1 ? "Következő játékos" : "Kész: saját lapom megnyitása"}</button>
+    <button class="btn ghost" id="back">Vissza</button>`;
+  new QRCode($("#qr"), {text: cardUrl({...base, p: i}), width: 240, height: 240, correctLevel: QRCode.CorrectLevel.L});
+  $("#next").onclick = () => deal(base, i + 1);
+  $("#back").onclick = () => i > 1 ? deal(base, i - 1) : lobby();
+  const up = () => { if (!$("#gleft")) return clearInterval(t); const left = Math.max(0, (base.t0 - Date.now()) / 1000 * base.x); $("#gleft").textContent = Math.ceil(left) + " mp"; $("#gbar").style.width = (100 * left / L.gather) + "%"; };
+  const t = setInterval(up, 250); up();
 }
 
-function score(){
-  const last=G.tour.idx>=G.tour.list.length-1;
-  show(`<div class="panel center" style="margin-top:24px"><div style="font-size:2.4rem">🏆</div><h2>${last?"Végeredmény":"Állás"}</h2>
-    <p class="muted small">${roundLabel()} lezárva</p>${scoreTable(G.lastPts)}</div>
-    ${last?finalText():`<button class="btn" id="next">Következő történet: ${esc(SCENARIOS.find(s=>s.id===G.tour.list[G.tour.idx+1]).title)}</button>`}
-    <button class="btn ghost" id="home">Főmenü</button>`);
-  on("next",()=>{G.tour.idx++;newRound()});
-  on("home",()=>{if(last||confirm("Kilépsz a bajnokságból?")){clearSave();home()}});
-  if(last){G.phase="final";save()}
+/* ===================== game (every phone) ===================== */
+let P, S, ME, SLOT, NOW = () => Date.now();
+const ST = {userStep: 0, key: "", tipSeen: {}};
+function TL() {
+  let e = (NOW() - P.t0) / 1000 * P.x;
+  if (e < 0) return {ph: "wait", left: -e};
+  if (e < 120) return {ph: "read", e, ts: e < READ[0] ? 0 : e < READ[0] + READ[1] ? 1 : 2, left: 120 - e};
+  e -= 120;
+  if (e < OVERTURE) return {ph: "ovr", e, left: OVERTURE - e};
+  e -= OVERTURE;
+  const D = P.m * 60, T = TIPS_AT[P.m];
+  for (let i = 0; i < T.length; i++) {
+    const st = (D - T[i]) + TIP * i;
+    if (e < st) return {ph: "play", rem: D - (e - TIP * i)};
+    if (e < st + TIP) return {ph: "tip", i, rem: T[i], left: st + TIP - e};
+  }
+  const rem = D - (e - TIP * T.length);
+  return rem > 0 ? {ph: "play", rem} : {ph: "end"};
 }
-function finalText(){
-  const max=Math.max(...G.tour.scores), w=[0,1,2,3].filter(s=>G.tour.scores[s]===max);
-  return `<div class="role det"><div class="big">${w.map(pname).map(esc).join(" és ")}</div><p>${w.length>1?"holtversenyben nyertek":"nyerte a bajnokságot"}, ${max} ponttal.</p></div>`;
+function startGame(hash) {
+  try { P = decodeCard(hash); } catch (e) { app.innerHTML = `<h2>Hibás kód</h2><p>Olvasd be újra a QR-kódot.</p>`; return; }
+  S = STORIES.find(s => s.id === P.s); SLOT = P.ch[P.p]; ME = S.chars[SLOT];
+  const saved = ls("st-" + P.t0 + "-" + P.p); if (saved) Object.assign(ST, saved);
+  ST.key = "";
+  if ("wakeLock" in navigator) { const wl = () => navigator.wakeLock.request("screen").catch(() => {}); wl(); document.addEventListener("visibilitychange", () => document.visibilityState === "visible" && wl()); }
+  document.addEventListener("click", () => P.p === 0 && ensureAudio(), {capture: true});
+  setInterval(loop, 200); loop();
 }
-function final(){score()}
+const saveST = () => ls("st-" + P.t0 + "-" + P.p, {userStep: ST.userStep, tipSeen: ST.tipSeen});
+function loop() {
+  const t = TL();
+  let key = t.ph;
+  if (t.ph === "read") key += Math.max(t.ts, ST.userStep);
+  if (t.ph === "tip") key += t.i;
+  if (key !== ST.key) { ST.key = key; render(t); }
+  update(t);
+}
+function render(t) {
+  closeModal();
+  if (t.ph === "wait") return waitView();
+  if (t.ph === "read") return readView(Math.max(t.ts, ST.userStep));
+  if (t.ph === "end") return endView();
+  sceneView(t);
+  if (t.ph === "ovr") overture();
+  if (t.ph === "tip") tipView(t.i);
+}
+function update(t) {
+  if (t.ph === "wait") { const el = $("#wleft"); if (el) el.textContent = Math.ceil(t.left) + " mp"; }
+  if (t.ph === "read") {
+    const bar = $("#rbar"); if (bar) bar.style.width = (100 * t.left / 120) + "%";
+    if (t.left < 10 && $("#rwarn")) $("#rwarn").textContent = "Mindjárt indul a játék!";
+  }
+  if (t.ph === "ovr" || t.ph === "play" || t.ph === "tip") {
+    const D = P.m * 60, rem = t.ph === "ovr" ? D : t.rem;
+    drawClock(rem / D, t.ph === "tip", t.ph === "play" && rem <= 60);
+    if (P.p === 0 && t.ph === "play") {
+      if (rem <= 180) tensionOn(S);
+      if (rem <= 60) { const s = Math.ceil(rem * (rem <= 10 ? 2 : 1)); if (s !== AU.lastTick) { AU.lastTick = s; tick(1 - rem / 60); } }
+    }
+  }
+  if (t.ph === "tip") { const b = $("#tbar"); if (b) b.style.width = (100 * t.left / TIP) + "%"; }
+}
 
-function route(){
-  clearInterval(tick);
-  ({intro,deal,ready,play,timeout,accuse,verdict,end,score,final})[G.phase]();
+/* ---------- before start ---------- */
+function waitView() {
+  app.innerHTML = `<div class="center" style="padding-top:8vh"><h2>Szia, ${esc(P.n[P.p])}!</h2>
+    <p class="muted">${esc(S.title)}</p>${pimg(S, SLOT, {cls: "pfp"})}
+    <p>A karaktered: <b>${esc(ME.name)}</b><br><span class="muted small">${esc(ME.title)}</span></p>
+    <div class="panel"><p class="small">A játék minden telefonon egyszerre indul. Utána <b>2 perced</b> lesz elolvasni a lapodat, és a játék alatt <b>nem látod újra</b>.</p>
+    <p class="big" id="wleft"></p></div>
+    ${P.p === 0 ? '<button class="btn ghost" id="snd">🔊 Hang bekapcsolása (narráció, zene)</button>' : ""}</div>`;
+  if ($("#snd")) $("#snd").onclick = () => { ensureAudio(); tone(660, .3); $("#snd").textContent = "🔊 Hang bekapcsolva"; };
 }
 
-window.addEventListener("hashchange",()=>location.reload());
-const h=location.hash.match(/#k=([\w-]+)/);
-if(h) cardView(h[1]); else home();
+/* ---------- 2-minute card reading in 3 steps ---------- */
+function readHead(step) {
+  const names = ["1. Ki vagy", "2. Küldetés", "3. Te és a halott"];
+  return `<div class="topbar"><div class="bar"><i id="rbar"></i><span class="tick" style="left:25%"></span><span class="tick" style="left:50%"></span></div>
+    <div class="steps">${names.map((s, i) => i === step ? `<b>${s}</b>` : `<span>${s}</span>`).join("")}</div><div id="rwarn" class="small center" style="color:var(--red)"></div></div>`;
 }
+function readView(step) {
+  const next = `<button class="btn" id="nx">${step < 2 ? "Tovább" : "Kész, várom a többieket"}</button>`;
+  let h = readHead(step);
+  if (step === 0) {
+    h += `<div class="row" style="align-items:flex-start;gap:14px;margin-top:8px">${pimg(S, SLOT, {cls: "pfp"})}<div style="flex:2"><h2 style="margin:0">${esc(ME.name)}</h2><p class="muted small">${esc(ME.title)}</p>
+      <div class="role ${ME.role}">${ME.roleName}</div></div></div>
+      <div class="panel"><div class="kv"><b>Mi történt veled</b>${esc(ME.roleText)}</div><div class="kv"><b>Hogyan nyersz</b>${esc(ME.win)}</div></div>`;
+  } else if (step === 1) {
+    h += `<h2>Titkos küldetésed</h2><div class="panel" style="font-size:1.12rem">${esc(ME.mission)}</div>
+      <p class="small muted">Nem pontot ér: ez egy extra csavar a történetben. Ha a játék közben sikerül, a végén elmesélheted.</p>`;
+  } else {
+    const vis = ME.traits.join(", ");
+    h += `<h2>Te és ${esc(S.victim.split(",")[0])}</h2><div class="panel">
+      ${ME.rel ? `<div class="kv"><b>Kapcsolatotok</b>${esc(ME.rel)}</div>` : ""}
+      <div class="kv"><b>A saját okod (titkos)</b>${esc(ME.motive)}</div>
+      <div class="kv"><b>Ezt mindenki tudja rólad</b>${esc(ME.dispute)} ${esc(ME.weapon)}</div>
+      <div class="kv"><b>Hol voltál</b>${esc(ME.hol)}${ME.miert ? `<br><span class="muted">Miért:</span> ${esc(ME.miert)}` : ""}${ME.kivel ? `<br><span class="muted">Kivel:</span> ${esc(ME.kivel)}` : ""}</div>
+      ${ME.claim ? `<div class="kv"><b>Amit mondasz</b>${esc(ME.claim)}</div>` : ""}
+      ${ME.role !== "S" && ME.seen ? `<div class="kv"><b>Amit láttál</b>${esc(ME.seen)}</div>` : ""}
+      <div class="kv"><b>A képeden látszik</b>${esc(vis)}. Ha rákérdeznek, találj ki rá magyarázatot!</div>
+      <div class="kv"><b>Tárgyad</b>${esc(ME.item)} Megmutathatod bárkinek, vagy eldughatod.</div></div>
+      <p class="small muted">A játék alatt időnként 30 másodpercre kapsz egy titkos tippet. Senki más nem látja: hazudhatsz róla. Ezt a lapot többé nem látod: jegyezd meg!</p>`;
+  }
+  app.innerHTML = h + next;
+  $("#nx").onclick = () => { if (step < 2) { ST.userStep = step + 1; saveST(); loop(); } else { $("#nx").disabled = true; $("#nx").textContent = "Várjuk, hogy lejárjon az idő..."; } };
+  window.scrollTo(0, 0);
+}
+
+/* ---------- crime scene with clock, map, notebook ---------- */
+function drawClock(frac, paused, urgent) {
+  const el = $("#clock"); if (!el) return;
+  frac = Math.max(0, Math.min(1, frac));
+  const a = frac * 2 * Math.PI, r = 44, x = 50 + r * Math.sin(a), y = 50 - r * Math.cos(a);
+  const wedge = frac >= .999 ? `<circle cx="50" cy="50" r="${r}" fill="#c0392b"/>` : frac <= 0 ? "" :
+    `<path d="M50 50 L50 ${50 - r} A${r} ${r} 0 ${a > Math.PI ? 1 : 0} 1 ${x.toFixed(2)} ${y.toFixed(2)} Z" fill="#c0392b"/>`;
+  let ticks = ""; for (let i = 0; i < 60; i++) { const b = i * 6 * Math.PI / 180, l = i % 5 ? 3 : 7; ticks += `<line x1="${50 + 47 * Math.sin(b)}" y1="${50 - 47 * Math.cos(b)}" x2="${50 + (47 - l) * Math.sin(b)}" y2="${50 - (47 - l) * Math.cos(b)}" stroke="#2b2233" stroke-width="${i % 5 ? .6 : 1.4}"/>`; }
+  el.innerHTML = `<circle cx="50" cy="50" r="49" fill="#efe6d2" stroke="#8a6d3b" stroke-width="2"/>${wedge}${ticks}
+    <line x1="50" y1="50" x2="${x.toFixed(2)}" y2="${y.toFixed(2)}" stroke="#2b2233" stroke-width="2.4" stroke-linecap="round"/>
+    <circle cx="50" cy="50" r="4" fill="#2b2233"/>${paused ? `<rect x="42" y="64" width="5" height="14" fill="#2b2233"/><rect x="53" y="64" width="5" height="14" fill="#2b2233"/>` : ""}`;
+  el.classList.toggle("urgent", !!urgent); el.classList.toggle("paused", !!paused);
+}
+function sceneView(t) {
+  const n = P.n.length, slots = P.ch;
+  let h = `<div id="scene"><div class="bg" id="bg"></div>
+    <div class="hud"><button class="hbtn" id="mapb" title="Térkép">🗺️</button><svg id="clock" viewBox="0 0 100 100"></svg>
+    <div class="hright"><button class="hbtn" id="noteb" title="Jegyzetfüzet">📓</button>${P.p === 0 ? '<button class="hbtn" id="muteb" title="Hang">🔊</button>' : ""}</div></div>
+    <div class="stage"><div class="victim"><div class="vb">✝</div>${esc(S.victim.split(",")[0])}</div>`;
+  slots.forEach((slot, i) => {
+    const ang = -Math.PI / 2 + (i + .5) * 2 * Math.PI / n;
+    const x = 50 + 37 * Math.cos(ang), y = 50 + 38 * Math.sin(ang);
+    h += `<div class="ch ${i === P.p ? "me" : ""}" data-slot="${slot}" style="left:${x}%;top:${y}%">${pimg(S, slot)}<span>${esc(S.chars[slot].name)}<br><span style="opacity:.75">${esc(P.n[i])}</span></span></div>`;
+  });
+  h += `</div></div>`;
+  app.innerHTML = h;
+  const bg = new Image(); bg.onload = () => { $("#bg").style.backgroundImage = `url(${bg.src})`; const v = $(".victim"); if (v) v.style.display = "none"; }; bg.onerror = () => $("#bg").classList.add("none"); bg.src = `assets/${S.id}/scene.jpg`;
+  app.querySelectorAll(".ch").forEach(e => e.onclick = () => charModal(+e.dataset.slot));
+  $("#mapb").onclick = mapModal; $("#noteb").onclick = notesModal;
+  if ($("#muteb")) $("#muteb").onclick = () => { ensureAudio(); AU.muted = !AU.muted; AU.master.gain.value = AU.muted ? 0 : .9; [AU.music, AU.tension].forEach(a => a && (a.muted = AU.muted)); $("#muteb").textContent = AU.muted ? "🔇" : "🔊"; };
+  if (P.p === 0 && t.ph !== "ovr") { ensureAudio(); startMusic(S); }
+}
+function modal(inner, cls = "") {
+  closeModal();
+  const m = document.createElement("div"); m.className = "modal"; m.id = "modal";
+  m.innerHTML = `<div class="box ${cls}"><button class="x" id="mx">×</button>${inner}</div>`;
+  document.body.appendChild(m);
+  $("#mx").onclick = closeModal; m.onclick = e => { if (e.target === m) closeModal(); };
+  return m;
+}
+function closeModal() { const m = $("#modal"); if (m) m.remove(); }
+function zoomable(html) { return `<div class="zoomwrap" onclick="this.classList.toggle('z')">${html}</div><p class="small muted center">Koppints a nagyításhoz.</p>`; }
+function charModal(slot) {
+  const c = S.chars[slot], who = P.n[P.ch.indexOf(slot)];
+  modal(`${zoomable(pimg(S, slot, {cls: "zoomimg"}))}<h2 style="margin-top:10px">${esc(c.name)}</h2><p class="muted small">${esc(c.title)} · játssza: ${esc(who)}</p>
+    <div class="kv"><b>Mindenki látta</b>${esc(c.dispute)}</div><div class="kv"><b>Mindenki tudja</b>${esc(c.weapon)}</div>`);
+}
+function mapModal() {
+  modal(`<h2>${esc(S.title)}: alaprajz</h2>${zoomable(`<img class="zoomimg" src="assets/${S.id}/map.jpg" onerror="this.onerror=null;this.src='assets/maps/${S.id}.png'">`)}<p class="small">${esc(S.mapNote)}</p>`);
+}
+function notesModal() {
+  const k = "notes-" + P.t0 + "-" + P.p, N = ls(k) || {text: "", sus: {}};
+  const lab = ["?", "gyanús", "tiszta"];
+  const chips = () => P.ch.map(sl => `<button data-s="${sl}" class="s${N.sus[sl] || 0}">${esc(S.chars[sl].name)}: ${lab[N.sus[sl] || 0]}</button>`).join("");
+  modal(`<h2>Jegyzetfüzet</h2><p class="small muted">Csak a te telefonodon látszik.</p><div class="sus" id="sus">${chips()}</div>
+    <textarea id="nt" placeholder="Ki mit mondott, ki hazudhat, ki hol volt...">${esc(N.text)}</textarea>`);
+  $("#nt").oninput = e => { N.text = e.target.value; ls(k, N); };
+  const bind = () => $("#sus").querySelectorAll("button").forEach(b => b.onclick = () => { const s = +b.dataset.s; N.sus[s] = ((N.sus[s] || 0) + 1) % 3; ls(k, N); $("#sus").innerHTML = chips(); bind(); });
+  bind();
+}
+function overture() {
+  const d = document.createElement("div"); d.className = "subs"; d.id = "subs";
+  d.innerHTML = `<h3>${esc(S.title)}</h3><p style="margin:0">${esc(S.intro)}</p>${P.p === 0 ? '<button class="btn ghost" id="narr" style="margin-top:10px">🔊 Narráció újra</button>' : ""}`;
+  $("#scene").appendChild(d);
+  if (P.p === 0) { ensureAudio(); narrate(S); $("#narr").onclick = () => narrate(S); }
+}
+
+/* ---------- private 30 s tip ---------- */
+function tipView(i) {
+  const tip = S.tips[ROUND[i]][SLOT], last = i === TIPS_AT[P.m].length - 1;
+  let body = Array.isArray(tip)
+    ? `<p>Neked nem jár igazi tipp. Válassz egy hazugságot, és mondd el úgy, mintha a tipped lenne:</p><ol>${tip.map(x => `<li style="margin:6px 0">${esc(x)}</li>`).join("")}</ol>`
+    : `<p style="font-size:1.15rem">${esc(tip)}</p>`;
+  if (last && SLOT === 4 && P.n.length === 6) body += `<p style="font-size:1.05rem;border-top:1px solid var(--line);padding-top:10px">${esc(S.accTip)}</p>`;
+  const m = modal(`<h2>🔒 Titkos tipp</h2>${body}<div class="bar" style="margin-top:12px"><i id="tbar"></i></div><p class="small muted">Az óra áll. 30 másodperc múlva eltűnik. Hazudhatsz róla.</p>`, "tipbox");
+  m.querySelector(".x").remove(); m.onclick = null;
+  if (!ST.tipSeen[i]) { ST.tipSeen[i] = 1; saveST(); ensureAudio(); chime(); if (navigator.vibrate) navigator.vibrate([120, 80, 120]); }
+}
+
+/* ---------- end: secret vote on the host phone ---------- */
+function endView() {
+  if (P.p === 0 && AU.mode !== "done") stopMusic();
+  if (P.p !== 0) {
+    app.innerHTML = `<div class="center" style="padding-top:12vh"><h1>Lejárt az idő!</h1><p>A titkos szavazás <b>${esc(P.n[0])}</b> telefonján megy: adjátok körbe.</p><p class="muted small">Ott derül ki az eredmény is.</p></div>`;
+    return;
+  }
+  voteFlow();
+}
+function voteFlow() {
+  const k = "vote-" + P.t0, V = ls(k) || {i: 0, stage: "pass", votes: {}}, n = P.n.length, save = () => ls(k, V);
+  const roleOf = i => S.chars[P.ch[i]].role;
+  if (V.stage === "pass") {
+    if (V.i >= n) { V.stage = "count"; save(); return voteFlow(); }
+    app.innerHTML = `<div class="center" style="padding-top:8vh"><h1>Titkos szavazás</h1><p>Add a telefont neki:</p><p class="big">${esc(P.n[V.i])}</p>
+      <p class="muted small">${V.i}/${n} szavazott. Senki ne nézzen oda!</p><button class="btn" id="me">Én vagyok ${esc(P.n[V.i])}, szavazok</button></div>`;
+    $("#me").onclick = () => { ensureAudio(); V.stage = "pick"; save(); voteFlow(); };
+  } else if (V.stage === "pick") {
+    let sel = null;
+    app.innerHTML = `<h2>${esc(P.n[V.i])}, ki a gyilkos?</h2><p class="small muted">A szavazatodat senki nem látja.</p><div class="grid">` +
+      P.ch.map((sl, j) => j === V.i ? "" : `<div class="c" data-j="${j}">${pimg(S, sl)}<b>${esc(S.chars[sl].name)}</b><br><span class="muted">${esc(P.n[j])}</span></div>`).join("") +
+      `</div><button class="btn" id="cast" disabled>Leadom a szavazatom</button>`;
+    app.querySelectorAll(".grid .c").forEach(e => e.onclick = () => { sel = +e.dataset.j; app.querySelectorAll(".grid .c").forEach(x => x.classList.toggle("on", x === e)); $("#cast").disabled = false; });
+    $("#cast").onclick = () => { V.votes[V.i] = sel; V.i++; V.stage = "pass"; save(); tone(520, .15); voteFlow(); };
+  } else if (V.stage === "count") {
+    app.innerHTML = `<div class="center" style="padding-top:18vh"><h1>Számolás...</h1><p class="big">🥁</p></div>`;
+    ensureAudio(); drumroll(3);
+    setTimeout(() => { V.stage = "reveal"; save(); voteFlow(); }, 3300);
+  } else if (V.stage === "reveal") {
+    const tally = Array(n).fill(0); Object.values(V.votes).forEach(j => tally[j]++);
+    const max = Math.max(...tally), top = tally.map((c, j) => c === max ? j : -1).filter(j => j >= 0);
+    let h = `<h1 class="center">Az ítélet</h1>`;
+    if (top.length > 1) {
+      h += `<p class="center">Döntetlen (${top.map(j => esc(P.n[j])).join(", ")}): senkit nem ítéltetek el.</p><p class="big" style="color:var(--red)">A gonoszok nyertek!</p>`;
+      V.outcome = "evil";
+    } else {
+      const j = top[0], r = roleOf(j), sl = P.ch[j], evil = r === "G" || r === "B";
+      h += `<div class="center flip">${pimg(S, sl, {cls: "pfp", evil})}</div><p class="big">${esc(S.chars[sl].name)}</p><p class="center muted">${esc(P.n[j])} · ${max} szavazat</p>`;
+      if (r === "G") { h += `<p class="big" style="color:var(--red)">A GYILKOS volt!</p><p class="center">Utolsó esély: ha kitalálja, ki a szemtanú, mégis a gonoszok nyernek.</p><button class="btn" id="g">${esc(P.n[j])}, tippelj a szemtanúra</button>`; V.conv = j; }
+      else if (r === "B") { h += `<p class="big" style="color:var(--red)">A BŰNTÁRS volt!</p><p class="big" style="color:var(--green)">Az ártatlanok nyertek!</p>`; V.outcome = "good"; }
+      else { h += `<p class="big" style="color:var(--green)">ÁRTATLAN volt.</p><p class="big" style="color:var(--red)">A gonoszok nyertek!</p>`; V.outcome = "evil"; }
+    }
+    h += `<div class="panel small"><b>Szavazatok:</b> ${P.n.map((nm, j) => `${esc(nm)}: ${tally[j]}`).join(" · ")}</div>`;
+    if (V.outcome) h += `<button class="btn" id="fin">Megoldás és szerepek</button>`;
+    app.innerHTML = h; save();
+    tone(V.outcome === "good" ? 660 : 160, 1.2, "triangle", .3);
+    if ($("#g")) $("#g").onclick = () => { V.stage = "guess"; save(); voteFlow(); };
+    if ($("#fin")) $("#fin").onclick = () => { V.stage = "final"; save(); voteFlow(); };
+  } else if (V.stage === "guess") {
+    let sel = null; const j0 = V.conv;
+    app.innerHTML = `<h2>${esc(P.n[j0])}: ki a szemtanú?</h2><div class="grid">` +
+      P.ch.map((sl, j) => j === j0 ? "" : `<div class="c" data-j="${j}">${pimg(S, sl)}<b>${esc(S.chars[sl].name)}</b><br><span class="muted">${esc(P.n[j])}</span></div>`).join("") +
+      `</div><button class="btn" id="cast" disabled>Ez a tippem</button>`;
+    app.querySelectorAll(".grid .c").forEach(e => e.onclick = () => { sel = +e.dataset.j; app.querySelectorAll(".grid .c").forEach(x => x.classList.toggle("on", x === e)); $("#cast").disabled = false; });
+    $("#cast").onclick = () => { V.guess = sel; V.outcome = roleOf(sel) === "S" ? "evil" : "good"; V.stage = "guessed"; save(); voteFlow(); };
+  } else if (V.stage === "guessed") {
+    const ok = V.outcome === "evil";
+    app.innerHTML = `<div class="center flip">${pimg(S, P.ch[V.guess], {cls: "pfp"})}</div><p class="big">${esc(S.chars[P.ch[V.guess]].name)}</p>
+      <p class="big" style="color:${ok ? "var(--red)" : "var(--green)"}">${ok ? "Eltalálta a szemtanút! A gonoszok nyertek!" : "Nem ő a szemtanú. Az ártatlanok nyertek!"}</p><button class="btn" id="fin">Megoldás és szerepek</button>`;
+    tone(ok ? 160 : 660, 1.2, "triangle", .3);
+    $("#fin").onclick = () => { V.stage = "final"; save(); voteFlow(); };
+  } else {
+    let h = `<p class="big" style="color:${V.outcome === "good" ? "var(--green)" : "var(--red)"}">${V.outcome === "good" ? "Az ártatlanok nyertek!" : "A gonoszok nyertek!"}</p>
+      <div class="panel"><h3>Mi történt valójában</h3><p>${esc(S.solution)}</p></div><h3>Ki kicsoda volt</h3><div class="grid">`;
+    P.ch.forEach((sl, j) => { const c = S.chars[sl], ev = c.role === "G" || c.role === "B"; h += `<div class="c">${pimg(S, sl, {evil: ev})}<b>${esc(c.name)}</b><br>${esc(P.n[j])}<br><span class="badge ${ev ? "red" : c.role === "S" ? "blue" : ""}">${c.roleName}</span></div>`; });
+    h += `</div><div class="panel"><h3>Titkos küldetések</h3><p class="small muted">Meséljétek el, kinek sikerült!</p>` +
+      P.ch.map((sl, j) => `<p class="small"><b>${esc(P.n[j])}</b> (${esc(S.chars[sl].name)}): ${esc(S.chars[sl].mission)}</p>`).join("") +
+      `</div><button class="btn" id="new">Új játék</button>`;
+    app.innerHTML = h;
+    $("#new").onclick = () => { location.hash = ""; location.reload(); };
+  }
+  window.scrollTo(0, 0);
+}
+
+/* ===================== router ===================== */
+function route() {
+  const m = location.hash.match(/^#c=(.+)$/);
+  if (m) startGame(m[1]); else lobby();
+}
+window.addEventListener("hashchange", () => location.reload());
+route();
 </script>
 </body>
 </html>
