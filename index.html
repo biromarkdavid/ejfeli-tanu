@@ -1,0 +1,576 @@
+<!doctype html>
+<html lang="hu">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Éjféli Tanú</title>
+<meta name="description" content="Titkos szerepes gyilkosos nyomozós játék négy főre, egy telefonon.">
+<meta name="theme-color" content="#121016">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+:root{
+  --bg:#121016; --panel:#1c1922; --panel2:#25212d; --line:#3a3444;
+  --text:#ece6dc; --muted:#a59cad; --gold:#d9b46a; --gold2:#f0d79c;
+  --red:#d2554d; --green:#6fbf8a; --blue:#7aa7d9;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text)}
+body{font-family:Inter,system-ui,-apple-system,sans-serif;font-size:16px;line-height:1.5;
+  background:radial-gradient(ellipse at top,#2a2030 0%,var(--bg) 60%) fixed;min-height:100vh}
+#app{max-width:560px;margin:0 auto;padding:20px 16px calc(40px + env(safe-area-inset-bottom))}
+h1,h2,h3{font-family:"Playfair Display",Georgia,serif;margin:0 0 .4em;line-height:1.2}
+h1{font-size:2.2rem;color:var(--gold2);letter-spacing:.5px}
+h2{font-size:1.5rem;color:var(--gold2)}
+h3{font-size:1.1rem;color:var(--gold)}
+p{margin:.4em 0 .9em}
+.muted{color:var(--muted)}
+.small{font-size:.88rem}
+.center{text-align:center}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;margin:12px 0}
+.btn{display:block;width:100%;border:0;border-radius:12px;padding:15px 16px;margin:10px 0;
+  font:600 1.05rem Inter,sans-serif;cursor:pointer;background:var(--gold);color:#1a1410;
+  -webkit-tap-highlight-color:transparent}
+.btn:active{transform:scale(.98)}
+.btn.ghost{background:transparent;color:var(--text);border:1px solid var(--line)}
+.btn.red{background:var(--red);color:#fff}
+.btn.small{padding:10px;font-size:.95rem}
+.row{display:flex;gap:10px}.row>*{flex:1}
+.scen{display:flex;gap:12px;align-items:center;padding:14px;border:1px solid var(--line);border-radius:12px;
+  margin:8px 0;cursor:pointer;background:var(--panel2)}
+.scen.sel{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold) inset}
+.scen .ic{font-size:2rem}
+.chip{display:inline-block;padding:7px 12px;border:1px solid var(--line);border-radius:99px;margin:4px 4px 0 0;cursor:pointer}
+.chip.sel{border-color:var(--gold);color:var(--gold2)}
+input[type=text]{width:100%;padding:11px 12px;border-radius:10px;border:1px solid var(--line);
+  background:var(--bg);color:var(--text);font:inherit}
+.namerow{display:flex;align-items:center;gap:10px;margin:8px 0}
+.namerow .lab{width:44%;font-weight:600}
+.story p{font-family:Georgia,serif;font-size:1.05rem}
+.role{border-radius:14px;padding:16px;margin:12px 0;text-align:center}
+.role.murd{background:linear-gradient(135deg,#4a1717,#2a0f12);border:1px solid var(--red)}
+.role.wit{background:linear-gradient(135deg,#1d3550,#141f2e);border:1px solid var(--blue)}
+.role.det{background:linear-gradient(135deg,#1f3a2a,#14231a);border:1px solid var(--green)}
+.role .big{font-family:"Playfair Display",serif;font-size:1.8rem;font-weight:800}
+.fact{padding:10px 12px;border-left:3px solid var(--gold);background:var(--panel2);border-radius:0 10px 10px 0;margin:8px 0}
+.fact.red{border-color:var(--red)}.fact.blue{border-color:var(--blue)}.fact.green{border-color:var(--green)}
+.timer{font-family:"Playfair Display",serif;font-size:4.2rem;text-align:center;color:var(--gold2);margin:8px 0 0;font-variant-numeric:tabular-nums}
+.bar{height:6px;background:var(--panel2);border-radius:9px;overflow:hidden;margin:6px 0 14px}
+.bar>i{display:block;height:100%;background:var(--gold)}
+.pick{display:flex;gap:12px;align-items:center;padding:14px;border:1px solid var(--line);border-radius:12px;margin:8px 0;
+  cursor:pointer;background:var(--panel2);font-weight:600}
+.pick .ic{font-size:1.7rem}
+.qr{display:flex;justify-content:center;background:#fff;padding:12px;border-radius:12px;width:max-content;margin:10px auto}
+table{width:100%;border-collapse:collapse;font-size:.9rem}
+td{padding:6px 4px;border-bottom:1px solid var(--line);vertical-align:top}
+.modal{position:fixed;inset:0;background:rgba(5,4,8,.88);display:flex;align-items:center;justify-content:center;padding:16px;z-index:9}
+.modal .panel{max-width:520px;width:100%;max-height:90vh;overflow:auto}
+.fade{animation:fade .5s ease}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.pulse{animation:pulse 1.2s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.35}}
+ol{padding-left:1.2em}li{margin:.3em 0}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+"use strict";
+/* ===================== Scenario data ===================== */
+const SCENARIOS = [
+{
+  id:"var", icon:"🏰", title:"Méreg a Holdkő-várban", era:"1462 ősze",
+  short:"Szüreti lakoma, megmérgezett gróf, bezárt várkapuk.",
+  crime:"a gróf dolgozószobája",
+  intro:[
+    "Holdkő vára, 1462 őszén. A szüreti lakoma véget ért, a vendégek szétszéledtek a várban. Ödön gróf visszavonult a dolgozószobájába, hogy megírja másnapi rendeleteit.",
+    "Negyed tizenkettőkor a szolgája holtan találta. Előtte egy félig üres serleg, a borban méreg.",
+    "A vár kapuit bezárták. Rajtatok kívül senki nem járt a gróf szobája közelében. Négyen vagytok, és egyikőtök gyilkos.",
+    "Hajnalig van időtök. Ha addig nem neveztek meg közösen valakit, a tettes elszökik a ködben."
+  ],
+  witnessLine:"Pár perccel negyed tizenkettő előtt a folyosó végéről láttad, ahogy valaki kisurran a gróf dolgozószobájából. Felismerted: {X} volt.",
+  chars:[
+    {name:"A Lovag", icon:"🛡️", bio:"A gróf hű kardja húsz éve. Büszke, nyers, és az életével tartozik a grófnak.",
+     motive:"A gróf elvette a földedet, és a fiadat zálogként a királyi udvarba küldte."},
+    {name:"A Füvész", icon:"🌿", bio:"A vár gyógyítója, aki minden növény titkát ismeri. A mérgekről is tud ezt-azt.",
+     motive:"A gróf azzal fenyegetett, hogy boszorkányként máglyára küld."},
+    {name:"A Dalnok", icon:"🎻", bio:"Vándor zenész, aki egy éve maradt a várban. Mindenkiről tud egy pletykát.",
+     motive:"A gróf rájött, hogy a szomszéd báró kémeként dolgozol."},
+    {name:"A Kincstárnok", icon:"🗝️", bio:"A vár pénzének őre. Pontos, hideg, és soha nem felejt el egy tartozást.",
+     motive:"A gróf rájött, hogy évek óta sikkasztasz a kincstárból."}
+  ],
+  cats:[
+    {label:"Kezesség", A:"balkezes", B:"jobbkezes",
+     clue:"A serleg füle balra fordítva állt, a bort bal kézzel töltötték. A tettes balkezes.",
+     seeA:"bal kézzel emelte a serlegét a lakomán.", seeB:"jobb kézzel emelte a serlegét a lakomán."},
+    {label:"Ruhaujj", A:"vörös pecsétviasz van rajta", B:"tiszta",
+     clue:"A gróf asztalán vörös pecsétviasz csöppent szét, és elkenődött. A tettes ruhaujja viaszos lett.",
+     seeA:"vörös viaszfolt volt a ruhaujján, amikor elhaladt melletted.", seeB:"makulátlanul tiszta volt a ruhaujja a lakoma után."},
+    {label:"Illat", A:"rozmaringillatú", B:"nincs rajta különös illat",
+     clue:"A dolgozószobában erős rozmaringillat terjengett. A tettes hozta magával.",
+     seeA:"erős rozmaringillatot éreztél rajta, amikor elment melletted.", seeB:"semmilyen különös illatot nem éreztél rajta."}
+  ],
+  locs:[
+    {name:"Borpince", at:"a borpincében", toward:"a borpince felé",
+     secret:"A borpincében titokban a gróf legdrágább tokaji borát kóstolgattad, és két palackot el is rejtettél."},
+    {name:"Kápolna", at:"a kápolnában", toward:"a kápolna felé",
+     secret:"A kápolnában szerelmes levelet rejtettél a gyóntatószékbe a gróf lányának."},
+    {name:"Istálló", at:"az istállóban", toward:"az istálló felé",
+     secret:"Az istállóban felnyergeltél egy lovat: hajnalban szökni akartál az adósságaid elől."},
+    {name:"Bástya", at:"a bástyán", toward:"a bástya felé",
+     secret:"A bástyán egy idegen futárral találkoztál, aki pénzt adott neked egy lepecsételt levélért."},
+    {name:"Konyha", at:"a konyhában", toward:"a konyha felé",
+     secret:"A konyhában elcsentél egy ezüst gyertyatartót, és a köpenyed alá rejtetted."}
+  ]
+},
+{
+  id:"vonat", icon:"🚂", title:"Utolsó éjszaka a Duna Expresszen", era:"1925 novembere",
+  short:"Hóban vesztegelő éjszakai vonat, halott bankár.",
+  crime:"a bankár hálófülkéje",
+  intro:[
+    "1925 novembere. A Duna Expressz Bécsből Budapestre tart a ködös éjszakában. Éjfél előtt a kalauz kopogtat Von Hagen bankár hálófülkéjén. Nem jön válasz.",
+    "A bankár holtan fekszik, mellkasában a saját ezüst levélbontója.",
+    "A vonat a havas pályán vesztegel. Senki nem szállt le és senki nem szállt fel. A kocsiban csak ti négyen utaztatok vele. Egyikőtök gyilkos.",
+    "Mire a vonat beér a Keleti pályaudvarra, meg kell neveznetek a tettest. Ha nem sikerül, a gyilkos eltűnik a reggeli tömegben."
+  ],
+  witnessLine:"Nem sokkal éjfél előtt a folyosó végéről láttad, ahogy valaki kilép a bankár hálófülkéjéből és gyorsan behúzza maga mögött az ajtót. Felismerted: {X} volt.",
+  chars:[
+    {name:"Az Ezredes", icon:"🎖️", bio:"Nyugalmazott huszárezredes, aki a háború óta nem alszik jól.",
+     motive:"A bankár csődbe vitte a családi birtokodat, és most a házadat is elárverezte volna."},
+    {name:"A Színész", icon:"🎭", bio:"Budapesti színpadi sztár, aki a színpadon kívül is mindig szerepet játszik.",
+     motive:"A bankár leveleket őrzött, amelyek tönkretették volna a karrieredet."},
+    {name:"Az Orvos", icon:"🩺", bio:"Bécsi orvos, konferenciára utazik. Nyugodt keze van, és sok titkot hallott már.",
+     motive:"A bankár tudta, hogy egy titkos kísérleted egy beteg halálával végződött."},
+    {name:"Az Újságíró", icon:"📰", bio:"Szemfüles riporter, aki hetek óta a bankár után nyomoz.",
+     motive:"A bankár lefizette a szerkesztődet, és azzal fenyegetett, hogy börtönbe juttat."}
+  ],
+  cats:[
+    {label:"Kezesség", A:"balkezes", B:"jobbkezes",
+     clue:"A levélbontót balról döfték. A tettes balkezes.",
+     seeA:"bal kézzel gyújtott rá a szalonkocsiban.", seeB:"jobb kézzel gyújtott rá a szalonkocsiban."},
+    {label:"Kesztyű", A:"fekete bőrkesztyűt hord", B:"nem hord kesztyűt",
+     clue:"A levélbontón nincs ujjlenyomat, de egy fekete bőrszál akadt a markolatán. A tettes bőrkesztyűt viselt.",
+     seeA:"fekete bőrkesztyűt húzott a kezére vacsora után.", seeB:"vacsora után is kesztyű nélkül volt."},
+    {label:"Mandzsetta", A:"szivarhamus", B:"tiszta",
+     clue:"A fülke szőnyegén friss szivarhamu volt. A tettes nem sokkal előtte szivarozott.",
+     seeA:"szivarhamu volt a mandzsettáján, amikor elment melletted.", seeB:"tiszta volt a mandzsettája, egész este nem szivarozott."}
+  ],
+  locs:[
+    {name:"Étkezőkocsi", at:"az étkezőkocsiban", toward:"az étkezőkocsi felé",
+     secret:"Az étkezőkocsiban kártyáztál, csaltál, és elnyerted egy pincér egész havi fizetését."},
+    {name:"Poggyászkocsi", at:"a poggyászkocsiban", toward:"a poggyászkocsi felé",
+     secret:"A poggyászkocsiban feltörted egy utastárs bőröndjét, és elvittél belőle egy köteg levelet."},
+    {name:"Szalonkocsi", at:"a szalonkocsiban", toward:"a szalonkocsi felé",
+     secret:"A szalonkocsiban titkos randevúd volt valakivel, akivel senki nem láthat együtt."},
+    {name:"Kalauzfülke", at:"a kalauzfülkében", toward:"a kalauzfülke felé",
+     secret:"A kalauzfülkében lefizetted a kalauzt, hogy Budapest előtt leszállhass egy menetrenden kívüli megállóban."},
+    {name:"Hátsó peron", at:"a hátsó peronon", toward:"a hátsó peron felé",
+     secret:"A hátsó peronról egy csomagot dobtál le egy sötétben várakozó ismeretlennek."}
+  ]
+},
+{
+  id:"villa", icon:"🌩️", title:"Vihar a balatoni villában", era:"napjainkban",
+  short:"Születésnapi buli, áramszünet, halott nagybácsi.",
+  crime:"a könyvtár",
+  intro:[
+    "Augusztus vége, Balatonfüred. Bálint bácsi a nyolcvanadik születésnapját ünnepli a tóparti villában. Éjfél előtt vihar csap le, elmegy az áram.",
+    "Mire a generátor beindul, Bálint bácsit holtan találják a könyvtárban, a kandalló előtt. Valaki meglökte, és beverte a fejét a márványpárkányba.",
+    "A vihar miatt senki nem jöhetett és senki nem mehetett. A villában csak ti négyen voltatok vele. Egyikőtök gyilkos.",
+    "A rendőrség hajnalban ér ki. Addig nektek kell kideríteni, ki volt, különben a tettes eltünteti a nyomokat."
+  ],
+  witnessLine:"Amikor visszajött az áram, a folyosó végéről láttad, ahogy valaki kisiet a könyvtárból. Felismerted: {X} volt.",
+  chars:[
+    {name:"A Séf", icon:"🍳", bio:"A család régi szakácsa. Mindent tud, ami a konyhában elhangzik.",
+     motive:"Bálint bácsi kirúgott volna, és feljelentett volna a hamis számláid miatt."},
+    {name:"Az Influenszer", icon:"📱", bio:"A család fekete báránya, kétszázezer követővel és nulla megtakarítással.",
+     motive:"Bálint bácsi még ezen a héten kitagadott volna a végrendeletéből."},
+    {name:"Az Ügyvéd", icon:"⚖️", bio:"A család ügyvédje harminc éve. Ő őrzi a végrendeletet.",
+     motive:"Bálint bácsi rájött, hogy a vagyonkezelésből a saját számládra utaltál."},
+    {name:"A Kertész", icon:"🌱", bio:"Mogorva kertész, aki a villa minden zugát ismeri.",
+     motive:"Bálint bácsi eladta volna a telket, amit évekkel ezelőtt neked ígért."}
+  ],
+  cats:[
+    {label:"Kezesség", A:"balkezes", B:"jobbkezes",
+     clue:"A sérülésből ítélve balról lökték meg. A tettes balkezes.",
+     seeA:"bal kézzel koccintott a pezsgővel.", seeB:"jobb kézzel koccintott a pezsgővel."},
+    {label:"Cipő", A:"sáros, vizes", B:"száraz",
+     clue:"A könyvtár parkettáján sáros, vizes lábnyomok vezetnek a teraszajtótól. A tettes kintről jött be a viharból.",
+     seeA:"csupa sár és víz volt a cipője nem sokkal éjfél előtt.", seeB:"száraz volt a cipője nem sokkal éjfél előtt."},
+    {label:"Illat", A:"erős, édes parfüm", B:"nincs rajta parfüm",
+     clue:"A könyvtárban erős, édes parfüm illata terjengett. A tettesé.",
+     seeA:"erős, édes parfümöt éreztél rajta.", seeB:"semmilyen parfümöt nem éreztél rajta."}
+  ],
+  locs:[
+    {name:"Stég", at:"a stégen", toward:"a stég felé",
+     secret:"A stégen a viharban egy idegen motorcsónakostól átvettél egy vastag borítékot."},
+    {name:"Garázs", at:"a garázsban", toward:"a garázs felé",
+     secret:"A garázsban kölcsönvetted Bálint bácsi veterán autóját, és már egy csúnya karcolás is van rajta."},
+    {name:"Borospince", at:"a borospincében", toward:"a borospince felé",
+     secret:"A borospincében egy drága bort olcsóra cseréltél, a jót el akartad adni."},
+    {name:"Vendégszoba", at:"az emeleti vendégszobában", toward:"az emeleti vendégszoba felé",
+     secret:"Az emeleti vendégszobában átkutattad a fiókokat, és lefotóztál egy végrendelet-tervezetet."},
+    {name:"Terasz", at:"a teraszon", toward:"a terasz felé",
+     secret:"A teraszon titokban telefonáltál valakivel, akiről a család nem tudhat."}
+  ]
+}
+];
+
+/* ===================== Game generation (pure, deterministic) ===================== */
+function rngFrom(seed){let a=seed>>>0;return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);
+  t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function shuffle(arr,r){const a=arr.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function pickOne(arr,r){return arr[Math.floor(r()*arr.length)]}
+
+function generate(seed, scId){
+  const sc = SCENARIOS.find(s=>s.id===scId) || SCENARIOS[0];
+  const r = rngFrom(seed);
+  const seats=[0,1,2,3];
+  const murderer = Math.floor(r()*4);
+  const others = shuffle(seats.filter(s=>s!==murderer), r);
+  const witness = others[0];
+  const dets = [others[1], others[2]];
+  const innocents = seats.filter(s=>s!==murderer);
+
+  // traits[seat][cat] = true means the "A" (clue) value
+  let traits;
+  for(let tries=0;tries<500;tries++){
+    traits = seats.map(s => s===murderer ? [true,true,true] : [0,1,2].map(()=>r()<0.45));
+    const noFull = innocents.every(s=>!(traits[s][0]&&traits[s][1]&&traits[s][2]));
+    const everyCatHerring = [0,1,2].every(c=>innocents.some(s=>traits[s][c]));
+    const noBlank = innocents.filter(s=>!traits[s].some(Boolean)).length<=1;
+    if(noFull && everyCatHerring && noBlank) break;
+  }
+  // clue order: k0 public at half time (murderer knows it), k1 -> dets[0], k2 -> dets[1]
+  const clueOrder = shuffle([0,1,2], r);
+
+  // locations: innocents get distinct secret locations, murderer was at crime scene
+  const locOrder = shuffle([0,1,2,3,4], r);
+  const loc = {}; innocents.forEach((s,i)=>loc[s]=locOrder[i]);
+  loc[murderer] = -1;
+  const alibi = locOrder[3];
+
+  // sightings
+  const sight = {};
+  const catcherIdx = Math.floor(r()*2);
+  const catcher = dets[catcherIdx], other = dets[1-catcherIdx];
+  const catchCat = clueOrder[1 + (1-catcherIdx)];          // the clue the OTHER detective holds
+  sight[catcher] = {type:"trait", who:murderer, cat:catchCat};
+  const otherTargets = innocents.filter(s=>s!==other);
+  const ot = pickOne(otherTargets, r);
+  sight[other] = r()<0.5 ? {type:"loc", who:ot} : {type:"trait", who:ot, cat:Math.floor(r()*3)};
+  const wt = pickOne(dets, r);
+  sight[witness] = r()<0.5 ? {type:"loc", who:wt} : {type:"trait", who:wt, cat:Math.floor(r()*3)};
+  sight[murderer] = {type:"loc", who:pickOne(innocents, r)};
+
+  return {sc, murderer, witness, dets, traits, clueOrder, loc, alibi, sight};
+}
+
+/* ===================== Card text ===================== */
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
+function who(g,names,s){const c=g.sc.chars[s];const n=(names&&names[s]||"").trim();return n?`${n} (${c.name})`:c.name}
+function roleOf(g,s){return s===g.murderer?"murd":s===g.witness?"wit":"det"}
+function sightText(g,names,s){
+  const x=g.sight[s]; const w=esc(who(g,names,x.who));
+  if(x.type==="loc"){
+    const L=g.sc.locs[g.loc[x.who]];
+    return `<b>${w}</b>: nem sokkal a gyilkosság előtt ${L.toward} ment. Láttad.`;
+  }
+  const cat=g.sc.cats[x.cat];
+  return `<b>${w}</b>: ${g.traits[x.who][x.cat]?cat.seeA:cat.seeB}`;
+}
+function cardHTML(g,names,s){
+  const sc=g.sc, c=sc.chars[s], role=roleOf(g,s);
+  let h=`<div class="center"><div style="font-size:3rem">${c.icon}</div><h2>${esc(who(g,names,s))}</h2>
+    <p class="muted small">${esc(c.bio)}</p></div>`;
+  if(role==="murd"){
+    h+=`<div class="role murd"><div class="small">A szereped</div><div class="big">Gyilkos</div>
+      <div class="small">Te ölted meg. Senki nem tudja. Még.</div></div>
+      <div class="fact red"><b>Indítékod:</b> ${esc(c.motive)}</div>
+      <div class="fact red"><b>Egy nyomról tudsz:</b> ${esc(sc.cats[g.clueOrder[0]].clue)} <span class="muted">Félidőben ez mindenki előtt kiderül.</span></div>
+      <div class="fact red">A többi nyomról nem tudsz. Lehet, hogy más is maradt utánad.</div>
+      <div class="fact red"><b>Hamis alibi ötlet:</b> mondd, hogy ${esc(sc.locs[g.alibi].at)} voltál.</div>
+      <p class="small"><b>Célod:</b> ne nevezzenek meg. Ha mégis, egy esélyed marad: ha kitalálod, ki a Szemtanú, akkor is te nyersz. Figyeld, ki tud túl sokat.</p>`;
+  } else if(role==="wit"){
+    h+=`<div class="role wit"><div class="small">A szereped</div><div class="big">Szemtanú</div>
+      <div class="small">Ártatlan vagy, és tudod a választ.</div></div>
+      <div class="fact blue">${esc(sc.witnessLine).replace("{X}","<b>"+esc(who(g,names,g.murderer))+"</b>")}</div>
+      <p class="small"><b>Célod:</b> vezesd rá a többieket a gyilkosra, de óvatosan. Ha elkapják, a gyilkos még tippelhet, ki a Szemtanú. Ha téged nevez meg, a gyilkos nyer.</p>`;
+  } else {
+    const k = g.dets[0]===s ? g.clueOrder[1] : g.clueOrder[2];
+    h+=`<div class="role det"><div class="small">A szereped</div><div class="big">Nyomozó</div>
+      <div class="small">Ártatlan vagy. Találd meg a gyilkost.</div></div>
+      <div class="fact green"><b>Nyom, amit te találtál:</b> ${esc(sc.cats[k].clue)}</div>
+      <p class="small"><b>Célod:</b> a többiekkel közösen nevezzétek meg a gyilkost. Egy vádatok van.</p>`;
+  }
+  // own truth
+  h+=`<h3 style="margin-top:16px">Amit magadról tudsz</h3><div class="panel" style="margin-top:6px">`;
+  h+= s===g.murderer
+    ? `<div>📍 A gyilkosság idején a tetthelyen voltál: <b>${esc(sc.crime)}</b>. Ezt titkold!</div>`
+    : `<div>📍 A gyilkosság idején ${esc(sc.locs[g.loc[s]].at)} voltál.</div>`;
+  sc.cats.forEach((cat,i)=>{h+=`<div>• ${esc(cat.label)}: <b>${esc(g.traits[s][i]?cat.A:cat.B)}</b></div>`});
+  h+=`</div>`;
+  if(s!==g.murderer){
+    h+=`<div class="fact"><b>Kínos titkod:</b> ${esc(sc.locs[g.loc[s]].secret)} <span class="muted">Nem bűn, csak szégyen. Ha a végéig nem derül ki, jár egy titkos becsületpont.</span></div>`;
+  }
+  h+=`<div class="fact"><b>Amit láttál:</b> ${sightText(g,names,s)}</div>`;
+  h+=`<p class="small muted">Bárki hazudhat. Az igazság csak ezen a lapon van.</p>`;
+  return h;
+}
+
+/* ===================== Card link encoding ===================== */
+const KEY="ejfeli-tanu-1462";
+function b64u(bytes){let s="";bytes.forEach(b=>s+=String.fromCharCode(b));return btoa(s).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"")}
+function unb64u(str){str=str.replace(/-/g,"+").replace(/_/g,"/");while(str.length%4)str+="=";const s=atob(str);return Uint8Array.from(s,c=>c.charCodeAt(0))}
+function encodeCard(obj){
+  const raw=new TextEncoder().encode(JSON.stringify(obj));
+  const out=new Uint8Array(raw.length+1);let sum=0;
+  raw.forEach((b,i)=>{out[i]=b^KEY.charCodeAt(i%KEY.length);sum=(sum+b*(i+7))&255});
+  out[raw.length]=sum;return b64u(out);
+}
+function decodeCard(str){
+  const d=unb64u(str);const raw=new Uint8Array(d.length-1);let sum=0;
+  for(let i=0;i<raw.length;i++){raw[i]=d[i]^KEY.charCodeAt(i%KEY.length);sum=(sum+raw[i]*(i+7))&255}
+  if(sum!==d[d.length-1]) throw new Error("bad");
+  return JSON.parse(new TextDecoder().decode(raw));
+}
+
+if(typeof module!=="undefined"){module.exports={SCENARIOS,generate,cardHTML,encodeCard,decodeCard}}
+
+/* ===================== UI ===================== */
+if(typeof document!=="undefined"){
+const app=document.getElementById("app");
+const STORE="ejfeli-tanu-v1";
+let G=null, tick=null, wakeLock=null;
+
+function save(){try{localStorage.setItem(STORE,JSON.stringify(G))}catch(e){}}
+function load(){try{return JSON.parse(localStorage.getItem(STORE)||"null")}catch(e){return null}}
+function clearSave(){try{localStorage.removeItem(STORE)}catch(e){}}
+function game(){return generate(G.seed,G.sc)}
+function newSeed(){const a=new Uint32Array(1);crypto.getRandomValues(a);return a[0]}
+function show(html){app.innerHTML=`<div class="fade">${html}</div>`;window.scrollTo(0,0)}
+function on(id,fn){const el=document.getElementById(id);if(el)el.onclick=fn}
+function beep(){try{const ctx=new (window.AudioContext||window.webkitAudioContext)();[0,0.25,0.5].forEach(t=>{
+  const o=ctx.createOscillator(),g=ctx.createGain();o.frequency.value=660;o.connect(g);g.connect(ctx.destination);
+  g.gain.setValueAtTime(0.25,ctx.currentTime+t);g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+t+0.22);
+  o.start(ctx.currentTime+t);o.stop(ctx.currentTime+t+0.24)})}catch(e){} try{navigator.vibrate&&navigator.vibrate([200,100,200])}catch(e){}}
+async function keepAwake(){try{if("wakeLock" in navigator&&!wakeLock){wakeLock=await navigator.wakeLock.request("screen");wakeLock.addEventListener("release",()=>wakeLock=null)}}catch(e){}}
+function modal(html){const m=document.createElement("div");m.className="modal";m.innerHTML=`<div class="panel fade">${html}</div>`;document.body.appendChild(m);return m}
+
+const RULES=`<h3>Szabályok</h3><ol>
+<li>Négyen vagytok: <b>1 Gyilkos</b>, <b>1 Szemtanú</b>, <b>2 Nyomozó</b>. Mindenki titokban nézi meg a lapját.</li>
+<li>Minden lapon ott van: hol voltál, milyen vagy (kezesség, ruha, illat...), egy kínos titok, és valami, amit láttál. A Nyomozók egy-egy nyomot is kapnak, a Szemtanú látta a gyilkost.</li>
+<li>Beszélgessetek, kérdezzetek, vádaskodjatok. <b>Bárki hazudhat.</b> Nem kötelező mindent elárulni.</li>
+<li>Félidőben a játék egy új nyomot fed fel mindenki előtt.</li>
+<li><b>Vádemelés:</b> ha legalább hárman egyetértetek, nyomjátok meg a gombot. Csak egyszer lehet.</li>
+<li>Ha ártatlant vádoltok, vagy lejár az idő: <b>a Gyilkos nyer</b>.</li>
+<li>Ha a Gyilkost vádoljátok: van még egy esélye. Ha kitalálja, ki a Szemtanú, <b>mégis ő nyer</b>.</li>
+</ol><p class="small muted">Tipp: a Szemtanú tudja a választ, de ha túl nyilvánvalóan segít, lebukik.</p>`;
+
+/* ---- card-only view (opened from QR on own phone) ---- */
+function cardView(hash){
+  let d;try{d=decodeCard(hash)}catch(e){show(`<div class="panel center"><h2>Hibás link</h2><p>Ez a lap nem olvasható.</p><a class="btn" href="./">Új játék</a></div>`);return}
+  const g=generate(d.s,d.c);
+  show(`<p class="center muted small">${g.sc.icon} ${esc(g.sc.title)} · Ezt a lapot csak te nézd.</p>
+    <div id="cover" class="panel center"><p>A lapod rejtve van.</p><button class="btn" id="reveal">Megmutatom</button></div>
+    <div id="card" style="display:none">${cardHTML(g,d.n,d.p)}<button class="btn ghost" id="hide">Elrejtem</button></div>`);
+  on("reveal",()=>{document.getElementById("cover").style.display="none";document.getElementById("card").style.display="block"});
+  on("hide",()=>{document.getElementById("cover").style.display="block";document.getElementById("card").style.display="none";window.scrollTo(0,0)});
+}
+
+/* ---- home ---- */
+function home(){
+  const saved=load();
+  let sel=(saved&&saved.sc)||"var", mins=(saved&&saved.minutes)||20;
+  const names=(saved&&saved.names)||["","","",""];
+  function draw(){
+    const sc=SCENARIOS.find(s=>s.id===sel);
+    show(`<div class="center" style="margin:18px 0 8px"><div style="font-size:2.6rem">🕯️</div><h1>Éjféli Tanú</h1>
+      <p class="muted">Titkos szerepes gyilkosos nyomozás négy főre. Egy telefon, egy gyilkos, egy szemtanú.</p></div>
+      ${saved&&saved.phase&&saved.phase!=="end"?`<button class="btn" id="resume">Folytatom a félbehagyott játékot</button>`:""}
+      <div class="panel"><h3>1. Történet</h3>
+        ${SCENARIOS.map(s=>`<div class="scen ${s.id===sel?"sel":""}" data-sc="${s.id}"><div class="ic">${s.icon}</div>
+          <div><b>${esc(s.title)}</b><div class="small muted">${esc(s.era)} · ${esc(s.short)}</div></div></div>`).join("")}
+      </div>
+      <div class="panel"><h3>2. Ki kicsoda?</h3><p class="small muted">Írjátok be a neveket a karakterek mellé (nem kötelező).</p>
+        ${sc.chars.map((c,i)=>`<div class="namerow"><div class="lab">${c.icon} ${esc(c.name)}</div>
+          <input type="text" maxlength="14" data-n="${i}" placeholder="Név" value="${esc(names[i]||"")}"></div>`).join("")}
+      </div>
+      <div class="panel"><h3>3. Idő</h3>${[15,20,25,30].map(m=>`<span class="chip ${m===mins?"sel":""}" data-m="${m}">${m} perc</span>`).join("")}</div>
+      <button class="btn" id="start">Kezdjük</button>
+      <div class="panel">${RULES}</div>`);
+    app.querySelectorAll("[data-sc]").forEach(el=>el.onclick=()=>{grab();sel=el.dataset.sc;draw()});
+    app.querySelectorAll("[data-m]").forEach(el=>el.onclick=()=>{grab();mins=+el.dataset.m;draw()});
+    on("resume",()=>{G=saved;route()});
+    on("start",()=>{grab();G={seed:newSeed(),sc:sel,names:names.slice(),minutes:mins,phase:"intro",deal:0,step:"pass"};save();route()});
+  }
+  function grab(){app.querySelectorAll("[data-n]").forEach(el=>names[+el.dataset.n]=el.value)}
+  draw();
+}
+
+/* ---- intro story ---- */
+function intro(){
+  const sc=SCENARIOS.find(s=>s.id===G.sc);
+  show(`<p class="center muted small">Olvassa fel valaki hangosan</p>
+    <div class="panel story"><div class="center" style="font-size:2.4rem">${sc.icon}</div><h2 class="center">${esc(sc.title)}</h2>
+    ${sc.intro.map(p=>`<p>${esc(p)}</p>`).join("")}</div>
+    <div class="panel"><h3>A gyanúsítottak</h3>${sc.chars.map((c,i)=>`<p><b>${c.icon} ${esc(who({sc},G.names,i))}</b><br><span class="small muted">${esc(c.bio)}</span></p>`).join("")}</div>
+    <button class="btn" id="go">Lapok kiosztása</button><button class="btn ghost" id="back">Vissza</button>`);
+  on("go",()=>{G.phase="deal";G.deal=0;G.step="pass";save();route()});
+  on("back",()=>{clearSave();home()});
+}
+
+/* ---- deal cards one by one ---- */
+function deal(){
+  const g=game(), s=G.deal;
+  if(G.step==="pass"){
+    show(`<div class="panel center" style="margin-top:40px"><div style="font-size:3rem">${g.sc.chars[s].icon}</div>
+      <p class="muted">${s+1} / 4</p><h2>Add a telefont neki:</h2><h1>${esc(who(g,G.names,s))}</h1>
+      <p class="small muted">A többiek ne nézzenek oda.</p>
+      <button class="btn" id="see">Én vagyok, megnézem a lapom</button></div>`);
+    on("see",()=>{G.step="card";save();route()});
+  } else {
+    const url=location.origin+location.pathname+"#k="+encodeCard({s:G.seed,c:G.sc,p:s,n:G.names});
+    show(`${cardHTML(g,G.names,s)}
+      <div class="panel center"><p class="small"><b>Vidd magaddal a lapod:</b> szkenneld be a saját telefonoddal, így játék közben bármikor megnézheted.</p>
+      <div class="qr" id="qr"></div></div>
+      <button class="btn" id="done">Megjegyeztem, elrejtem</button>`);
+    try{new QRCode(document.getElementById("qr"),{text:url,width:190,height:190,correctLevel:QRCode.CorrectLevel.L})}
+    catch(e){document.getElementById("qr").outerHTML=`<p class="small muted">A QR-kód nem töltött be.</p>`}
+    on("done",()=>{
+      if(G.deal<3){G.deal++;G.step="pass";save();route()}
+      else{G.phase="ready";save();route()}
+    });
+  }
+}
+
+function ready(){
+  show(`<div class="panel center" style="margin-top:40px"><div style="font-size:3rem">🕯️</div><h2>Mindenki tudja, ki kicsoda.</h2>
+    <p>Tegyétek le a telefont középre. Az óra indul, amint megnyomjátok.</p>
+    <button class="btn" id="go">Indul a nyomozás (${G.minutes} perc)</button></div>`);
+  on("go",()=>{G.phase="play";G.start=Date.now();G.half=false;save();keepAwake();route()});
+}
+
+/* ---- play: timer ---- */
+function play(){
+  const g=game();
+  show(`<p class="center muted small">${g.sc.icon} ${esc(g.sc.title)}</p>
+    <div class="timer" id="t">--:--</div><div class="bar"><i id="b"></i></div>
+    <div class="panel"><b>A tetthely:</b> ${esc(g.sc.crime)}<br><span class="small muted">Kérdezzétek egymást: hol voltál? mit láttál? mutasd a kezed!</span></div>
+    <div id="pub"></div>
+    <button class="btn red" id="acc">⚖️ Vádemelés</button>
+    <div class="row"><button class="btn ghost small" id="peek">Lapom újra</button><button class="btn ghost small" id="rules">Szabályok</button></div>
+    <button class="btn ghost small" id="quit">Játék feladása</button>`);
+  const pub=document.getElementById("pub");
+  function drawPub(){if(G.half)pub.innerHTML=`<div class="fact"><b>Félidős nyom (mindenki tudja):</b> ${esc(g.sc.cats[g.clueOrder[0]].clue)}</div>`}
+  drawPub();
+  on("acc",()=>{G.phase="accuse";save();route()});
+  on("rules",()=>{const m=modal(RULES+`<button class="btn" id="x">Bezár</button>`);m.querySelector("#x").onclick=()=>m.remove()});
+  on("peek",()=>{
+    const m=modal(`<h3>Kié a lap?</h3><p class="small muted">Csak a sajátodat nézd meg!</p>${g.sc.chars.map((c,i)=>`<div class="pick" data-p="${i}"><span class="ic">${c.icon}</span>${esc(who(g,G.names,i))}</div>`).join("")}<button class="btn ghost" id="x">Mégsem</button>`);
+    m.querySelector("#x").onclick=()=>m.remove();
+    m.querySelectorAll("[data-p]").forEach(el=>el.onclick=()=>{m.querySelector(".panel").innerHTML=cardHTML(g,G.names,+el.dataset.p)+`<button class="btn" id="x2">Elrejtem</button>`;m.querySelector("#x2").onclick=()=>m.remove()});
+  });
+  on("quit",()=>{if(confirm("Biztosan feladjátok? A gyilkos nyer.")){G.phase="end";G.result="giveup";save();route()}});
+  const total=G.minutes*60000;
+  function upd(){
+    const left=Math.max(0,G.start+total-Date.now());
+    const m=Math.floor(left/60000), s=Math.floor(left%60000/1000);
+    const t=document.getElementById("t"); if(!t){clearInterval(tick);return}
+    t.textContent=`${m}:${String(s).padStart(2,"0")}`;
+    document.getElementById("b").style.width=(100*left/total)+"%";
+    if(left<=60000)t.classList.add("pulse");
+    if(!G.half && left<=total/2){G.half=true;save();drawPub();beep();
+      const mm=modal(`<div class="center"><div style="font-size:2.4rem">🔎</div><h2>Félidő: új nyom!</h2></div><div class="fact">${esc(g.sc.cats[g.clueOrder[0]].clue)}</div><button class="btn" id="x">Értem</button>`);
+      mm.querySelector("#x").onclick=()=>mm.remove();}
+    if(left<=0){clearInterval(tick);beep();document.querySelectorAll(".modal").forEach(x=>x.remove());G.phase="timeout";save();route()}
+  }
+  clearInterval(tick);tick=setInterval(upd,500);upd();
+}
+
+function timeout(){
+  show(`<div class="panel center" style="margin-top:30px"><div style="font-size:3rem">⌛</div><h2>Lejárt az idő!</h2>
+    <p>Utolsó lehetőség: ha most azonnal megegyeztek, még vádat emelhettek. Ha nem, a gyilkos elszökik.</p>
+    <button class="btn red" id="acc">⚖️ Utolsó vádemelés</button><button class="btn ghost" id="lose">Nem tudunk dönteni</button></div>`);
+  on("acc",()=>{G.phase="accuse";G.late=true;save();route()});
+  on("lose",()=>{G.phase="end";G.result="time";save();route()});
+}
+
+/* ---- accusation ---- */
+function accuse(){
+  const g=game();
+  show(`<h2 class="center" style="margin-top:20px">⚖️ Vádemelés</h2><p class="center muted">Kit vádoltok? Legalább hárman kell, hogy egyetértsetek.</p>
+    ${g.sc.chars.map((c,i)=>`<div class="pick" data-p="${i}"><span class="ic">${c.icon}</span>${esc(who(g,G.names,i))}</div>`).join("")}
+    <button class="btn ghost" id="back">Mégsem, tovább nyomozunk</button>`);
+  app.querySelectorAll("[data-p]").forEach(el=>el.onclick=()=>{
+    const p=+el.dataset.p;
+    const m=modal(`<div class="center"><div style="font-size:2.6rem">${g.sc.chars[p].icon}</div><h2>${esc(who(g,G.names,p))}</h2>
+      <p>Legalább hárman egyetértetek? Ezt nem lehet visszavonni.</p></div>
+      <button class="btn red" id="y">Igen, őt vádoljuk</button><button class="btn ghost" id="n">Mégsem</button>`);
+    m.querySelector("#n").onclick=()=>m.remove();
+    m.querySelector("#y").onclick=()=>{m.remove();G.accused=p;G.phase="verdict";save();route()};
+  });
+  on("back",()=>{G.phase=G.late?"timeout":"play";save();route()});
+}
+
+function verdict(){
+  const g=game(), p=G.accused;
+  show(`<div class="panel center" style="margin-top:50px"><div style="font-size:3rem">${g.sc.chars[p].icon}</div>
+    <h2>${esc(who(g,G.names,p))}</h2><p class="pulse">felfedi a lapját...</p></div>`);
+  setTimeout(()=>{
+    if(p!==g.murderer){G.phase="end";G.result="wrong";save();route();return}
+    show(`<div class="role murd" style="margin-top:30px"><div class="big">Elkaptátok!</div>
+      <p>${esc(who(g,G.names,p))} a gyilkos.</p></div>
+      <div class="panel"><h3>De még nincs vége.</h3>
+      <p>Gyilkos, egy esélyed maradt: <b>ki volt a Szemtanú?</b> Ha eltalálod, mégis te nyersz.</p>
+      <p class="small muted">Gondolkodj hangosan, ha akarsz. A döntés csak a tiéd.</p></div>
+      ${g.sc.chars.map((c,i)=>i===p?"":`<div class="pick" data-p="${i}"><span class="ic">${c.icon}</span>${esc(who(g,G.names,i))}</div>`).join("")}`);
+    beep();
+    app.querySelectorAll("[data-p]").forEach(el=>el.onclick=()=>{
+      const q=+el.dataset.p;
+      const m=modal(`<div class="center"><h2>${esc(who(g,G.names,q))}</h2><p>Ő a Szemtanú? Végső döntés.</p></div>
+        <button class="btn red" id="y">Igen</button><button class="btn ghost" id="n">Mégsem</button>`);
+      m.querySelector("#n").onclick=()=>m.remove();
+      m.querySelector("#y").onclick=()=>{m.remove();G.guess=q;G.phase="end";G.result=(q===g.witness)?"witness":"caught";save();route()};
+    });
+  },2600);
+}
+
+/* ---- end ---- */
+function end(){
+  const g=game(), sc=g.sc;
+  const M=esc(who(g,G.names,g.murderer)), W=esc(who(g,G.names,g.witness));
+  const R={
+    caught:{c:"det",t:"Az ártatlanok nyertek!",d:`Elkaptátok a gyilkost, és a Szemtanú (${W}) rejtve maradt.`},
+    witness:{c:"murd",t:"A gyilkos nyert!",d:`Lelepleztétek ${M} személyét, de kitalálta, hogy ${W} volt a Szemtanú. Elhallgattatta, és a vádat elejtették.`},
+    wrong:{c:"murd",t:"A gyilkos nyert!",d:`Ártatlant vádoltatok. A gyilkos ${M} volt.`},
+    time:{c:"murd",t:"A gyilkos nyert!",d:`Lejárt az idő, a gyilkos megszökött. ${M} volt az.`},
+    giveup:{c:"murd",t:"A gyilkos nyert!",d:`Feladtátok. A gyilkos ${M} volt.`}
+  }[G.result]||{c:"murd",t:"Vége",d:""};
+  const roleName=s=>s===g.murderer?"🔪 Gyilkos":s===g.witness?"👁️ Szemtanú":"🔎 Nyomozó";
+  show(`<div class="role ${R.c}" style="margin-top:24px"><div class="big">${R.t}</div><p>${R.d}</p></div>
+    <div class="panel"><h3>A teljes igazság</h3><table>
+    ${sc.chars.map((c,s)=>`<tr><td>${c.icon}</td><td><b>${esc(who(g,G.names,s))}</b><br>${roleName(s)}<br>
+      <span class="small muted">${s===g.murderer?"📍 "+esc(sc.crime):"📍 "+esc(sc.locs[g.loc[s]].name)} · ${sc.cats.map((cat,i)=>esc(g.traits[s][i]?cat.A:cat.B)).join(" · ")}</span><br>
+      <span class="small">${s===g.murderer?"Indíték: "+esc(c.motive):"Titok: "+esc(sc.locs[g.loc[s]].secret)}</span></td></tr>`).join("")}
+    </table>
+    <h3 style="margin-top:14px">A nyomok</h3>${g.clueOrder.map((k,i)=>`<div class="small">• ${esc(sc.cats[k].clue)} <span class="muted">(${i===0?"félidős nyom":"nála volt: "+esc(who(g,G.names,g.dets[i-1]))})</span></div>`).join("")}
+    </div>
+    <button class="btn" id="again">Új kör, ugyanezekkel</button><button class="btn ghost" id="home">Főmenü</button>`);
+  on("again",()=>{G={seed:newSeed(),sc:G.sc,names:G.names,minutes:G.minutes,phase:"intro",deal:0,step:"pass"};save();route()});
+  on("home",()=>{clearSave();home()});
+}
+
+function route(){
+  clearInterval(tick);
+  ({intro,deal,ready,play,timeout,accuse,verdict,end})[G.phase]();
+}
+
+const h=location.hash.match(/#k=([\w-]+)/);
+if(h) cardView(h[1]);
+else { const s=load(); if(s&&s.phase&&s.phase!=="intro"&&s.phase!=="end"){home()} else home(); }
+}
+</script>
+</body>
+</html>
