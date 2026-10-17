@@ -74,6 +74,10 @@ td{padding:6px 4px;border-bottom:1px solid var(--line);vertical-align:top}
 .pub{padding:10px 0;border-top:1px solid var(--line)}
 .tags{margin:4px 0}.tag{display:inline-block;font-size:.82rem;padding:3px 8px;border-radius:99px;background:var(--panel2);border:1px solid var(--line);margin:2px 4px 2px 0}
 .fact.gold{border-color:var(--gold2);background:#2e2718}
+.sec{border-radius:14px;padding:12px 14px;margin:14px 0;border:1px solid var(--line)}
+.sech{font-weight:700;letter-spacing:.5px;margin-bottom:8px}.sech span{display:block;font-weight:400;font-size:.8rem;color:var(--muted);letter-spacing:0}
+.pubsec{background:#16231b;border-color:#2f5a3d}.revsec{background:#29240f;border-color:#6b5a20}.secsec{background:#2a1416;border-color:#6e2a2a}
+.mis{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-top:1px solid var(--line)}.mis input{width:22px;height:22px;margin-top:3px;flex:none}
 ol{padding-left:1.2em}li{margin:.3em 0}
 </style>
 </head>
@@ -319,42 +323,6 @@ function publicHTML(g,names){
   </div>`;
 }
 
-function cardHTML(g,names,s){
-  const sc=g.sc, c=sc.chars[s], role=roleOf(g,s);
-  const R={murd:["Gyilkos","Te ölted meg. Senki nem tudja. Még."],
-           wit:["Szemtanú","Ártatlan vagy, és tudod a választ."],
-           det:["Nyomozó","Ártatlan vagy. Találd meg a gyilkost."]}[role];
-  const col={murd:"red",wit:"blue",det:"green"}[role];
-  let h=`<div class="center"><div style="font-size:3rem">${c.icon}</div><h2>${esc(who(g,names,s))}</h2>
-    <p class="muted small">${esc(c.bio)}</p></div>
-    <div class="role ${role}"><div class="small">A szereped</div><div class="big">${R[0]}</div><div class="small">${R[1]}</div></div>`;
-
-  // 1. where you were (same structure for everyone)
-  h+= s===g.murderer
-    ? `<div class="fact"><b>📍 Hol voltál?</b> Valójában a tetthelyen (${esc(sc.crime)}). A fedősztorid: ${esc(sc.locs[g.alibi].at)} voltál. Oda rajtad kívül senki nem ment.</div>`
-    : `<div class="fact"><b>📍 Hol voltál?</b> A gyilkosság idején ${esc(sc.locs[g.loc[s]].at)} voltál. Rajtad kívül senki nem járt ott.</div>`;
-  // 2. motive, 3. embarrassing secret (everyone has both)
-  h+=`<div class="fact"><b>🔥 Indítékod:</b> ${esc(c.motive)}</div>`;
-  h+=`<div class="fact"><b>🤫 Kínos titkod:</b> ${esc(secretOf(g,s))}</div>`;
-  // 4. secret info, role specific
-  let info;
-  if(role==="murd") info=`Tudod, hogy ez a nyom maradt utánad: ${esc(clueText(g,g.clueOrder[0]))} <span class="muted">Félidőben ez mindenki előtt kiderül. Két másik nyomot a Nyomozók találtak, azokról nem tudsz.</span>`;
-  else if(role==="wit") info=esc(sc.witnessLine).replace("{X}","<b>"+esc(who(g,names,g.murderer))+"</b>");
-  else info=`Nyomot találtál: ${esc(clueText(g, g.dets[0]===s ? g.clueOrder[1] : g.clueOrder[2]))}`;
-  h+=`<div class="fact ${col}"><b>🔍 Titkos információd:</b> ${info}</div>`;
-  // 5. sighting
-  const t=g.sight[s];
-  h+=`<div class="fact"><b>👁️ Amit láttál:</b> ${esc(who(g,names,t))} nem sokkal a gyilkosság előtt ${esc(sc.locs[g.loc[t]].toward)} ment.</div>`;
-  // 6. goal
-  const goal={murd:"Ne nevezzenek meg. Ha mégis, egy esélyed marad: ha kitalálod, ki a Szemtanú, akkor is te nyersz.",
-    wit:"Vezesd rá a többieket a gyilkosra, de óvatosan. Ha elkapják, a gyilkos tippelhet, ki a Szemtanú. Ha téged nevez meg, a gyilkos nyer.",
-    det:"A többiekkel közösen nevezzétek meg a gyilkost. Egy vádatok van."}[role];
-  h+=`<p class="small"><b>🎯 Célod:</b> ${goal}</p>`;
-  h+=`<p class="small muted">A titkodat nem kötelező bevallani, és bárki hazudhat. Ha a titkod a végéig nem derül ki, jár egy becsületpont.</p>`;
-  h+=publicHTML(g,names);
-  return h;
-}
-
 /* ===================== Half-time private info ===================== */
 // third-person motives (what a found letter says about someone) and physical traces of each secret
 const MOTIVE3 = {
@@ -409,6 +377,75 @@ function halfHTML(g,names,s){
   return `<div class="fact gold"><b>🕛 Félidős titkos információd:</b> ${txt}</div>`;
 }
 
+/* ===================== Secret missions ===================== */
+const MISSIONS = [
+  {t:"Titoktartó", d:"A játék végén a többiek tippelhetnek, mi a kínos titkod. Ha senki nem találja el, teljesítetted."},
+  {t:"Varázsszó", d:"Érd el, hogy valaki más hangosan kimondja ezt a szót: „{W}”. Te nem mondhatod ki előbb."},
+  {t:"Bűnbak", d:"Érd el, hogy valaki hangosan megvádoljon téged, de a végső vád ne rád essen."},
+  {t:"Kíváncsi", d:"Derítsd ki valaki más kínos titkát, és a játék végén mondd ki pontosan."},
+  {t:"Mesemondó", d:"Hazudj valamit arról, hol voltál vagy mit láttál, és a játék végéig senki ne leplezzen le."}
+];
+const WORDS = {var:["sárkány","tokaji","Mátyás király","boszorkány"], vonat:["Párizs","pezsgő","kalap","Orient"], villa:["Instagram","lángos","vitorlás","Tihany"]};
+function missionsFor(g){
+  const r = rngFrom((g.seedBase ^ 0x5bd1e995)>>>0);
+  const pool = shuffle([0,1,2,3,4], r), words = shuffle(WORDS[g.sc.id], r);
+  const out = {}; let i=0;
+  [0,1,2,3].forEach(s=>{ if(s!==g.murderer){ const k=pool[i++]; out[s]={t:MISSIONS[k].t, d:MISSIONS[k].d.replace("{W}",words[0])}; } });
+  return out;
+}
+
+/* ===================== Points ===================== */
+const POINTS_TEXT = "Ártatlan csapat győzelme: 2 pont mindhárom ártatlannak. Teljesített titkos küldetés: +1 pont (akkor is, ha a csapat veszít). Gyilkos győzelme: 4 pont. Ha a gyilkost elkapták, de eltalálta a Szemtanút: 2 pont.";
+function roundPoints(g,result,missionOk){
+  const p=[0,0,0,0];
+  if(result==="caught") [0,1,2,3].forEach(s=>{ if(s!==g.murderer) p[s]+=2; });
+  else if(result==="witness") p[g.murderer]+=2;
+  else p[g.murderer]+=4;
+  [0,1,2,3].forEach(s=>{ if(s!==g.murderer && missionOk && missionOk[s]) p[s]+=1; });
+  return p;
+}
+
+/* ===================== Character card (player's own phone) ===================== */
+function cardHTML(g,names,s){
+  const sc=g.sc, c=sc.chars[s], role=roleOf(g,s), mis=missionsFor(g)[s];
+  const R={murd:["Gyilkos","Te ölted meg. Senki nem tudja. Még."],
+           wit:["Szemtanú","Ártatlan vagy, és tudod a választ."],
+           det:["Nyomozó","Ártatlan vagy. Találd meg a gyilkost."]}[role];
+  let h=`<div class="center"><div style="font-size:3rem">${c.icon}</div><h2>${esc(who(g,names,s))}</h2>
+    <p class="muted small">${esc(c.bio)}</p></div>`;
+
+  // PUBLIC
+  h+=`<div class="sec pubsec"><div class="sech">🟢 NYILVÁNOS <span>ezt mindenki tudja rólad</span></div>
+    <div class="tags">${sc.cats.map((cat,i)=>`<span class="tag">${esc(cat.label)}: <b>${esc(cat.vals[g.vals[s][i]].v)}</b></span>`).join("")}</div>
+    <div class="small">🗣️ ${esc(c.rumor)}</div><div class="small">🔑 ${esc(c.access)}</div></div>`;
+
+  // REVEALABLE
+  let clue;
+  if(role==="murd") clue=`${esc(clueText(g,g.clueOrder[0]))} <span class="muted">Ezt a nyomot te hagytad. Mondhatod, hogy te találtad, félidőben úgyis mindenki megtudja.</span>`;
+  else if(role==="det") clue=esc(clueText(g, g.dets[0]===s ? g.clueOrder[1] : g.clueOrder[2]));
+  else clue=`Nem találtál nyomot. <span class="muted">Mondhatod, hogy találtál.</span>`;
+  const where = role==="murd" ? `Ezt mondod: ${esc(sc.locs[g.alibi].at)} voltál. Oda rajtad kívül senki nem ment.`
+                              : `A gyilkosság idején ${esc(sc.locs[g.loc[s]].at)} voltál. Rajtad kívül senki nem járt ott.`;
+  const t=g.sight[s];
+  h+=`<div class="sec revsec"><div class="sech">🟡 FELFEDHETŐ <span>bármikor elmondhatod, elhallgathatod, hazudhatsz is</span></div>
+    <div class="fact">📍 <b>Hol voltál:</b> ${where}</div>
+    <div class="fact">🔥 <b>Indítékod:</b> ${esc(c.motive)}</div>
+    <div class="fact">🤫 <b>Kínos titkod:</b> ${esc(secretOf(g,s))}</div>
+    <div class="fact">🔍 <b>Nyom:</b> ${clue}</div>
+    <div class="fact">👁️ <b>Amit láttál:</b> ${esc(who(g,names,t))} nem sokkal a gyilkosság előtt ${esc(sc.locs[g.loc[t]].toward)} ment.</div></div>`;
+
+  // SECRET
+  h+=`<div class="sec secsec"><div class="sech">🔴 TITKOS <span>ezt tilos kimondani</span></div>
+    <div class="role ${role}"><div class="small">A szereped</div><div class="big">${R[0]}</div><div class="small">${R[1]}</div></div>`;
+  if(role==="murd") h+=`<div class="fact red">Valójában a tetthelyen voltál: ${esc(sc.crime)}.</div>
+    <div class="fact red"><b>Célod:</b> ne nevezzenek meg. Ha mégis, egy esélyed marad: ha kitalálod, ki a Szemtanú, akkor is kapsz pontot. Titkos küldetésed nincs.</div>`;
+  if(role==="wit") h+=`<div class="fact blue">${esc(sc.witnessLine).replace("{X}","<b>"+esc(who(g,names,g.murderer))+"</b>")} <span class="muted">Célozhatsz rá, de nem mondhatod ki.</span></div>`;
+  if(role!=="murd") h+=`<div class="fact gold"><b>🎯 Titkos küldetésed: ${esc(mis.t)}.</b> ${esc(mis.d)}</div>
+    <div class="fact"><b>Célod:</b> ${role==="wit"?"vezesd rá a többieket a gyilkosra, de úgy, hogy ne derüljön ki, hogy te vagy a Szemtanú.":"a többiekkel közösen nevezzétek meg a gyilkost. Egy vádatok van."}</div>`;
+  h+=`<p class="small muted">${POINTS_TEXT}</p></div>`;
+  return h;
+}
+
 /* ===================== Card link encoding ===================== */
 const KEY="ejfeli-tanu-1462";
 function b64u(bytes){let s="";bytes.forEach(b=>s+=String.fromCharCode(b));return btoa(s).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"")}
@@ -426,12 +463,12 @@ function decodeCard(str){
   return JSON.parse(new TextDecoder().decode(raw));
 }
 
-if(typeof module!=="undefined"){module.exports={SCENARIOS,generate,cardHTML,halfHTML,halfPlan,publicHTML,encodeCard,decodeCard}}
+if(typeof module!=="undefined"){module.exports={SCENARIOS,generate,cardHTML,halfHTML,halfPlan,publicHTML,missionsFor,roundPoints,encodeCard,decodeCard}}
 
 /* ===================== UI ===================== */
 if(typeof document!=="undefined"){
 const app=document.getElementById("app");
-const STORE="ejfeli-tanu-v1";
+const STORE="ejfeli-tanu-v2";
 let G=null, tick=null, wakeLock=null;
 
 function save(){try{localStorage.setItem(STORE,JSON.stringify(G))}catch(e){}}
@@ -447,25 +484,46 @@ function beep(){try{const ctx=new (window.AudioContext||window.webkitAudioContex
   o.start(ctx.currentTime+t);o.stop(ctx.currentTime+t+0.24)})}catch(e){} try{navigator.vibrate&&navigator.vibrate([200,100,200])}catch(e){}}
 async function keepAwake(){try{if("wakeLock" in navigator&&!wakeLock){wakeLock=await navigator.wakeLock.request("screen");wakeLock.addEventListener("release",()=>wakeLock=null)}}catch(e){}}
 function modal(html){const m=document.createElement("div");m.className="modal";m.innerHTML=`<div class="panel fade">${html}</div>`;document.body.appendChild(m);return m}
+function pname(i){return (G.names[i]||"").trim()||`${i+1}. játékos`}
 
 const RULES=`<h3>Szabályok</h3><ol>
-<li>Négyen vagytok: <b>1 Gyilkos</b>, <b>1 Szemtanú</b>, <b>2 Nyomozó</b>. Mindenki titokban nézi meg a lapját.</li>
-<li>Mindenkinek ugyanolyan a lapja: hol volt, mi az indítéka, mi a kínos titka, egy titkos információ, és amit látott valakiről. A Nyomozók egy-egy nyomot találtak, a Szemtanú látta a gyilkost.</li>
-<li>Ami mindenki számára látható (ruha, illat, ki mit veszekedett, ki fért hozzá a fegyverhez), az a közös telefonon végig kint van.</li>
-<li>Beszélgessetek, kérdezzetek, vádaskodjatok. <b>Bárki hazudhat.</b> Nem kötelező mindent elárulni.</li>
-<li>Félidőben előkerül egy új közös nyom, és a telefon még egyszer körbejár: mindenki kap egy új titkos információt valaki másról.</li>
+<li>Négyen vagytok: <b>1 Gyilkos</b>, <b>1 Szemtanú</b>, <b>2 Nyomozó</b>. A játékvezető telefonja olvassa fel a történetet és a nyilvános infókat, a többiek QR-kóddal kapják meg a lapjukat a saját telefonjukra.</li>
+<li>A lapon három rész van. <b>🟢 Nyilvános:</b> ezt mindenki tudja rólad. <b>🟡 Felfedhető:</b> bármikor elmondhatod, elhallgathatod, hazudhatsz is róla. <b>🔴 Titkos:</b> a szereped és a küldetésed, ezeket tilos kimondani.</li>
+<li>Beszélgessetek, kérdezzetek, vádaskodjatok. <b>Bárki hazudhat.</b></li>
+<li>Félidőben az óra megáll, előkerül egy közös nyom, és mindenki 30 másodpercre megnyit a saját lapján egy új titkos információt valaki másról. Utána eltűnik, és az óra megy tovább.</li>
 <li><b>Vádemelés:</b> ha legalább hárman egyetértetek, nyomjátok meg a gombot. Csak egyszer lehet.</li>
 <li>Ha ártatlant vádoltok, vagy lejár az idő: <b>a Gyilkos nyer</b>.</li>
-<li>Ha a Gyilkost vádoljátok: van még egy esélye. Ha kitalálja, ki a Szemtanú, <b>mégis ő nyer</b>.</li>
-</ol><p class="small muted">Tipp: a Szemtanú tudja a választ, de ha túl nyilvánvalóan segít, lebukik. A Gyilkos is mondhatja, hogy talált egy nyomot.</p>`;
+<li>Ha a Gyilkost vádoljátok: van még egy esélye. Ha kitalálja, ki a Szemtanú, ő is kap pontot, az ártatlanok nem.</li>
+</ol><h3>Pontozás</h3><p class="small">${POINTS_TEXT} A bajnokság végén a legtöbb pontot gyűjtő játékos nyer.</p>`;
 
-/* ---- card-only view (opened from QR on own phone) ---- */
+/* ---- card-only view (opened from QR on a player's own phone) ---- */
 function cardView(hash){
-  let d;try{d=decodeCard(hash)}catch(e){show(`<div class="panel center"><h2>Hibás link</h2><p>Ez a lap nem olvasható.</p><a class="btn" href="./">Új játék</a></div>`);return}
-  const g=generate(d.s,d.c);
+  let d;try{d=decodeCard(hash)}catch(e){show(`<div class="panel center"><h2>Hibás link</h2><p>Ez a lap nem olvasható.</p></div>`);return}
+  const g=generate(d.s,d.c), hk="ejfeli-half-"+d.s+"-"+d.p;
+  let opened=0; try{opened=+localStorage.getItem(hk)||0}catch(e){}
   show(`<p class="center muted small">${g.sc.icon} ${esc(g.sc.title)} · Ezt a lapot csak te nézd.</p>
     <div id="cover" class="panel center"><p>A lapod rejtve van.</p><button class="btn" id="reveal">Megmutatom</button></div>
-    <div id="card" style="display:none">${cardHTML(g,d.n,d.p)}<p class="small muted center">A félidős titkos információdat a közös telefonon kapod meg.</p><button class="btn ghost" id="hide">Elrejtem</button></div>`);
+    <div id="card" style="display:none">${cardHTML(g,d.n,d.p)}<button class="btn ghost" id="hide">Elrejtem</button></div>
+    <div id="half" class="panel center"></div>`);
+  const half=document.getElementById("half");
+  let iv=null;
+  function drawHalf(){
+    clearInterval(iv);
+    const left = opened ? 30000-(Date.now()-opened) : null;
+    if(!opened){
+      half.innerHTML=`<button class="btn" id="openhalf">🕛 Félidős információ</button><p class="small muted">Csak akkor nyomd meg, amikor a játékvezető telefonján elindul a 30 másodperc. Utána eltűnik.</p>`;
+      on("openhalf",()=>{if(!confirm("Elindult a 30 másodperc a játékvezető telefonján?"))return;
+        opened=Date.now();try{localStorage.setItem(hk,String(opened))}catch(e){};drawHalf()});
+    } else if(left>0){
+      const paint=()=>{const l=30000-(Date.now()-opened);if(l<=0){drawHalf();return}
+        half.innerHTML=`<div class="timer pulse" style="font-size:2.6rem">${Math.ceil(l/1000)}</div>${halfHTML(g,d.n,d.p)}<p class="small muted">Jegyezd meg, mindjárt eltűnik.</p>`};
+      paint(); iv=setInterval(paint,250);
+      half.scrollIntoView({behavior:"smooth"});
+    } else {
+      half.innerHTML=`<p class="small muted">🕛 A félidős információ eltűnt. Remélem, megjegyezted.</p>`;
+    }
+  }
+  drawHalf();
   on("reveal",()=>{document.getElementById("cover").style.display="none";document.getElementById("card").style.display="block"});
   on("hide",()=>{document.getElementById("cover").style.display="block";document.getElementById("card").style.display="none";window.scrollTo(0,0)});
 }
@@ -473,67 +531,83 @@ function cardView(hash){
 /* ---- home ---- */
 function home(){
   const saved=load();
-  let sel=(saved&&saved.sc)||"var", mins=(saved&&saved.minutes)||20;
+  let mode=(saved&&saved.tour&&!saved.tour.on)?"single":"tour", sel=(saved&&saved.sc)||"var", mins=(saved&&saved.minutes)||20;
   const names=(saved&&saved.names)||["","","",""];
   function draw(){
-    const sc=SCENARIOS.find(s=>s.id===sel);
     show(`<div class="center" style="margin:18px 0 8px"><div style="font-size:2.6rem">🕯️</div><h1>Éjféli Tanú</h1>
-      <p class="muted">Titkos szerepes gyilkosos nyomozás négy főre. Egy telefon, egy gyilkos, egy szemtanú.</p></div>
-      ${saved&&saved.phase&&saved.phase!=="end"?`<button class="btn" id="resume">Folytatom a félbehagyott játékot</button>`:""}
-      <div class="panel"><h3>1. Történet</h3>
-        ${SCENARIOS.map(s=>`<div class="scen ${s.id===sel?"sel":""}" data-sc="${s.id}"><div class="ic">${s.icon}</div>
-          <div><b>${esc(s.title)}</b><div class="small muted">${esc(s.era)} · ${esc(s.short)}</div></div></div>`).join("")}
-      </div>
-      <div class="panel"><h3>2. Ki kicsoda?</h3><p class="small muted">Írjátok be a neveket a karakterek mellé (nem kötelező).</p>
-        ${sc.chars.map((c,i)=>`<div class="namerow"><div class="lab">${c.icon} ${esc(c.name)}</div>
+      <p class="muted">Titkos szerepes gyilkosos nyomozás négy főre. Egy gyilkos, egy szemtanú, sok hazugság.</p></div>
+      ${saved&&saved.phase&&saved.phase!=="final"?`<button class="btn" id="resume">Folytatom a félbehagyott játékot</button>`:""}
+      <div class="panel"><h3>1. Játékosok</h3>
+        ${[0,1,2,3].map(i=>`<div class="namerow"><div class="lab">${i===0?"Te (ez a telefon)":(i+1)+". játékos"}</div>
           <input type="text" maxlength="14" data-n="${i}" placeholder="Név" value="${esc(names[i]||"")}"></div>`).join("")}
       </div>
-      <div class="panel"><h3>3. Idő</h3>${[15,20,25,30].map(m=>`<span class="chip ${m===mins?"sel":""}" data-m="${m}">${m} perc</span>`).join("")}</div>
+      <div class="panel"><h3>2. Mód</h3>
+        <span class="chip ${mode==="tour"?"sel":""}" data-mode="tour">🏆 Bajnokság: mind a 3 történet</span>
+        <span class="chip ${mode==="single"?"sel":""}" data-mode="single">Egy történet</span>
+        ${mode==="single"?SCENARIOS.map(s=>`<div class="scen ${s.id===sel?"sel":""}" data-sc="${s.id}"><div class="ic">${s.icon}</div>
+          <div><b>${esc(s.title)}</b><div class="small muted">${esc(s.era)} · ${esc(s.short)}</div></div></div>`).join(""):
+          `<p class="small muted" style="margin-top:10px">${SCENARIOS.map(s=>s.icon+" "+esc(s.title)).join("<br>")}</p>`}
+      </div>
+      <div class="panel"><h3>3. Idő körönként</h3>${[15,20,25,30].map(m=>`<span class="chip ${m===mins?"sel":""}" data-m="${m}">${m} perc</span>`).join("")}</div>
       <button class="btn" id="start">Kezdjük</button>
       <div class="panel">${RULES}</div>`);
     app.querySelectorAll("[data-sc]").forEach(el=>el.onclick=()=>{grab();sel=el.dataset.sc;draw()});
+    app.querySelectorAll("[data-mode]").forEach(el=>el.onclick=()=>{grab();mode=el.dataset.mode;draw()});
     app.querySelectorAll("[data-m]").forEach(el=>el.onclick=()=>{grab();mins=+el.dataset.m;draw()});
     on("resume",()=>{G=saved;route()});
-    on("start",()=>{grab();G={seed:newSeed(),sc:sel,names:names.slice(),minutes:mins,phase:"intro",deal:0,step:"pass"};save();route()});
+    on("start",()=>{grab();
+      const list = mode==="tour" ? SCENARIOS.map(s=>s.id) : [sel];
+      G={names:names.slice(),minutes:mins,tour:{on:mode==="tour",list,idx:0,scores:[0,0,0,0],rounds:[]}};
+      newRound();});
   }
   function grab(){app.querySelectorAll("[data-n]").forEach(el=>names[+el.dataset.n]=el.value)}
   draw();
 }
+function newRound(){
+  Object.assign(G,{seed:newSeed(),sc:G.tour.list[G.tour.idx],phase:"intro",deal:1,half:false,accused:null,result:null,late:false});
+  save();route();
+}
+function scoreTable(extra){
+  const order=[0,1,2,3].sort((a,b)=>G.tour.scores[b]-G.tour.scores[a]);
+  return `<table>${order.map((s,i)=>`<tr><td>${i===0&&G.tour.scores[s]>0?"👑":""}</td><td><b>${esc(pname(s))}</b></td><td class="center"><b>${G.tour.scores[s]}</b> pont${extra&&extra[s]?` <span class="muted">(+${extra[s]})</span>`:""}</td></tr>`).join("")}</table>`;
+}
+function roundLabel(){return G.tour.list.length>1?`${G.tour.idx+1}. történet a ${G.tour.list.length}-ból`:"Egy történet"}
 
-/* ---- intro story ---- */
+/* ---- intro: story + public info, read aloud by the host ---- */
 function intro(){
   const g=game(), sc=g.sc;
-  show(`<p class="center muted small">Olvassa fel valaki hangosan</p>
+  show(`<p class="center muted small">${roundLabel()} · Olvasd fel hangosan</p>
     <div class="panel story"><div class="center" style="font-size:2.4rem">${sc.icon}</div><h2 class="center">${esc(sc.title)}</h2>
     ${sc.intro.map(p=>`<p>${esc(p)}</p>`).join("")}</div>
-    <div class="panel"><h3>A gyanúsítottak</h3>${sc.chars.map((c,i)=>`<p><b>${c.icon} ${esc(who(g,G.names,i))}</b><br><span class="small muted">${esc(c.bio)}</span></p>`).join("")}</div>
+    <div class="panel"><h3>Ki kicsoda?</h3>${sc.chars.map((c,i)=>`<p><b>${c.icon} ${esc(pname(i))}: ${esc(c.name)}</b><br><span class="small muted">${esc(c.bio)}</span></p>`).join("")}</div>
     ${publicHTML(g,G.names)}
-    <button class="btn" id="go">Lapok kiosztása</button><button class="btn ghost" id="back">Vissza</button>`);
-  on("go",()=>{G.phase="deal";G.deal=0;G.step="pass";save();route()});
+    <button class="btn" id="go">Lapok kiosztása QR-kóddal</button>
+    ${G.tour.idx===0?`<button class="btn ghost" id="back">Vissza</button>`:""}`);
+  on("go",()=>{G.phase="deal";G.deal=1;save();route()});
   on("back",()=>{clearSave();home()});
 }
 
-/* ---- deal cards one by one ---- */
+/* ---- deal: 3 QR pages, then the host's own card ---- */
 function deal(){
   const g=game(), s=G.deal;
-  if(G.step==="pass"){
-    show(`<div class="panel center" style="margin-top:40px"><div style="font-size:3rem">${g.sc.chars[s].icon}</div>
-      <p class="muted">${s+1} / 4</p><h2>Add a telefont neki:</h2><h1>${esc(who(g,G.names,s))}</h1>
-      <p class="small muted">A többiek ne nézzenek oda.</p>
-      <button class="btn" id="see">Én vagyok, megnézem a lapom</button></div>`);
-    on("see",()=>{G.step="card";save();route()});
-  } else {
+  if(s<=3){
     const url=location.origin+location.pathname+"#k="+encodeCard({s:G.seed,c:G.sc,p:s,n:G.names});
-    show(`${cardHTML(g,G.names,s)}
-      <div class="panel center"><p class="small"><b>Vidd magaddal a lapod:</b> szkenneld be a saját telefonoddal, így játék közben bármikor megnézheted.</p>
+    show(`<div class="panel center" style="margin-top:24px"><div style="font-size:2.6rem">${g.sc.chars[s].icon}</div>
+      <p class="muted">${s} / 3</p><h2>${esc(pname(s))}</h2><p>${esc(g.sc.chars[s].name)}</p>
+      <p class="small">Szkenneld be a saját telefonoddal. Ott lesz a lapod és a félidős információd is.</p>
       <div class="qr" id="qr"></div></div>
-      <button class="btn" id="done">Megjegyeztem, elrejtem</button>`);
-    try{new QRCode(document.getElementById("qr"),{text:url,width:190,height:190,correctLevel:QRCode.CorrectLevel.L})}
-    catch(e){document.getElementById("qr").outerHTML=`<p class="small muted">A QR-kód nem töltött be.</p>`}
-    on("done",()=>{
-      if(G.deal<3){G.deal++;G.step="pass";save();route()}
-      else{G.phase="ready";save();route()}
-    });
+      <button class="btn" id="next">${s<3?"Következő":"Kész, mindhárman beszkennelték"}</button>`);
+    try{new QRCode(document.getElementById("qr"),{text:url,width:230,height:230,correctLevel:QRCode.CorrectLevel.L})}
+    catch(e){document.getElementById("qr").outerHTML=`<p class="small muted">A QR-kód nem töltött be. Link: <a href="${url}">${url}</a></p>`}
+    on("next",()=>{G.deal++;save();route()});
+  } else if(G.deal===4){
+    show(`<div class="panel center" style="margin-top:40px"><div style="font-size:3rem">${g.sc.chars[0].icon}</div>
+      <h2>Most a te lapod jön, ${esc(pname(0))}.</h2><p class="small muted">A többiek ne nézzenek oda.</p>
+      <button class="btn" id="see">Megnézem</button></div>`);
+    on("see",()=>{G.deal=5;save();route()});
+  } else {
+    show(`${cardHTML(g,G.names,0)}<button class="btn" id="done">Megjegyeztem, elrejtem</button>`);
+    on("done",()=>{G.phase="ready";save();route()});
   }
 }
 
@@ -541,78 +615,64 @@ function ready(){
   show(`<div class="panel center" style="margin-top:40px"><div style="font-size:3rem">🕯️</div><h2>Mindenki tudja, ki kicsoda.</h2>
     <p>Tegyétek le a telefont középre. Az óra indul, amint megnyomjátok.</p>
     <button class="btn" id="go">Indul a nyomozás (${G.minutes} perc)</button></div>`);
-  on("go",()=>{G.phase="play";G.start=Date.now();G.half=false;save();keepAwake();route()});
+  on("go",()=>{G.phase="play";G.start=Date.now();G.half=false;G.pausedAt=null;G.halfPhase=null;save();keepAwake();route()});
 }
 
-/* ---- play: timer ---- */
-function timeLeft(){return Math.max(0,G.start+G.minutes*60000-Date.now())}
-function startClock(onTick){
-  clearInterval(tick);
-  const f=()=>{
-    const left=timeLeft();
-    if(!G.half && left<=G.minutes*30000){G.half=true;G.halfDeal=0;G.halfStep="intro";save();beep();route();return}
-    if(left<=0){clearInterval(tick);beep();document.querySelectorAll(".modal").forEach(x=>x.remove());G.phase="timeout";save();route();return}
-    onTick&&onTick(left);
-  };
-  tick=setInterval(f,500);f();
-}
+function timeLeft(){const now=G.pausedAt||Date.now();return Math.max(0,G.start+G.minutes*60000-now)}
+function resumeClock(){if(G.pausedAt){G.start+=Date.now()-G.pausedAt;G.pausedAt=null}G.halfPhase="done";save()}
 function fmt(ms){const m=Math.floor(ms/60000),s=Math.floor(ms%60000/1000);return `${m}:${String(s).padStart(2,"0")}`}
 
-function halfTime(){
-  const g=game();
-  const clue=clueText(g,g.clueOrder[0]);
-  if(G.halfStep==="intro"){
-    show(`<div class="panel center" style="margin-top:24px"><div style="font-size:2.6rem">🕛</div><h2>Félidő!</h2>
-      <p class="small muted">Az óra közben megy tovább: <b id="t2"></b></p></div>
-      <div class="fact gold"><b>Új közös nyom:</b> ${esc(clue)}</div>
-      <div class="panel"><p>És még valami: mindenki talált egy <b>új titkos információt</b> valaki másról. Adjátok körbe a telefont, mindenki nézze meg a sajátját.</p>
-      <button class="btn" id="go">Körbeadjuk</button></div>`);
-    on("go",()=>{G.halfStep="pass";save();route()});
-  } else if(G.halfStep==="pass"){
-    const s=G.halfDeal;
-    show(`<div class="panel center" style="margin-top:40px"><div style="font-size:3rem">${g.sc.chars[s].icon}</div>
-      <p class="muted">Félidő · ${s+1} / 4</p><h2>Add a telefont neki:</h2><h1>${esc(who(g,G.names,s))}</h1>
-      <button class="btn" id="see">Én vagyok, megnézem</button></div>`);
-    on("see",()=>{G.halfStep="see";save();route()});
-  } else {
-    const s=G.halfDeal;
-    show(`<div class="center" style="margin-top:20px"><div style="font-size:3rem">${g.sc.chars[s].icon}</div><h2>${esc(who(g,G.names,s))}</h2></div>
-      ${halfHTML(g,G.names,s)}
-      <p class="small muted">Te döntöd el, elárulod-e, és mikor.</p>
-      <button class="btn" id="done">Megjegyeztem, elrejtem</button>`);
-    on("done",()=>{if(G.halfDeal<3){G.halfDeal++;G.halfStep="pass"}else{G.halfDeal=4}save();route()});
-  }
-  startClock(left=>{const t=document.getElementById("t2");if(t)t.textContent=fmt(left)});
-}
-
-/* ---- play: timer ---- */
+/* ---- play: timer + public table ---- */
 function play(){
-  if(G.half && G.halfDeal<4){halfTime();return}
-  const g=game();
-  show(`<p class="center muted small">${g.sc.icon} ${esc(g.sc.title)}</p>
+  const g=game(), total=G.minutes*60000;
+  show(`<p class="center muted small">${roundLabel()} · ${g.sc.icon} ${esc(g.sc.title)}</p>
     <div class="timer" id="t">--:--</div><div class="bar"><i id="b"></i></div>
-    ${G.half?`<div class="fact gold"><b>Félidős közös nyom:</b> ${esc(clueText(g,g.clueOrder[0]))}</div>`:""}
+    <div id="halfbox">${G.half?halfBox(g):""}</div>
     <button class="btn red" id="acc">⚖️ Vádemelés</button>
-    <div class="row"><button class="btn ghost small" id="peek">Lapom újra</button><button class="btn ghost small" id="rules">Szabályok</button></div>
+    <div class="row"><button class="btn ghost small" id="peek">Saját lapom</button><button class="btn ghost small" id="rules">Szabályok</button></div>
     ${publicHTML(g,G.names)}
-    <p class="small muted center">Kérdezzétek egymást: hol voltál? miért? mit láttál? mi van a zsebedben?</p>
-    <button class="btn ghost small" id="quit">Játék feladása</button>`);
+    <button class="btn ghost small" id="quit">Kör feladása</button>`);
   on("acc",()=>{G.phase="accuse";save();route()});
   on("rules",()=>{const m=modal(RULES+`<button class="btn" id="x">Bezár</button>`);m.querySelector("#x").onclick=()=>m.remove()});
-  on("peek",()=>{
-    const m=modal(`<h3>Kié a lap?</h3><p class="small muted">Csak a sajátodat nézd meg!</p>${g.sc.chars.map((c,i)=>`<div class="pick" data-p="${i}"><span class="ic">${c.icon}</span>${esc(who(g,G.names,i))}</div>`).join("")}<button class="btn ghost" id="x">Mégsem</button>`);
+  on("peek",()=>{const m=modal(`<p class="center">Ez ${esc(pname(0))} lapja. A többiek ne nézzenek oda.</p><button class="btn" id="y">Megnézem</button><button class="btn ghost" id="x">Mégsem</button>`);
     m.querySelector("#x").onclick=()=>m.remove();
-    m.querySelectorAll("[data-p]").forEach(el=>el.onclick=()=>{const p=+el.dataset.p;m.querySelector(".panel").innerHTML=(G.half?halfHTML(g,G.names,p):"")+cardHTML(g,G.names,p)+`<button class="btn" id="x2">Elrejtem</button>`;m.querySelector("#x2").onclick=()=>m.remove()});
-  });
+    m.querySelector("#y").onclick=()=>{m.querySelector(".panel").innerHTML=cardHTML(g,G.names,0)+`<button class="btn" id="x2">Elrejtem</button>`;m.querySelector("#x2").onclick=()=>m.remove()}});
   on("quit",()=>{if(confirm("Biztosan feladjátok? A gyilkos nyer.")){G.phase="end";G.result="giveup";save();route()}});
-  const total=G.minutes*60000;
-  startClock(left=>{
-    const t=document.getElementById("t"); if(!t)return;
-    t.textContent=fmt(left);
-    document.getElementById("b").style.width=(100*left/total)+"%";
+  clearInterval(tick);
+  const f=()=>{
+    const left=timeLeft(), t=document.getElementById("t"); if(!t){clearInterval(tick);return}
+    t.textContent=fmt(left); document.getElementById("b").style.width=(100*left/total)+"%";
     if(left<=60000)t.classList.add("pulse");
-  });
+    if(!G.half && left<=total/2){G.half=true;G.pausedAt=Date.now();G.halfPhase="wait";save();beep();document.getElementById("halfbox").innerHTML=halfBox(g);halfModal(g)}
+    if(left<=0){clearInterval(tick);beep();document.querySelectorAll(".modal").forEach(x=>x.remove());G.phase="timeout";save();route()}
+  };
+  tick=setInterval(f,500);f();
+  if(G.half&&G.halfPhase!=="done")halfModal(g);
 }
+function halfModal(g){
+  if(document.querySelector(".modal.halfm"))return;
+  const m=modal("");m.classList.add("halfm");const panel=m.querySelector(".panel");let iv=null;
+  function draw(){
+    clearInterval(iv);
+    if(G.halfPhase==="wait"){
+      panel.innerHTML=`<div class="center"><div style="font-size:2.4rem" class="pulse">🕛</div><h2>Félidő! Az óra megállt.</h2></div>
+        <div class="fact gold"><b>Új közös nyom:</b> ${esc(clueText(g,g.clueOrder[0]))}</div>
+        <p>Mindenki fogja a saját telefonját. Amikor elindítod, mindenki nyomja meg a lapján a <b>Félidős információ</b> gombot. <b>30 másodperc</b> van elolvasni, utána eltűnik, és az óra megy tovább.</p>
+        <button class="btn" id="go30">Indul a 30 másodperc</button>`;
+      panel.querySelector("#go30").onclick=()=>{G.halfPhase="read";G.readStart=Date.now();save();draw()};
+    } else {
+      let mine=false;
+      const paint=()=>{const l=30000-(Date.now()-G.readStart);
+        if(l<=0){clearInterval(iv);resumeClock();m.remove();return}
+        panel.innerHTML=`<div class="center"><div class="timer pulse">${Math.ceil(l/1000)}</div><p>Olvassátok a félidős információtokat.</p></div>
+          ${mine?halfHTML(g,G.names,0):`<button class="btn ghost" id="mine">${esc(pname(0))}, a te félidős infód</button>`}`;
+        const b=panel.querySelector("#mine");if(b)b.onclick=()=>{mine=true;paint()}};
+      paint();iv=setInterval(paint,250);
+    }
+  }
+  draw();
+}
+function halfBox(g){return `<div class="fact gold"><b>Félidős közös nyom:</b> ${esc(clueText(g,g.clueOrder[0]))}<br></div>`}
 
 function timeout(){
   show(`<div class="panel center" style="margin-top:30px"><div style="font-size:3rem">⌛</div><h2>Lejárt az idő!</h2>
@@ -648,7 +708,7 @@ function verdict(){
     show(`<div class="role murd" style="margin-top:30px"><div class="big">Elkaptátok!</div>
       <p>${esc(who(g,G.names,p))} a gyilkos.</p></div>
       <div class="panel"><h3>De még nincs vége.</h3>
-      <p>Gyilkos, egy esélyed maradt: <b>ki volt a Szemtanú?</b> Ha eltalálod, mégis te nyersz.</p>
+      <p>Gyilkos, egy esélyed maradt: <b>ki volt a Szemtanú?</b> Ha eltalálod, 2 pontot kapsz, az ártatlanok semmit.</p>
       <p class="small muted">Gondolkodj hangosan, ha akarsz. A döntés csak a tiéd.</p></div>
       ${g.sc.chars.map((c,i)=>i===p?"":`<div class="pick" data-p="${i}"><span class="ic">${c.icon}</span>${esc(who(g,G.names,i))}</div>`).join("")}`);
     beep();
@@ -662,43 +722,72 @@ function verdict(){
   },2600);
 }
 
-/* ---- end ---- */
+/* ---- end of a round: truth, missions, points ---- */
 function end(){
-  const g=game(), sc=g.sc, hp=halfPlan(g);
+  const g=game(), sc=g.sc, hp=halfPlan(g), mis=missionsFor(g);
   const M=esc(who(g,G.names,g.murderer)), W=esc(who(g,G.names,g.witness));
   const R={
     caught:{c:"det",t:"Az ártatlanok nyertek!",d:`Elkaptátok a gyilkost, és a Szemtanú rejtve maradt. Ő volt az: ${W}.`},
-    witness:{c:"murd",t:"A gyilkos nyert!",d:`Lelepleztétek ${M} személyét, de kitalálta, hogy ${W} volt a Szemtanú. Elhallgattatta, és a vádat elejtették.`},
+    witness:{c:"murd",t:"Döntetlen szagú vég",d:`Lelepleztétek ${M} személyét, de kitalálta, hogy ${W} volt a Szemtanú.`},
     wrong:{c:"murd",t:"A gyilkos nyert!",d:`Ártatlant vádoltatok. A gyilkos ${M} volt.`},
     time:{c:"murd",t:"A gyilkos nyert!",d:`Lejárt az idő, a gyilkos megszökött. ${M} volt az.`},
     giveup:{c:"murd",t:"A gyilkos nyert!",d:`Feladtátok. A gyilkos ${M} volt.`}
   }[G.result]||{c:"murd",t:"Vége",d:""};
   const roleName=s=>s===g.murderer?"🔪 Gyilkos":s===g.witness?"👁️ Szemtanú":"🔎 Nyomozó";
-  const match=(s,k)=>g.vals[s][k]===g.mv[k];
+  const ok=G.missionOk||{};
   show(`<div class="role ${R.c}" style="margin-top:24px"><div class="big">${R.t}</div><p>${R.d}</p></div>
+    <div class="panel"><h3>🎯 Titkos küldetések</h3><p class="small muted">Mindenki mondja el a küldetését. Közösen döntsétek el, kinek sikerült.</p>
+      ${[0,1,2,3].filter(s=>s!==g.murderer).map(s=>`<label class="mis"><input type="checkbox" data-ok="${s}" ${ok[s]?"checked":""}>
+        <span><b>${esc(pname(s))}: ${esc(mis[s].t)}</b><br><span class="small muted">${esc(mis[s].d)}</span></span></label>`).join("")}
+    </div>
+    <div class="panel"><h3>Pontok ebben a körben</h3><div id="pts"></div></div>
+    <button class="btn" id="save">Pontok rögzítése</button>
     <div class="panel"><h3>A teljes igazság</h3><table>
     ${sc.chars.map((c,s)=>`<tr><td>${c.icon}</td><td><b>${esc(who(g,G.names,s))}</b><br>${roleName(s)}<br>
       <span class="small muted">📍 ${s===g.murderer?esc(sc.crime)+" (fedősztori: "+esc(sc.locs[g.alibi].name)+")":esc(sc.locs[g.loc[s]].name)}</span><br>
-      <span class="small">Titok: ${esc(secretOf(g,s))}</span><br>
-      <span class="small muted">Nyomok, amikre illett: ${g.clueOrder.filter(k=>match(s,k)).map(k=>esc(sc.cats[k].vals[g.mv[k]].v)).join(", ")||"egyik sem"}</span></td></tr>`).join("")}
+      <span class="small">Titok: ${esc(secretOf(g,s))}</span></td></tr>`).join("")}
     </table>
     <h3 style="margin-top:14px">A nyomok</h3>${g.clueOrder.map((k,i)=>`<div class="small">• ${esc(clueText(g,k))} <span class="muted">(${i===0?"félidős közös nyom":"nála volt: "+esc(who(g,G.names,g.dets[i-1]))})</span></div>`).join("")}
-    <h3 style="margin-top:14px">Félidős gyanúk</h3>${[0,1,2,3].map(s=>`<div class="small">• ${esc(who(g,G.names,s))} → ${esc(who(g,G.names,hp.perm[s]))} (${hp.kind[s]==="motive"?"indíték":"árulkodó jel"})</div>`).join("")}
-    </div>
-    <button class="btn" id="again">Új kör, ugyanezekkel</button><button class="btn ghost" id="home">Főmenü</button>`);
-  on("again",()=>{G={seed:newSeed(),sc:G.sc,names:G.names,minutes:G.minutes,phase:"intro",deal:0,step:"pass"};save();route()});
-  on("home",()=>{clearSave();home()});
+    <h3 style="margin-top:14px">Félidős gyanúk</h3>${[0,1,2,3].map(s=>`<div class="small">• ${esc(pname(s))} → ${esc(pname(hp.perm[s]))} (${hp.kind[s]==="motive"?"indíték":"árulkodó jel"})</div>`).join("")}
+    </div>`);
+  function upd(){
+    const sel={};app.querySelectorAll("[data-ok]").forEach(el=>sel[+el.dataset.ok]=el.checked);
+    G.missionOk=sel;save();
+    const p=roundPoints(g,G.result,sel);
+    document.getElementById("pts").innerHTML=`<table>${[0,1,2,3].map(s=>`<tr><td>${esc(pname(s))}</td><td class="center"><b>+${p[s]}</b></td></tr>`).join("")}</table>`;
+    return p;
+  }
+  app.querySelectorAll("[data-ok]").forEach(el=>el.onchange=upd); upd();
+  on("save",()=>{const p=upd();
+    G.tour.scores=G.tour.scores.map((v,i)=>v+p[i]);
+    G.tour.rounds.push({sc:G.sc,pts:p,result:G.result});
+    G.lastPts=p;G.missionOk=null;G.phase="score";save();route()});
 }
+
+function score(){
+  const last=G.tour.idx>=G.tour.list.length-1;
+  show(`<div class="panel center" style="margin-top:24px"><div style="font-size:2.4rem">🏆</div><h2>${last?"Végeredmény":"Állás"}</h2>
+    <p class="muted small">${roundLabel()} lezárva</p>${scoreTable(G.lastPts)}</div>
+    ${last?finalText():`<button class="btn" id="next">Következő történet: ${esc(SCENARIOS.find(s=>s.id===G.tour.list[G.tour.idx+1]).title)}</button>`}
+    <button class="btn ghost" id="home">Főmenü</button>`);
+  on("next",()=>{G.tour.idx++;newRound()});
+  on("home",()=>{if(last||confirm("Kilépsz a bajnokságból?")){clearSave();home()}});
+  if(last){G.phase="final";save()}
+}
+function finalText(){
+  const max=Math.max(...G.tour.scores), w=[0,1,2,3].filter(s=>G.tour.scores[s]===max);
+  return `<div class="role det"><div class="big">${w.map(pname).map(esc).join(" és ")}</div><p>${w.length>1?"holtversenyben nyertek":"nyerte a bajnokságot"}, ${max} ponttal.</p></div>`;
+}
+function final(){score()}
 
 function route(){
   clearInterval(tick);
-  ({intro,deal,ready,play,timeout,accuse,verdict,end})[G.phase]();
+  ({intro,deal,ready,play,timeout,accuse,verdict,end,score,final})[G.phase]();
 }
 
 window.addEventListener("hashchange",()=>location.reload());
 const h=location.hash.match(/#k=([\w-]+)/);
-if(h) cardView(h[1]);
-else { const s=load(); if(s&&s.phase&&s.phase!=="intro"&&s.phase!=="end"){home()} else home(); }
+if(h) cardView(h[1]); else home();
 }
 </script>
 </body>
