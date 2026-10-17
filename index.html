@@ -542,7 +542,7 @@ function end(){
   const g=game(), sc=g.sc;
   const M=esc(who(g,G.names,g.murderer)), W=esc(who(g,G.names,g.witness));
   const R={
-    caught:{c:"det",t:"Az ártatlanok nyertek!",d:`Elkaptátok a gyilkost, és a Szemtanú (${W}) rejtve maradt.`},
+    caught:{c:"det",t:"Az ártatlanok nyertek!",d:`Elkaptátok a gyilkost, és a Szemtanú rejtve maradt. Ő volt az: ${W}.`},
     witness:{c:"murd",t:"A gyilkos nyert!",d:`Lelepleztétek ${M} személyét, de kitalálta, hogy ${W} volt a Szemtanú. Elhallgattatta, és a vádat elejtették.`},
     wrong:{c:"murd",t:"A gyilkos nyert!",d:`Ártatlant vádoltatok. A gyilkos ${M} volt.`},
     time:{c:"murd",t:"A gyilkos nyert!",d:`Lejárt az idő, a gyilkos megszökött. ${M} volt az.`},
@@ -567,6 +567,7 @@ function route(){
   ({intro,deal,ready,play,timeout,accuse,verdict,end})[G.phase]();
 }
 
+window.addEventListener("hashchange",()=>location.reload());
 const h=location.hash.match(/#k=([\w-]+)/);
 if(h) cardView(h[1]);
 else { const s=load(); if(s&&s.phase&&s.phase!=="intro"&&s.phase!=="end"){home()} else home(); }
