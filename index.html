@@ -502,13 +502,15 @@ function voteFlow() {
     ensureAudio(); drumroll(3);
     setTimeout(() => { V.stage = "reveal"; save(); voteFlow(); }, 3300);
   } else if (V.stage === "reveal") {
-    const count = skipEvil => { const t = Array(n).fill(0); Object.entries(V.votes).forEach(([v, j]) => { if (!(skipEvil && "GB".includes(roleOf(+v)))) t[j]++; }); return t; };
+    // second tie: 4-5 players drop the murderer's vote, 6 players only the accomplice's (Márk 2026-10-18)
+    const dropRole = n === 6 ? "B" : "G", dropName = n === 6 ? "a bűntárs" : "a gyilkos";
+    const count = skipEvil => { const t = Array(n).fill(0); Object.entries(V.votes).forEach(([v, j]) => { if (!(skipEvil && roleOf(+v) === dropRole)) t[j]++; }); return t; };
     let tally = count(false), max = Math.max(...tally), top = tally.map((c, j) => c === max ? j : -1).filter(j => j >= 0);
     let h = `<h1 class="center">Az ítélet</h1>`, note = "";
     if (top.length > 1 && V.round2) {
       // second tie: the evil players' votes no longer count (they only steer); if still tied, draw lots
       tally = count(true); max = Math.max(...tally); top = tally.map((c, j) => c === max ? j : -1).filter(j => j >= 0);
-      note = `<div class="panel small"><b>Újra döntetlen lett.</b> Ilyenkor a gyilkos${n === 6 ? " és a bűntárs" : ""} szavazata nem számít, hiszen ő úgyis csak terel. A gép kivette a szavazatát, és újraszámolt.`;
+      note = `<div class="panel small"><b>Újra döntetlen lett.</b> Ilyenkor ${dropName} szavazata nem számít, hiszen ${n === 6 ? "ő tudja, ki a szemtanú, és csak terel" : "ő úgyis csak terel"}. A gép kivette a szavazatát, és újraszámolt.`;
       if (top.length > 1) { if (V.lot === undefined) V.lot = top[Math.floor(Math.random() * top.length)]; note += ` Még így is döntetlen maradt, ezért sorsolás döntött.`; top = [V.lot]; }
       note += `</div>`;
       if (!V.noteShown) { V.noteShown = 1; save(); setTimeout(() => modal(`<h2>Újra döntetlen</h2>${note}<button class="btn" onclick="closeModal()">Értem, jöjjön az ítélet</button>`), 50); }
@@ -516,7 +518,7 @@ function voteFlow() {
     if (top.length > 1 && !V.round2) {
       h += `<p class="big">Döntetlen!</p><p class="center">${top.map(j => `<b>${esc(P.n[j])}</b> (${esc(S.chars[P.ch[j]].name)})`).join(" és ")} ugyanannyi szavazatot kapott.</p>
         <p class="center">Még <b>3 perc</b> érvelés, aztán új titkos szavazás, de már csak közöttük. Ebben a körben még mindenki szavazata számít.</p>
-        <p class="center small muted">Ha másodszor is döntetlen lesz, a gyilkos${n === 6 ? " és a bűntárs" : ""} szavazatát a gép kiveszi, így biztosan lesz ítélet.</p><button class="btn" id="extra">Indul a 3 perc</button>`;
+        <p class="center small muted">Ha másodszor is döntetlen lesz, ${n === 6 ? "a bűntárs" : "a gyilkos"} szavazatát a gép kiveszi, így biztosan lesz ítélet.</p><button class="btn" id="extra">Indul a 3 perc</button>`;
       V.cands = top;
     } else {
       h += note;
