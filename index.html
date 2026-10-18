@@ -321,8 +321,10 @@ const drumroll = sec => { if (!CFG.sfx) return; for (let i = 0; i < sec * 18; i+
 // Placeholder music: a story file assets/<id>/music.mp3 (and tension.mp3) wins when it exists, else a generated drone.
 function startMusic(story) {
   if (AU.mode || !CFG.music) return; AU.mode = "calm";
-  const a = new Audio(`assets/${story.id}/music.mp3`); a.loop = true; a.volume = .45;
-  a.play().then(() => { AU.music = a; }).catch(() => drone());
+  // music runs through the whole game (Márk 2026-10-18): take over the intro track if it is still playing
+  if (IMUS.a) { AU.music = IMUS.a; IMUS.a = null; return; }
+  const play = (src, fail) => { const a = new Audio(src); a.loop = true; a.volume = .3; a.play().then(() => { AU.music = a; }).catch(fail); };
+  play(`assets/${story.id}/music.mp3`, () => play("assets/music_intro.mp3", () => drone()));
 }
 function drone() {
   if (!AU.ctx) return;
@@ -498,7 +500,7 @@ function settingsView(s) {
     const x = +(new URLSearchParams(location.search).get("x") || 1);
     const g = Math.random().toString(36).slice(2, 10);
     const base = {v: 4, s: s.id, m: L.mode, n, ch: pick, t0: Date.now(), g, x};
-    removeEventListener("resize", layout); introMusic(false); $("#cover").remove();
+    removeEventListener("resize", layout); $("#cover").remove(); // the intro music keeps playing into the game
     deal(base, 1);
   };
 }
@@ -509,7 +511,8 @@ function deal(base, i) {
     const start = Date.now() + 1500;
     ls("st-" + base.t0 + "-0", {userStep: 0, tipSeen: {}, start, obs: []});
     fetch(`https://ntfy.sh/ejfeli-tanu-${base.g}`, {method: "POST", body: JSON.stringify({start}), keepalive: true}).catch(() => {});
-    location.hash = "c=" + encodeCard({...base, p: 0}); return;
+    // switch to the game without a reload, so the music keeps playing (a hash change would reload the page)
+    const code = encodeCard({...base, p: 0}); history.pushState(null, "", "#c=" + code); startGame(code); return;
   }
   app.innerHTML = `<h2 class="center" style="margin-top:4vh">${i + 1}. játékos</h2><p class="center muted">Olvasd be a telefonoddal. Csak a saját kódodat nézd!</p>
     <div class="center"><div class="qrbox" id="qr"></div></div>
