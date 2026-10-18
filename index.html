@@ -108,6 +108,10 @@ label{display:block;margin:8px 0 4px;color:var(--muted);font-size:.9rem}
 .reveal.done::after{background:linear-gradient(180deg,#0006,#000d 45%,#000f)}
 .reveal .rvmore{text-align:left;background:#000a;border:1px solid #ffffff22;border-radius:14px;padding:4px 14px;margin:8px 0}
 .reveal .rvmore .tog{border-top:0;margin:0}.reveal .rvmore .tog+.tog{border-top:1px solid #ffffff22}
+.lies{display:flex;flex-direction:column;gap:8px;margin:8px 0}
+.lie{display:block;text-align:left;width:100%;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:#ffffff0d;color:inherit;font:inherit;font-size:1rem;cursor:pointer}
+.lie small{display:block;margin-top:4px;color:#e8913a;font-size:.8rem}
+.lie.on{border-color:var(--gold2);background:#d9b46a26;box-shadow:0 0 0 2px #d9b46a55}
 .rvroles{display:grid;grid-template-columns:repeat(3,1fr);gap:14px 8px;margin:22px 0 8px}
 .rvroles .rr{display:flex;flex-direction:column;align-items:center;gap:3px}
 .rvroles .av{width:68px;height:68px;border-radius:50%;overflow:hidden;position:relative;border:2px solid #ffffff66;background:#2a2430}
@@ -545,7 +549,7 @@ function settingsView(s) {
   setTimeout(() => st.classList.add("in"), 350);
   $("#solve").onclick = () => {
     stopNarration();
-    const n = L.players, pick = [...Array(n).keys()];
+    const n = L.players, pick = [...(s.cast ? s.cast[n] : Array(n).keys())];
     for (let i = n - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [pick[i], pick[j]] = [pick[j], pick[i]]; }
     const x = +(new URLSearchParams(location.search).get("x") || 1);
     const g = Math.random().toString(36).slice(2, 10);
@@ -576,6 +580,23 @@ function deal(base, i) {
 
 /* ===================== game (every phone) ===================== */
 let P, S, ME, SLOT, NOW = () => Date.now();
+// v3 texts (Márk 2026-10-18): only characters in play may be named, roles depend on the player count.
+// {_n: {"4": a, "6": b}} = by player count (largest key <= n), {_alt: [{t, r}]} = first option whose named slots are all in play
+const ROLE_NAME = {N: "ÁRTATLAN", S: "SZEMTANÚ", G: "GYILKOS", B: "BŰNTÁRS"};
+function resolveStory(raw, cast) {
+  const n = cast.length, inCast = r => r.every(x => cast.includes(x));
+  const R = v => {
+    if (Array.isArray(v)) return v.map(R);
+    if (!v || typeof v !== "object") return v;
+    if (v._n) { const ks = Object.keys(v._n).map(Number).sort((a, b) => a - b); const k = ks.filter(x => x <= n).pop() ?? ks[0]; return R(v._n[k]); }
+    if (v._alt) return (v._alt.find(o => inCast(o.r)) || v._alt[v._alt.length - 1]).t;
+    if ("to" in v && "t" in v) return v;
+    const o = {}; for (const k in v) o[k] = R(v[k]); return o;
+  };
+  const S2 = R(raw);
+  S2.chars.forEach(c => c.roleName = ROLE_NAME[c.role]);
+  return S2;
+}
 const ST = {userStep: 0, key: "", tipSeen: {}, start: 0};
 const lab = j => S.chars[P.ch[j]].name;
 // The host starts the game for everyone ("Mindenki beolvasta: indulás!"); the start moment reaches the other
@@ -615,7 +636,7 @@ function TL() {
 function startGame(hash) {
   try { P = decodeCard(hash); } catch (e) { app.innerHTML = `<h2>Hibás kód</h2><p>Olvasd be újra a QR-kódot.</p>`; return; }
   if (typeof P.n === "number") P.n = Array.from({length: P.n}, (_, i) => `${i + 1}. játékos`);
-  S = STORIES.find(s => s.id === P.s); SLOT = P.ch[P.p]; ME = S.chars[SLOT];
+  S = resolveStory(STORIES.find(s => s.id === P.s), P.ch); SLOT = P.ch[P.p]; ME = S.chars[SLOT];
   const saved = ls("st-" + P.t0 + "-" + P.p); if (saved) Object.assign(ST, saved);
   ST.obs = ST.obs || [];
   ST.key = "";
@@ -664,7 +685,7 @@ function waitView() {
 
 /* ---------- own introduction in 3 steps: 1 minute for everyone, then the clock starts together ---------- */
 function readHead(step) {
-  const names = ["1. Ki vagy", "2. Amit tudsz", "3. Mini küldetés"];
+  const names = ["Ki vagy", "Amit tudsz", "Személyes titok"];
   return `<div class="topbar"><div class="steps">${names.map((s, i) => i === step ? `<b>${s}</b>` : `<span>${s}</span>`).join("")}</div>
     <div class="bar" style="margin-top:8px" title="A nyomozás indulásáig"><i id="ibar" style="width:100%"></i></div></div>`;
 }
@@ -673,15 +694,19 @@ function myRole() {
 }
 // order requested by Márk, unnumbered: public -> appearance -> where -> victim -> observations (incl. the 30 s observations received)
 function myCard(skipPublic) {
-  const obs = (ST.obs || []).map(o => o.lies
-    ? `<li><span class="muted">Hazugság-ötletek (${o.n}. kör):</span> ${o.lies.map(esc).join(" / ")}</li>`
+  const obs = (ST.obs || []).map(o => o.lie !== undefined
+    ? `<li><span class="muted">Választott hazugság (${o.n}. kör):</span> ${esc(o.lie)}</li>`
+    : o.lies ? `<li><span class="muted">${o.n}. kör:</span> nem választottál hazugságot.</li>`
     : `<li><span class="muted">${o.n}. megfigyelés:</span> ${esc(o.text)}</li>`).join("");
+  // only the murderer and the accomplice get to prepare their story about how they look (Márk 2026-10-18);
+  // the others should be caught off guard when somebody points at their sleeve
+  const evil = ME.role === "G" || ME.role === "B";
   return `<div class="panel">
     ${skipPublic ? "" : `<div class="kv"><b>Ezt mindenki tudja rólad</b>${esc(ME.dispute)} ${esc(ME.weapon)}</div>`}
-    <div class="kv"><b>A megjelenéseden látszik</b>${esc(ME.traits.join(", "))}. Ha rákérdeznek, találj ki rá magyarázatot!</div>
+    ${evil ? `<div class="kv"><b>A megjelenéseden látszik</b>${esc(ME.traits.join(", "))}. Ha rákérdeznek, legyen kész rá a magyarázatod!</div>` : ""}
     <div class="kv"><b>Hol voltál a gyilkosság idején</b>${esc(ME.hol)}${ME.miert ? `<br><span class="muted">Miért:</span> ${esc(ME.miert)}` : ""}${ME.kivel ? `<br><span class="muted">Kivel:</span> ${esc(ME.kivel)}` : ""}</div>
     <div class="kv"><b>A kapcsolatod az áldozattal</b>${ME.rel ? esc(ME.rel) + " " : ""}<span class="muted">A titkos okod:</span> ${esc(ME.motive)}</div>
-    <div class="kv"><b>Megfigyeléseid</b>${ME.role !== "S" && ME.seen ? esc(ME.seen) : ME.role === "S" ? "Lásd a szerepednél, mit láttál." : ""}${obs ? `<ul style="margin:6px 0 0;padding-left:18px">${obs}</ul>` : ""}</div></div>`;
+    <div class="kv"><b>Megfigyeléseid</b>${esc(ME.seen || "")}${obs ? `<ul style="margin:6px 0 0;padding-left:18px">${obs}</ul>` : ""}</div></div>`;
 }
 function readView(step) {
   let h = readHead(Math.min(step, 2));
@@ -692,8 +717,8 @@ function readView(step) {
     h += `<h2>Te és ${esc(S.victim.split(",")[0])}</h2>${myCard()}
       <p class="small muted">A játék alatt időnként 30 másodpercre új megfigyelést kapsz. Ezek ide, a Megfigyeléseid részbe kerülnek. Senki más nem látja őket: hazudhatsz róluk. A lapodat a játék alatt is megnézheted: koppints a saját képedre.</p>`;
   } else if (step === 2) {
-    h += `<p class="badge gold" style="margin-top:6px">Opcionális extra · csak neked</p><h2>Mini küldetés</h2><div class="panel" style="font-size:1.12rem">${esc(ME.mission)}</div>
-      <p class="small muted">Nem kötelező és nem ér pontot: egy jópofa csavar a történetben. Ha a játék közben sikerül, a végén elmesélheted.</p>`;
+    h += `<p class="badge gold" style="margin-top:6px">Csak neked</p><h2>Személyes titok</h2><div class="panel" style="font-size:1.12rem">${esc(ME.secret)}</div>
+      <p class="small muted">A saját kis ármánykodásod a történetben. Nem ér pontot, de ebből lesznek a jó viták: őrizd, használd ki, vagy fordítsd a többiek ellen.</p>`;
   } else {
     h += `<div class="center" style="padding-top:8vh"><h2>Kész vagy!</h2><p class="muted">Amint lejár a közös 1 perc, mindenkinél egyszerre indul az óra.</p></div>`;
   }
@@ -714,7 +739,7 @@ function susOf(slot) { const v = ((ls(notesKey()) || {}).sus || {})[slot]; retur
 function setSus(slot, k) {
   const N = ls(notesKey()) || {text: "", sus: {}}; N.sus = N.sus || {};
   N.sus[slot] = k; ls(notesKey(), N);
-  const el = document.querySelector(`[data-mk="${slot}"]`); if (el) el.outerHTML = markHTML(slot, false);
+  const el = document.querySelector(`[data-mk="${slot}"]`); if (el) el.outerHTML = markHTML(slot);
   document.querySelectorAll("#modal [data-sus]").forEach(b => b.classList.toggle("on", b.dataset.sus === k));
   drawTray();
 }
@@ -722,7 +747,7 @@ const SUSLAB = {N: "Ártatlan", S: "Szemtanú", Q: "Nem tudom", B: "Bűntárs", 
 // small icon by the name on the scene: your verdict on them, or your own role
 // keeps the icon on the same line as the last word of the name
 function nameWithMark(name, mk) { const w = name.split(" "), last = w.pop(); return (w.length ? esc(w.join(" ")) + " " : "") + `<em class="nw">${esc(last)}${mk}</em>`; }
-function markHTML(slot, mine) { const m = MARK[mine ? ME.role : susOf(slot)]; return `<i class="mk" data-mk="${slot}" style="--c:${m.col}">${icon(m.ic)}</i>`; }
+function markHTML(slot) { const m = MARK[susOf(slot)]; return `<i class="mk" data-mk="${slot}" style="--c:${m.col}">${icon(m.ic)}</i>`; }
 // verdict picker at the bottom of another player's popup (Márk 2026-10-18: easier than the slider on the scene)
 function susPicker(slot) {
   const cur = susOf(slot);
@@ -730,7 +755,7 @@ function susPicker(slot) {
 }
 function drawTray() {
   const t = $("#tray"); if (!t) return;
-  const used = {N: 0, S: 0, B: 0, G: 0}; used[ME.role]++;
+  const used = {N: 0, S: 0, B: 0, G: 0};  // your own role is not greyed out: that would show it to anyone looking
   P.ch.forEach((sl, i) => { if (i !== P.p) { const k = susOf(sl); if (k in used) used[k]++; } });
   let h = "";
   ["N", "S", "B", "G"].forEach(k => { const total = P.ch.filter(sl => roleOfSlot(sl) === k).length;
@@ -793,10 +818,12 @@ function sceneView(t) {
     <div class="stage"><div class="victim"><div class="vb">${icon("cross")}</div><span class="vn">${esc(S.victim.split(",")[0])}</span></div>
     <button class="helpq" id="storyb" title="A történet">${icon("q")}</button>`;
   const trayHTML = `<div class="tray" id="tray"></div>`;
+  // you sit at the bottom centre with no mark at all (a friend glancing at your screen must not see your role);
+  // the others go round the table, keeping the same seating order (Márk 2026-10-18)
   slots.forEach((slot, i) => {
-    const ang = -Math.PI / 2 + (i + .5) * 2 * Math.PI / n;
+    const k = (i - P.p + n) % n, ang = Math.PI / 2 + k * 2 * Math.PI / n;
     const c = Math.cos(ang), x = 50 + 38 * Math.sign(c) * Math.sqrt(Math.abs(c)), y = 50 + 39 * Math.sin(ang); // pushed out towards the screen edges
-    h += `<div class="ch ${i === P.p ? "me" : ""}" data-slot="${slot}" style="left:${x}%;top:${y}%"><div class="avw"><div class="av">${pimg(S, slot)}</div></div><span>${nameWithMark(S.chars[slot].name, markHTML(slot, i === P.p))}</span></div>`;
+    h += `<div class="ch ${i === P.p ? "me" : ""}" data-slot="${slot}" style="left:${x}%;top:${y}%"><div class="avw"><div class="av">${pimg(S, slot)}</div></div><span>${i === P.p ? esc(S.chars[slot].name) : nameWithMark(S.chars[slot].name, markHTML(slot))}</span></div>`;
   });
   h += `</div>${trayHTML}</div>`;
   app.innerHTML = h; drawTray();
@@ -823,7 +850,7 @@ function charModal(slot) {
     ${slot === SLOT ? `<div class="mine"><div class="row" style="align-items:center"><h3 style="margin:0">${icon("lock", "inl")} Csak neked</h3><div class="role ${ME.role}" style="font-size:1.15rem;text-align:right">${ME.roleName}</div></div>
       <details><summary>A szereped és hogyan nyersz</summary>${myRole()}</details>
       <details><summary>Amit tudsz</summary>${myCard(true)}</details>
-      <details><summary>Mini küldetés (opcionális)</summary><div class="panel">${esc(ME.mission)}</div></details></div>` : susPicker(slot)}`);
+      <details><summary>Személyes titok</summary><div class="panel">${esc(ME.secret)}</div></details></div>` : susPicker(slot)}`);
   $("#zoomb").onclick = () => photoView(S, slot, null, null, true);
   document.querySelectorAll("#modal [data-sus]").forEach(b => b.onclick = () => setSus(slot, b.dataset.sus));
 }
@@ -869,17 +896,27 @@ function notesModal() {
 }
 
 /* ---------- private 30 s tip ---------- */
+// Murderer and accomplice: 3 lies to pick from, each showing whom it steers suspicion to; the one tapped is kept
+// on their card as the chosen lie (Márk 2026-10-18). Lies never name somebody out of play or the liar himself.
+function myLies(tip) { return tip.filter(x => x.r.every(r => P.ch.includes(r)) && !x.to.includes(SLOT)).slice(0, 3); }
 function tipView(i) {
-  const tip = S.tips[ROUND[i]][SLOT], last = i === TIPS_AT[P.m].length - 1;
-  let body = Array.isArray(tip)
-    ? `<p>Neked nincs valódi megfigyelésed. Válassz egy hazugságot, és mondd el úgy, mintha te figyelted volna meg:</p><ol>${tip.map(x => `<li style="margin:6px 0">${esc(x)}</li>`).join("")}</ol>`
-    : `<p style="font-size:1.15rem">${esc(tip)}</p>`;
-  if (last && SLOT === 4 && P.n.length === 6) body += `<p style="font-size:1.05rem;border-top:1px solid var(--line);padding-top:10px">${esc(S.accTip)}</p>`;
-  const m = modal(`<h2>${icon("eye", "inl")} Új megfigyelés</h2>${body}<div class="bar" style="margin-top:12px"><i id="tbar"></i></div><p class="small muted">Az óra áll. 30 másodperc múlva eltűnik, és bekerül a lapod Megfigyeléseid részébe. Hazudhatsz róla.</p>`, "tipbox");
+  const raw = S.tips[ROUND[i]][SLOT], last = i === TIPS_AT[P.m].length - 1, lies = Array.isArray(raw);
+  const acc = !lies && last && P.ch.length >= 5 && S.accTo === SLOT ? S.accTip : "";
+  const opts = lies ? myLies(raw) : [];
+  const chosen = () => (ST.obs.find(o => o.n === i + 1) || {}).lie;
+  const body = lies
+    ? `<p>Neked nincs valódi megfigyelésed. Koppints arra a hazugságra, amelyiket választod, és mondd el úgy, mintha te láttad volna. Alatta látod, kire tereli a gyanút.</p><div class="lies">${opts.map((x, k) =>
+        `<button class="lie ${chosen() === x.t ? "on" : ""}" data-k="${k}"><span>${esc(x.t)}</span><small>Gyanú: ${x.to.map(t => esc(S.chars[t].name)).join(", ")}</small></button>`).join("")}</div>`
+    : `<p style="font-size:1.15rem">${esc(raw)}</p>${acc ? `<p style="font-size:1.05rem;border-top:1px solid var(--line);padding-top:10px">${esc(acc)}</p>` : ""}`;
+  const m = modal(`<h2>${icon("eye", "inl")} Új megfigyelés</h2>${body}<div class="bar" style="margin-top:12px"><i id="tbar"></i></div><p class="small muted">Az óra áll. 30 másodperc múlva eltűnik, és bekerül a lapod Megfigyeléseid részébe.${lies ? "" : " Hazudhatsz róla."}</p>`, "tipbox");
   m.querySelector(".x").remove(); m.onclick = null;
+  m.querySelectorAll(".lie").forEach(b => b.onclick = () => {
+    const o = ST.obs.find(o => o.n === i + 1); if (o) o.lie = opts[+b.dataset.k].t; saveST();
+    m.querySelectorAll(".lie").forEach(x => x.classList.toggle("on", x === b)); tone(520, .1);
+  });
   if (!ST.tipSeen[i]) {
     ST.tipSeen[i] = 1;
-    ST.obs.push(Array.isArray(tip) ? {n: i + 1, lies: tip} : {n: i + 1, text: tip + (last && SLOT === 4 && P.n.length === 6 ? " " + S.accTip.replace(/^Tipp[^:]*:\s*/, "") : "")});
+    ST.obs.push(lies ? {n: i + 1, lies: opts.map(x => x.t)} : {n: i + 1, text: raw + (acc ? " " + acc : "")});
     saveST(); ensureAudio(); chime(); if (navigator.vibrate) navigator.vibrate([120, 80, 120]); }
 }
 
@@ -891,8 +928,8 @@ const VOTE = {sel: {}, mine: {}, drum: {}, key: ""};
 function gameEndAt() { return ST.start + (INTRO + P.m * 60 + TIP * TIPS_AT[P.m].length) / P.x * 1000; }
 function seedPick(arr, salt) { let h = 7; for (const c of String(P.g || P.t0) + salt) h = (h * 31 + c.charCodeAt(0)) >>> 0; return arr[h % arr.length]; }
 function voteState(now) {
-  const n = P.ch.length, roleOf = i => S.chars[P.ch[i]].role, dropRole = n === 6 ? "B" : "G";
-  let r = 1, start = gameEndAt(), kind = "main", cands = null, outB;
+  const n = P.ch.length, roleOf = i => S.chars[P.ch[i]].role, dropRole = P.ch.some(sl => S.chars[sl].role === "B") ? "B" : "G";
+  let r = 1, start = gameEndAt(), kind = "main", cands = null, outB;  // outB: kept for old saved games, never set now
   for (;;) {
     const dl = start + VOTE_S * 1000 / P.x, pool = [...Array(n).keys()].filter(j => j !== outB && (!cands || cands.includes(j)));
     const st = {r, start, dl, kind, pool, outB, n};
@@ -911,8 +948,7 @@ function voteState(now) {
         if (top.length > 1) { st.lot = 1; top = [seedPick(top, "r" + r)]; }
       }
       st.j = top[0]; st.role = roleOf(st.j); st.max = max;
-      if (st.role === "B" && outB === undefined) next = {kind: "revote", outB: st.j};
-      else { st.tally = tally; st.phase = "verdict"; return st; }
+      st.tally = tally; st.phase = "verdict"; return st;
     }
     st.tally = tally;
     // 3 minutes of arguing before the next round; anyone can cut it short
@@ -976,14 +1012,21 @@ function voteRender(st, revealing, iVoted, guess) {
   let h;
   if (st.phase === "between" && st.tie) {
     h = `<h1 class="center">Döntetlen!</h1><p class="center">${st.tie.map(j => `<b>${nm(j)}</b>`).join(" és ")} ugyanannyi szavazatot kapott.</p>
-      <p class="center">3 perc érvelés, aztán új titkos szavazás, de már csak közöttük. Ha újra döntetlen, ${st.n === 6 ? "a bűntárs" : "a gyilkos"} szavazata nem számít.</p>${talk}`;
+      <p class="center">3 perc érvelés, aztán új titkos szavazás, de már csak közöttük. Ha újra döntetlen, ${P.ch.some(sl => S.chars[sl].role === "B") ? "a bűntárs" : "a gyilkos"} szavazata nem számít.</p>${talk}`;
   } else if (st.phase === "between") {
     h = wrap(st.j, `<p class="rvrole" style="color:#f0a35e">A BŰNTÁRS volt!</p><p><b>„Volt egy társam.”</b> A gyilkos még köztetek van.</p>
       <p class="small">3 perc érvelés, aztán új titkos szavazás. A bűntárs már nem jelölhető, de ő is szavaz.</p>${talk}`);
   } else {
     const r = st.role;
     const note = st.dropped ? `<p class="small">Újra döntetlen lett, ezért ${st.dropped === "B" ? "a bűntárs" : "a gyilkos"} szavazata nem számított.${st.lot ? " Még így is döntetlen maradt, sorsolás döntött." : ""}</p>` : "";
-    if (r === "G" && guess === null) {
+    const hasS = P.ch.some(sl => S.chars[sl].role === "S");
+    if (r === "G" && !hasS) {
+      VOTE.outcome = "good";
+      h = wrap(st.j, `${note}<p class="rvrole" style="color:#e8574a">A GYILKOS volt!</p><p class="rvrole" style="color:#5fc98d">Elkaptátok. Az ártatlanok nyertek!</p>`);
+    } else if (r === "B") {
+      VOTE.outcome = "evil";
+      h = wrap(st.j, `${note}<p class="rvrole" style="color:#f0a35e">A BŰNTÁRS volt!</p><p>Ő csak segített. A gyilkos megúszta, és egyedül nyert.</p>`);
+    } else if (r === "G" && guess === null) {
       // the murderer guesses the witness: on his own phone, or on the host phone passed to him
       const mine = st.j === P.p, host = P.p === 0;
       h = wrap(st.j, `${note}<p class="rvrole" style="color:#e8574a">A GYILKOS volt!</p><p>Elkaptátok. Most még tippelhet, ki a szemtanú: ha eltalálja, a gonoszok nyernek.</p>
@@ -994,7 +1037,7 @@ function voteRender(st, revealing, iVoted, guess) {
         <p class="rvrole" style="color:${ok ? "#e8574a" : "#5fc98d"}">${ok ? "Eltalálta! A gonoszok nyertek!" : "Nem ő a szemtanú. Az ártatlanok nyertek!"}</p>`);
     } else {
       VOTE.outcome = "evil";
-      h = wrap(st.j, `${note}<p class="rvrole" style="color:#5fc98d">ÁRTATLAN volt.</p><p class="rvrole" style="color:#e8574a">A gonoszok nyertek!</p>`);
+      h = wrap(st.j, `${note}<p class="rvrole" style="color:#5fc98d">${r === "S" ? "A SZEMTANÚ volt." : "ÁRTATLAN volt."}</p><p class="rvrole" style="color:#e8574a">A gonoszok nyertek!</p>`);
     }
     // outcome known: text moves up, and everyone's portrait shows the role they really had (Márk 2026-10-18)
     if (VOTE.outcome) {
@@ -1002,7 +1045,7 @@ function voteRender(st, revealing, iVoted, guess) {
         return `<div class="rr"><div class="av">${pimg(S, sl)}</div><i style="--c:${m.col}">${icon(m.ic)}</i><small>${esc(c.name)}</small><small class="muted">${c.roleName}</small></div>`; }).join("") + `</div>`;
       // one closing screen instead of 2-3 steps: verdict, true roles, solution and missions (as toggles), new game
       const more = `<div class="rvmore"><details class="tog"><summary>Mi történt valójában</summary><p>${esc(S.solution)}</p></details>
-        <details class="tog"><summary>Titkos küldetések</summary>${P.ch.map(sl => `<p class="small"><b>${esc(S.chars[sl].name)}</b>: ${esc(S.chars[sl].mission)}</p>`).join("")}<p class="small muted">Meséljétek el, kinek sikerült!</p></details></div>`;
+        <details class="tog"><summary>Személyes titkok</summary>${P.ch.map(sl => `<p class="small"><b>${esc(S.chars[sl].name)}</b>: ${esc(S.chars[sl].secret)}</p>`).join("")}<p class="small muted">Meséljétek el, ki mit titkolt!</p></details></div>`;
       h = h.replace('<div class="reveal">', '<div class="reveal done">').replace(/<\/div><\/div>$/, `${roles}${more}<button class="btn" id="new">Új játék</button></div></div>`);
     }
   }
@@ -1020,8 +1063,8 @@ function finalView(outcome) {
   let h = `<p class="big" style="color:${outcome === "good" ? "var(--green)" : "var(--red)"}">${outcome === "good" ? "Az ártatlanok nyertek!" : "A gonoszok nyertek!"}</p>
     <div class="panel"><h3>Mi történt valójában</h3><p>${esc(S.solution)}</p></div><h3>Ki kicsoda volt</h3><div class="grid">`;
   P.ch.forEach(sl => { const c = S.chars[sl], ev = c.role === "G" || c.role === "B"; h += `<div class="c">${pimg(S, sl, {evil: ev})}<b>${esc(c.name)}</b><br><span class="badge ${ev ? "red" : c.role === "S" ? "blue" : ""}">${c.roleName}</span></div>`; });
-  h += `</div><div class="panel"><h3>Titkos küldetések</h3><p class="small muted">Meséljétek el, kinek sikerült!</p>` +
-    P.ch.map(sl => `<p class="small"><b>${esc(S.chars[sl].name)}</b>: ${esc(S.chars[sl].mission)}</p>`).join("") + `</div><button class="btn" id="new">Új játék</button>`;
+  h += `</div><div class="panel"><h3>Személyes titkok</h3><p class="small muted">Meséljétek el, ki mit titkolt!</p>` +
+    P.ch.map(sl => `<p class="small"><b>${esc(S.chars[sl].name)}</b>: ${esc(S.chars[sl].secret)}</p>`).join("") + `</div><button class="btn" id="new">Új játék</button>`;
   app.innerHTML = h; window.scrollTo(0, 0);
   $("#new").onclick = () => { location.hash = ""; location.reload(); };
 }
@@ -1052,14 +1095,15 @@ function voteFlow() {
     setTimeout(() => { V.stage = "reveal"; save(); voteFlow(); }, 3300);
   } else if (V.stage === "reveal") {
     // second tie: 4-5 players drop the murderer's vote, 6 players only the accomplice's (Márk 2026-10-18)
-    const dropRole = n === 6 ? "B" : "G", dropName = n === 6 ? "a bűntárs" : "a gyilkos";
+    const hasB = P.ch.some(sl => S.chars[sl].role === "B"), hasS = P.ch.some(sl => S.chars[sl].role === "S");
+    const dropRole = hasB ? "B" : "G", dropName = hasB ? "a bűntárs" : "a gyilkos";
     const count = skipEvil => { const t = Array(n).fill(0); Object.entries(V.votes).forEach(([v, j]) => { if (!(skipEvil && roleOf(+v) === dropRole)) t[j]++; }); return t; };
     let tally = count(false), max = Math.max(...tally), top = tally.map((c, j) => c === max ? j : -1).filter(j => j >= 0);
     let h = `<h1 class="center">Az ítélet</h1>`, note = "";
     if (top.length > 1 && V.round2) {
       // second tie: the evil players' votes no longer count (they only steer); if still tied, draw lots
       tally = count(true); max = Math.max(...tally); top = tally.map((c, j) => c === max ? j : -1).filter(j => j >= 0);
-      note = `<div class="panel small"><b>Újra döntetlen lett.</b> Ilyenkor ${dropName} szavazata nem számít, hiszen ${n === 6 ? "ő tudja, ki a szemtanú, és csak terel" : "ő úgyis csak terel"}. A gép kivette a szavazatát, és újraszámolt.`;
+      note = `<div class="panel small"><b>Újra döntetlen lett.</b> Ilyenkor ${dropName} szavazata nem számít, hiszen ő úgyis csak terel. A gép kivette a szavazatát, és újraszámolt.`;
       if (top.length > 1) { if (V.lot === undefined) V.lot = top[Math.floor(Math.random() * top.length)]; note += ` Még így is döntetlen maradt, ezért sorsolás döntött.`; top = [V.lot]; }
       note += `</div>`;
       if (!V.noteShown) { V.noteShown = 1; save(); setTimeout(() => modal(`<h2>Újra döntetlen</h2>${note}<button class="btn" onclick="closeModal()">Értem, jöjjön az ítélet</button>`), 50); }
@@ -1067,16 +1111,15 @@ function voteFlow() {
     if (top.length > 1 && !V.round2) {
       h += `<p class="big">Döntetlen!</p><p class="center">${top.map(j => `<b>${esc(lab(j))}</b>`).join(" és ")} ugyanannyi szavazatot kapott.</p>
         <p class="center">Még <b>3 perc</b> érvelés, aztán új titkos szavazás, de már csak közöttük. Ebben a körben még mindenki szavazata számít.</p>
-        <p class="center small muted">Ha másodszor is döntetlen lesz, ${n === 6 ? "a bűntárs" : "a gyilkos"} szavazatát a gép kiveszi, így biztosan lesz ítélet.</p><button class="btn" id="extra">Indul a 3 perc</button>`;
+        <p class="center small muted">Ha másodszor is döntetlen lesz, ${dropName} szavazatát a gép kiveszi, így biztosan lesz ítélet.</p><button class="btn" id="extra">Indul a 3 perc</button>`;
       V.cands = top;
     } else {
       h += note;
       const j = top[0], r = roleOf(j), sl = P.ch[j], evil = r === "G" || r === "B";
       h += `<div class="center flip">${pimg(S, sl, {cls: "pfp", evil})}</div><p class="big">${esc(S.chars[sl].name)}</p><p class="center muted">${max} szavazat</p>`;
-      if (r === "G") { h += `<p class="big" style="color:var(--red)">A GYILKOS volt!</p><p class="center">Utolsó esély: ha kitalálja, ki a szemtanú, mégis a gonoszok nyernek.</p><button class="btn" id="g">${esc(lab(j))}, tippelj a szemtanúra</button>`; V.conv = j; }
-      else if (r === "B") { h += `<p class="big" style="color:var(--red)">A BŰNTÁRS volt!</p><p class="center"><b>„Volt egy társam.”</b> A gyilkos még köztetek van.</p>
-        <p class="center">Még <b>3 perc</b> érvelés, aztán új titkos szavazás. A bűntárs már nem jelölhető, de ő is szavaz.</p><button class="btn" id="extra">Indul a 3 perc</button>`;
-        V.outB = j; V.cands = P.ch.map((_, x) => x).filter(x => x !== j); V.revote = 1; }
+      if (r === "G" && !hasS) { h += `<p class="big" style="color:var(--red)">A GYILKOS volt!</p><p class="big" style="color:var(--green)">Az ártatlanok nyertek!</p>`; V.outcome = "good"; }
+      else if (r === "G") { h += `<p class="big" style="color:var(--red)">A GYILKOS volt!</p><p class="center">Utolsó esély: ha kitalálja, ki a szemtanú, mégis a gonoszok nyernek.</p><button class="btn" id="g">${esc(lab(j))}, tippelj a szemtanúra</button>`; V.conv = j; }
+      else if (r === "B") { h += `<p class="big" style="color:#f0a35e">A BŰNTÁRS volt!</p><p class="center">Ő csak segített. A gyilkos megúszta, és egyedül nyert.</p>`; V.outcome = "evil"; }
       else { h += `<p class="big" style="color:var(--green)">ÁRTATLAN volt.</p><p class="big" style="color:var(--red)">A gonoszok nyertek!</p>`; V.outcome = "evil"; }
     }
     h += `<div class="panel small"><b>Szavazatok:</b> ${P.ch.map((sl, j) => `${esc(lab(j))}: ${tally[j]}`).join(" · ")}</div>`;
@@ -1116,8 +1159,8 @@ function voteFlow() {
     let h = `<p class="big" style="color:${V.outcome === "good" ? "var(--green)" : "var(--red)"}">${V.outcome === "good" ? "Az ártatlanok nyertek!" : "A gonoszok nyertek!"}</p>
       <div class="panel"><h3>Mi történt valójában</h3><p>${esc(S.solution)}</p></div><h3>Ki kicsoda volt</h3><div class="grid">`;
     P.ch.forEach((sl, j) => { const c = S.chars[sl], ev = c.role === "G" || c.role === "B"; h += `<div class="c">${pimg(S, sl, {evil: ev})}<b>${esc(c.name)}</b><br><span class="badge ${ev ? "red" : c.role === "S" ? "blue" : ""}">${c.roleName}</span></div>`; });
-    h += `</div><div class="panel"><h3>Titkos küldetések</h3><p class="small muted">Meséljétek el, kinek sikerült!</p>` +
-      P.ch.map((sl, j) => `<p class="small"><b>${esc(S.chars[sl].name)}</b>: ${esc(S.chars[sl].mission)}</p>`).join("") +
+    h += `</div><div class="panel"><h3>Személyes titkok</h3><p class="small muted">Meséljétek el, ki mit titkolt!</p>` +
+      P.ch.map((sl, j) => `<p class="small"><b>${esc(S.chars[sl].name)}</b>: ${esc(S.chars[sl].secret)}</p>`).join("") +
       `</div><button class="btn" id="new">Új játék</button>`;
     app.innerHTML = h;
     $("#new").onclick = () => { location.hash = ""; location.reload(); };
