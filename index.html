@@ -69,6 +69,12 @@ label{display:block;margin:8px 0 4px;color:var(--muted);font-size:.9rem}
 .stage{position:absolute;left:0;right:0;top:calc(min(34vw,150px) + 30px);bottom:calc(10px + env(safe-area-inset-bottom));z-index:2}
 .victim{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);text-align:center;color:#e6c7c2;font-size:.8rem;pointer-events:none}
 .victim .vb{font-size:2.2rem;opacity:.7}
+.victim.img .vb,.victim.img .vn{visibility:hidden}
+/* Windows-help style "?" on the body in the middle of the scene: opens the story facts */
+.helpq{position:absolute;left:50%;top:50%;transform:translate(14px,-46px);width:34px;height:34px;border-radius:50%;border:2px solid #fff;background:#2f6fd6;color:#fff;display:grid;place-items:center;cursor:pointer;z-index:2;
+  box-shadow:0 2px 10px #000a,0 0 0 0 #2f6fd688;animation:helppulse 2.2s ease-in-out infinite;padding:0}
+.helpq .ic{width:22px;height:22px;stroke-width:2.6}
+@keyframes helppulse{50%{box-shadow:0 2px 10px #000a,0 0 0 9px #2f6fd600}}
 .ch{position:absolute;width:min(24vw,96px);transform:translate(-50%,-50%);text-align:center;cursor:pointer}
 .ch .av{width:min(17vw,68px);height:min(17vw,68px);margin:0 auto;border-radius:50%;overflow:hidden;border:2px solid #ffffffaa;box-shadow:0 4px 14px #000c;background:#2a2430;position:relative}
 .ch .av img{position:absolute;width:210%;left:-55%;top:-6%;max-width:none}
@@ -218,6 +224,7 @@ const ICON = {
   map: `<path d="M3 6.5 9 4l6 2.5L21 4v13.5L15 20l-6-2.5L3 20z"/><path d="M9 4v13.5"/><path d="M15 6.5V20"/>`,
   scroll: `<path d="M7 4h11a2 2 0 0 1 2 2v1h-4"/><path d="M16 7v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-1h10"/><path d="M7 4a2 2 0 0 0-2 2v11"/><path d="M9 9h4"/><path d="M9 12.5h4"/>`,
   lock: `<rect x="4.5" y="10.5" width="15" height="10" rx="2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/><circle cx="12" cy="15.5" r="1.2" fill="currentColor"/>`,
+  exit: `<path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4"/><path d="M10 16l-4-4 4-4"/><path d="M6 12h10"/>`,
   close: `<path d="M6 6l12 12"/><path d="M18 6 6 18"/>`,
   cross: `<path d="M12 3v18"/><path d="M6.5 8.5h11"/>`,
   drum: `<ellipse cx="12" cy="9" rx="8" ry="3.5"/><path d="M4 9v6.5C4 17.4 7.6 19 12 19s8-1.6 8-3.5V9"/><path d="M8 4.5l3 4"/><path d="M16 4.5l-3 4"/>`,
@@ -251,13 +258,23 @@ function cardUrl(P) { return location.origin + location.pathname + "#c=" + encod
 const CFG = Object.assign({music: true, narration: true, sfx: true, lang: "hu"}, ls("cfg") || {});
 const saveCFG = () => ls("cfg", CFG);
 function settingsModal() {
+  const inGame = !!$("#scene");
   const row = (k, title, sub) => `<label class="tg"><span><b>${title}</b><br><span class="small muted">${sub}</span></span><input type="checkbox" data-k="${k}" ${CFG[k] ? "checked" : ""}></label>`;
   modal(`<h2>Beállítások</h2>
     ${row("music", "Zene", "Háttérzene és a feszültség az utolsó 3 percben")}
     ${row("narration", "Narráció", "A történet felolvasása")}
     ${row("sfx", "Hangjelzések", "Órakattogás, tipp-értesítés, szavazás dobpergés")}
-    <h3 style="margin-top:14px">Nyelv</h3><div class="chips"><span class="chip on">Magyar</span><span class="chip" style="opacity:.45;cursor:default">English · hamarosan</span></div>`);
-  document.querySelectorAll("#modal [data-k]").forEach(e => e.onchange = () => { CFG[e.dataset.k] = e.checked; saveCFG(); if (!CFG.narration && window.speechSynthesis) speechSynthesis.cancel(); });
+    <h3 style="margin-top:14px">Nyelv</h3><div class="chips"><span class="chip on">Magyar</span><span class="chip" style="opacity:.45;cursor:default">English · hamarosan</span></div>
+    ${inGame ? `<button class="btn ghost" id="quit" style="margin-top:18px;color:#f19a92;border-color:#f19a9255">${icon("exit", "inl")} Kilépés: feladom a játékot</button>` : ""}`);
+  document.querySelectorAll("#modal [data-k]").forEach(e => e.onchange = () => {
+    CFG[e.dataset.k] = e.checked; saveCFG(); if (!CFG.narration && window.speechSynthesis) speechSynthesis.cancel();
+    if (e.dataset.k === "music" && inGame && P.p === 0) { if (!CFG.music) { stopMusic(); AU.mode = null; } else { ensureAudio(); if (AU.drone) AU.drone.gain.value = .05; startMusic(S); } }
+  });
+  if ($("#quit")) $("#quit").onclick = () => {
+    modal(`<h2>Feladod?</h2><p>A játék a te telefonodon véget ér, és visszakerülsz a főmenübe.</p>
+    <button class="btn" id="quitok" style="background:#c0392b;color:#fff">Igen, feladom</button><button class="btn ghost" onclick="closeModal()">Mégse, játszom tovább</button>`);
+    $("#quitok").onclick = () => { stopMusic(); stopNarration(); location.hash = ""; location.reload(); };
+  };
 }
 
 /* ===================== audio (host phone only) ===================== */
@@ -634,9 +651,10 @@ function drawClock(frac, paused, urgent) {
 function sceneView(t) {
   const n = P.n.length, slots = P.ch;
   let h = `<div id="scene"><div class="bg" id="bg"></div>
-    <div class="hud"><div class="hright"><button class="hbtn" id="mapb" title="Térkép">${icon("map")}</button><button class="hbtn" id="storyb" title="A történet">${icon("scroll")}</button></div><svg id="clock" viewBox="0 0 100 100"></svg>
-    <div class="hright"><button class="hbtn" id="noteb" title="Jegyzetfüzet">${icon("book")}</button>${P.p === 0 ? `<button class="hbtn" id="muteb" title="Hang">${icon("sound")}</button>` : ""}</div></div>
-    <div class="stage"><div class="victim"><div class="vb">${icon("cross")}</div>${esc(S.victim.split(",")[0])}</div>`;
+    <div class="hud"><div class="hright"><button class="hbtn" id="setb" title="Beállítások">${icon("gear")}</button></div><svg id="clock" viewBox="0 0 100 100"></svg>
+    <div class="hright"><button class="hbtn" id="mapb" title="Térkép">${icon("map")}</button></div></div>
+    <div class="stage"><div class="victim"><div class="vb">${icon("cross")}</div><span class="vn">${esc(S.victim.split(",")[0])}</span></div>
+    <button class="helpq" id="storyb" title="A történet">${icon("q")}</button>`;
   slots.forEach((slot, i) => {
     const ang = -Math.PI / 2 + (i + .5) * 2 * Math.PI / n;
     const x = 50 + 37 * Math.cos(ang), y = 50 + 38 * Math.sin(ang);
@@ -644,11 +662,10 @@ function sceneView(t) {
   });
   h += `</div></div>`;
   app.innerHTML = h;
-  const bg = new Image(); bg.onload = () => { $("#bg").style.backgroundImage = `url(${bg.src})`; const v = $(".victim"); if (v) v.style.display = "none"; }; bg.onerror = () => $("#bg").classList.add("none"); bg.src = `assets/${S.id}/scene.jpg`;
+  const bg = new Image(); bg.onload = () => { $("#bg").style.backgroundImage = `url(${bg.src})`; $(".victim").classList.add("img"); }; bg.onerror = () => $("#bg").classList.add("none"); bg.src = `assets/${S.id}/scene.jpg`;
   app.querySelectorAll(".ch").forEach(e => e.onclick = () => charModal(+e.dataset.slot));
   bindPills();
-  $("#mapb").onclick = mapModal; $("#noteb").onclick = notesModal; $("#storyb").onclick = storyModal;
-  if ($("#muteb")) $("#muteb").onclick = () => { ensureAudio(); AU.muted = !AU.muted; AU.master.gain.value = AU.muted ? 0 : .9; [AU.music, AU.tension].forEach(a => a && (a.muted = AU.muted)); $("#muteb").innerHTML = icon(AU.muted ? "mute" : "sound"); };
+  $("#mapb").onclick = mapModal; $("#storyb").onclick = storyModal; $("#setb").onclick = settingsModal;
   if (P.p === 0) { ensureAudio(); startMusic(S); }
 }
 function modal(inner, cls = "") {
