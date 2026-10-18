@@ -77,15 +77,16 @@ label{display:block;margin:8px 0 4px;color:var(--muted);font-size:.9rem}
 .victim .vb{font-size:2.2rem;opacity:.7}
 .victim.img .vb,.victim.img .vn{visibility:hidden}
 /* Windows-help style "?" on the body in the middle of the scene: opens the story facts */
-.helpq{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:46px;height:46px;border-radius:12px;border:1px solid #ffffff44;background:#00000040;color:#c9c4bc;opacity:.75;display:grid;place-items:center;cursor:pointer;z-index:2;padding:0;backdrop-filter:blur(2px)}
+.helpq{position:absolute;left:50%;top:50%;transform:translate(-50%,calc(-50% - min(10vh,90px)));width:46px;height:46px;border-radius:12px;border:1px solid #ffffff44;background:#00000040;color:#c9c4bc;opacity:.75;display:grid;place-items:center;cursor:pointer;z-index:2;padding:0;backdrop-filter:blur(2px)}
 .helpq .ic{width:26px;height:26px;stroke-width:2.4}
 .ch{position:absolute;width:min(31vw,124px);transform:translate(-50%,-50%);text-align:center;cursor:pointer}
 .ch .av{width:min(22vw,88px);height:min(22vw,88px);margin:0 auto;border-radius:50%;overflow:hidden;border:2px solid #ffffffaa;box-shadow:0 4px 14px #000c;background:#2a2430;position:relative}
 .ch .av img{position:absolute;width:210%;left:-55%;top:-6%;max-width:none}
 .avw{position:relative;width:min(22vw,88px);margin:0 auto}
 
-.ch .mk{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--c);border:1.5px solid #fff;vertical-align:-5px;margin-right:5px;box-shadow:0 1px 4px #000a}
-.ch .mk .ic{width:12px;height:12px}
+.ch .nw{font-style:normal;white-space:nowrap}
+.ch .mk{display:inline-grid;place-items:center;width:1.15em;height:1.15em;border-radius:50%;background:var(--c);border:1px solid #fff;vertical-align:-.22em;margin-left:4px;box-shadow:0 1px 3px #000a;line-height:0}
+.ch .mk .ic{width:.72em;height:.72em}
 .suspick{margin-top:14px;border-top:1px solid var(--line);padding-top:12px}
 .suspick b{display:block;color:var(--gold);font-size:.82rem;letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px}
 .suspick .opts{display:flex;gap:6px}
@@ -665,6 +666,8 @@ function setSus(slot, k) {
 }
 const SUSLAB = {N: "Ártatlan", S: "Szemtanú", Q: "Nem tudom", B: "Bűntárs", G: "Gyilkos"};
 // small icon by the name on the scene: your verdict on them, or your own role
+// keeps the icon on the same line as the last word of the name
+function nameWithMark(name, mk) { const w = name.split(" "), last = w.pop(); return (w.length ? esc(w.join(" ")) + " " : "") + `<em class="nw">${esc(last)}${mk}</em>`; }
 function markHTML(slot, mine) { const m = MARK[mine ? ME.role : susOf(slot)]; return `<i class="mk" data-mk="${slot}" style="--c:${m.col}">${icon(m.ic)}</i>`; }
 // verdict picker at the bottom of another player's popup (Márk 2026-10-18: easier than the slider on the scene)
 function susPicker(slot) {
@@ -738,8 +741,8 @@ function sceneView(t) {
   const trayHTML = `<div class="tray" id="tray"></div>`;
   slots.forEach((slot, i) => {
     const ang = -Math.PI / 2 + (i + .5) * 2 * Math.PI / n;
-    const x = 50 + 33 * Math.cos(ang), y = 50 + 38 * Math.sin(ang);
-    h += `<div class="ch ${i === P.p ? "me" : ""}" data-slot="${slot}" style="left:${x}%;top:${y}%"><div class="avw"><div class="av">${pimg(S, slot)}</div></div><span>${markHTML(slot, i === P.p)}${esc(S.chars[slot].name)}</span></div>`;
+    const c = Math.cos(ang), x = 50 + 38 * Math.sign(c) * Math.sqrt(Math.abs(c)), y = 50 + 39 * Math.sin(ang); // pushed out towards the screen edges
+    h += `<div class="ch ${i === P.p ? "me" : ""}" data-slot="${slot}" style="left:${x}%;top:${y}%"><div class="avw"><div class="av">${pimg(S, slot)}</div></div><span>${nameWithMark(S.chars[slot].name, markHTML(slot, i === P.p))}</span></div>`;
   });
   h += `</div>${trayHTML}</div>`;
   app.innerHTML = h; drawTray();
