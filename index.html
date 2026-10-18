@@ -391,6 +391,13 @@ function tokHTML(tok, k) {
   return h;
 }
 const NARR = {gen: 0};
+// iOS only lets an audio element play later from a timer if it was started once inside a tap: unlock the scream on the tap that opens the story
+const SCREAM = {a: null};
+function unlockScream() {
+  if (SCREAM.a) return;
+  const a = new Audio("assets/sfx_scream.mp3"); a.preload = "auto"; a.muted = true; SCREAM.a = a;
+  a.play().then(() => { a.pause(); a.currentTime = 0; a.muted = false; }).catch(() => { a.muted = false; });
+}
 function stopNarration() { NARR.gen++; if (window.speechSynthesis) speechSynthesis.cancel(); if (NARR.audio) NARR.audio.pause(); }
 // el: container to type into (or null for voice only). Reveals the text progressively in sync with the voice.
 function narrate(story, el, onDone) {
@@ -400,7 +407,7 @@ function narrate(story, el, onDone) {
   const voiceOn = CFG.narration && !!window.speechSynthesis;
   const draw = () => { if (el && gen === NARR.gen) el.innerHTML = parts.map((tok, i) => tokHTML(tok, done[i])).join(done[0] >= plainOf(parts[0]).length && parts.length > 1 ? " " : "") + (done[parts.length - 1] < plainOf(parts[parts.length - 1]).length ? `<span class="caret">▍</span>` : ""); };
   const typeTo = (i, target) => { done[i] = Math.max(done[i], Math.min(target, plainOf(parts[i]).length)); draw(); };
-  const scream = () => { if (CFG.sfx || CFG.narration) { const a = new Audio("assets/sfx_scream.mp3"); a.volume = .9; a.play().catch(() => {}); } };
+  const scream = () => { if (CFG.sfx || CFG.narration) { const a = SCREAM.a || new Audio("assets/sfx_scream.mp3"); a.currentTime = 0; a.volume = 1; a.play().catch(() => {}); } };
   const runPart = i => {
     if (gen !== NARR.gen || i >= parts.length) return;
     const text = plainOf(parts[i]);
@@ -463,7 +470,7 @@ function coverView(id, rect) {
   const bg = new Image(); bg.onload = () => { $("#cbg").style.backgroundImage = `url(${bg.src})`; };
   bg.onerror = () => { $("#cbg").style.backgroundImage = `url(${coverFallback(s)})`; }; bg.src = coverSrc(s);
   // Start button appears only once the narration has finished (Márk 2026-10-18)
-  introMusic(true);
+  introMusic(true); unlockScream();
   narrate(s, $("#ctyped"), () => { const b = $("#cstart"); if (b) b.style.display = ""; });
   $("#cback").onclick = $("#cother").onclick = () => { stopNarration(); introMusic(false); el.remove(); };
   $("#cstart").onclick = () => settingsView(s);
