@@ -106,6 +106,8 @@ textarea{width:100%;min-height:42vh;padding:12px;border-radius:12px;border:1px s
 .cover .cin{position:absolute;inset:0;display:flex;flex-direction:column;padding:calc(70px + env(safe-area-inset-top)) 16px calc(16px + env(safe-area-inset-bottom));max-width:560px;margin:0 auto}
 .cover .ctext{flex:1;overflow:auto;background:#000000a8;border:1px solid #ffffff22;border-radius:16px;padding:16px;margin-bottom:12px;animation:fadein 1.2s .4s both}
 @keyframes fadein{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+.tg{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line);cursor:pointer}
+.tg input{width:46px;height:26px;accent-color:var(--gold);flex:0 0 auto}
 .big{font:800 2rem "Playfair Display",serif;text-align:center;margin:10px 0}
 </style>
 </head>
@@ -161,6 +163,19 @@ function decodeCard(str) {
 }
 function cardUrl(P) { return location.origin + location.pathname + "#c=" + encodeCard(P); }
 
+/* ===================== settings (main menu, top left) ===================== */
+const CFG = Object.assign({music: true, narration: true, sfx: true, lang: "hu"}, ls("cfg") || {});
+const saveCFG = () => ls("cfg", CFG);
+function settingsModal() {
+  const row = (k, title, sub) => `<label class="tg"><span><b>${title}</b><br><span class="small muted">${sub}</span></span><input type="checkbox" data-k="${k}" ${CFG[k] ? "checked" : ""}></label>`;
+  modal(`<h2>Beállítások</h2>
+    ${row("music", "Zene", "Háttérzene és a feszültség az utolsó 3 percben")}
+    ${row("narration", "Narráció", "A történet felolvasása")}
+    ${row("sfx", "Hangjelzések", "Órakattogás, tipp-értesítés, szavazás dobpergés")}
+    <h3 style="margin-top:14px">Nyelv</h3><div class="chips"><span class="chip on">Magyar</span><span class="chip" style="opacity:.45;cursor:default">English · hamarosan</span></div>`);
+  document.querySelectorAll("#modal [data-k]").forEach(e => e.onchange = () => { CFG[e.dataset.k] = e.checked; saveCFG(); if (!CFG.narration && window.speechSynthesis) speechSynthesis.cancel(); });
+}
+
 /* ===================== audio (host phone only) ===================== */
 const AU = {ctx: null, master: null, music: null, tension: null, nodes: [], muted: false, lastTick: -1, mode: ""};
 function ensureAudio() {
@@ -186,12 +201,12 @@ function noise(dur, vol = .2, hp = 2000, when = 0) {
   const s = AU.ctx.createBufferSource(), f = AU.ctx.createBiquadFilter(), g = AU.ctx.createGain();
   f.type = "highpass"; f.frequency.value = hp; g.gain.value = vol; s.buffer = b; s.connect(f); f.connect(g); g.connect(AU.master); s.start(t);
 }
-const tick = loud => { noise(.03, .25 + loud * .5, 3500); tone(1800, .03, "square", .04 + loud * .08); };
-const chime = () => { tone(880, .9, "sine", .16); tone(1320, 1.1, "sine", .1, .12); };
-const drumroll = sec => { for (let i = 0; i < sec * 18; i++) noise(.05, .12 + i / (sec * 18) * .25, 300, i / 18); tone(110, 1.2, "triangle", .35, sec); };
+const tick = loud => { if (!CFG.sfx) return; noise(.03, .25 + loud * .5, 3500); tone(1800, .03, "square", .04 + loud * .08); };
+const chime = () => { if (!CFG.sfx) return; tone(880, .9, "sine", .16); tone(1320, 1.1, "sine", .1, .12); };
+const drumroll = sec => { if (!CFG.sfx) return; for (let i = 0; i < sec * 18; i++) noise(.05, .12 + i / (sec * 18) * .25, 300, i / 18); tone(110, 1.2, "triangle", .35, sec); };
 // Placeholder music: a story file assets/<id>/music.mp3 (and tension.mp3) wins when it exists, else a generated drone.
 function startMusic(story) {
-  if (AU.mode) return; AU.mode = "calm";
+  if (AU.mode || !CFG.music) return; AU.mode = "calm";
   const a = new Audio(`assets/${story.id}/music.mp3`); a.loop = true; a.volume = .45;
   a.play().then(() => { AU.music = a; }).catch(() => drone());
 }
@@ -203,7 +218,7 @@ function drone() {
   lp.connect(g); g.connect(AU.master); AU.drone = g;
 }
 function tensionOn(story) {
-  if (AU.mode === "tension") return; AU.mode = "tension";
+  if (AU.mode === "tension" || !CFG.music) return; AU.mode = "tension";
   const a = new Audio(`assets/${story.id}/tension.mp3`); a.loop = true; a.volume = .5;
   a.play().then(() => { if (AU.music) AU.music.pause(); AU.tension = a; }).catch(() => {
     if (AU.drone) AU.drone.gain.value = .08;
@@ -215,6 +230,7 @@ function stopMusic() {
   AU.nodes.forEach(o => { try { o.stop(); } catch (e) {} }); AU.nodes = []; if (AU.drone) AU.drone.gain.value = 0; AU.mode = "done";
 }
 function narrate(story) {
+  if (!CFG.narration) return;
   const a = new Audio(`assets/${story.id}/narration.mp3`);
   a.play().catch(() => {
     if (!window.speechSynthesis) return;
@@ -236,11 +252,12 @@ function coverFallback(s) {
 }
 function lobby() {
   window.speechSynthesis && speechSynthesis.cancel();
-  let h = `<h1 style="margin-top:6px">Éjféli Tanú</h1><p class="muted">Válassz egy rejtélyt. Koppints rá, és hallgassátok meg a történetet.</p><div class="cat">`;
+  let h = `<div class="row" style="align-items:center;gap:12px;margin-top:4px"><button class="hbtn" id="setb" title="Beállítások" style="flex:0 0 auto;width:46px;height:46px;font-size:1.3rem">⚙️</button><h1 style="margin:0;flex:1">Éjféli Tanú</h1></div><p class="muted">Válassz egy rejtélyt. Koppints rá, és hallgassátok meg a történetet.</p><div class="cat">`;
   STORIES.forEach(s => h += `<div class="tile" data-st="${s.id}"><img src="${coverSrc(s)}" onerror="this.onerror=null;this.src='${coverFallback(s)}'" alt="">
     <div class="tt"><b>${esc(s.title)}</b>${s.full ? '<span class="badge gold">teszt</span>' : ""}</div></div>`);
   app.innerHTML = h + `</div>`;
   app.querySelectorAll(".tile").forEach(e => e.onclick = () => coverView(e.dataset.st, e.getBoundingClientRect()));
+  $("#setb").onclick = settingsModal;
 }
 function coverView(id, rect) {
   const s = STORIES.find(x => x.id === id);
