@@ -146,6 +146,7 @@ textarea{width:100%;min-height:42vh;padding:12px;border-radius:12px;border:1px s
 .setup-st .go:active{transform:translate(-50%,-50%) scale(.94)}
 @keyframes gopulse{50%{box-shadow:0 0 0 6px #0d0b10,0 0 0 7px #d9b46acc,0 0 60px #d9b46aaa}}
 .tg{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line);cursor:pointer}
+.tg .langsel{width:auto;flex:0 0 auto;padding:8px 10px;font-size:.95rem}
 .tg input{width:46px;height:26px;accent-color:var(--gold);flex:0 0 auto}
 .storytxt{font-size:1.05rem;line-height:1.6;cursor:pointer}
 .storytxt .key{color:var(--gold2);text-decoration:underline;text-underline-offset:3px}
@@ -265,12 +266,10 @@ const CFG = Object.assign({music: true, narration: true, sfx: true, lang: "hu"},
 const saveCFG = () => ls("cfg", CFG);
 function settingsModal() {
   const inGame = !!$("#scene");
-  const row = (k, title, sub) => `<label class="tg"><span><b>${title}</b><br><span class="small muted">${sub}</span></span><input type="checkbox" data-k="${k}" ${CFG[k] ? "checked" : ""}></label>`;
+  const row = (k, title) => `<label class="tg"><b>${title}</b><input type="checkbox" data-k="${k}" ${CFG[k] ? "checked" : ""}></label>`;
   modal(`<h2>Beállítások</h2>
-    ${row("music", "Zene", "Háttérzene és a feszültség az utolsó 3 percben")}
-    ${row("narration", "Narráció", "A történet felolvasása")}
-    ${row("sfx", "Hangjelzések", "Órakattogás, tipp-értesítés, szavazás dobpergés")}
-    <h3 style="margin-top:14px">Nyelv</h3><div class="chips"><span class="chip on">Magyar</span><span class="chip" style="opacity:.45;cursor:default">English · hamarosan</span></div>
+    ${row("music", "Zene")}${row("narration", "Narráció")}${row("sfx", "Hangjelzések")}
+    <label class="tg"><b>Nyelv</b><select class="langsel"><option value="hu" selected>Magyar</option><option value="en" disabled>English (hamarosan)</option></select></label>
     ${inGame ? `<button class="btn ghost" id="quit" style="margin-top:18px;color:#f19a92;border-color:#f19a9255">${icon("exit", "inl")} Kilépés: feladom a játékot</button>` : ""}`);
   document.querySelectorAll("#modal [data-k]").forEach(e => e.onchange = () => {
     CFG[e.dataset.k] = e.checked; saveCFG(); if (!CFG.narration && window.speechSynthesis) speechSynthesis.cancel();
