@@ -125,6 +125,12 @@ textarea{width:100%;min-height:42vh;padding:12px;border-radius:12px;border:1px s
 .mine summary::after{content:"▾";transition:transform .2s}.mine details:not([open]) summary::after{transform:rotate(-90deg)}
 .mine summary::-webkit-details-marker{display:none}
 .mine .panel{margin:8px 0 2px}
+.ic{width:24px;height:24px;display:inline-block;vertical-align:middle;flex:0 0 auto}
+.hbtn .ic{width:26px;height:26px}
+.ic.inl{width:1.1em;height:1.1em;margin-top:-.15em}
+.modal .x .ic{width:22px;height:22px}
+.victim .vb .ic{width:34px;height:34px;opacity:.7}
+.drumb .ic{animation:pulse .25s infinite}
 .big{font:800 2rem "Playfair Display",serif;text-align:center;margin:10px 0}
 </style>
 </head>
@@ -161,6 +167,27 @@ function pimg(story, slot, opts = {}) {
   return `<img src="${src}" alt="${esc(c.name)}" class="${opts.cls || ""}${opts.evil ? " evilf" : ""}" ` +
     `onerror="if(this.dataset.f){this.onerror=null;this.src='${placeholder(c.name, !!opts.evil)}'}else{this.dataset.f=1;this.src='${fallback}';${opts.evil ? "this.classList.add('evil');" : ""}}">`;
 }
+
+/* ===================== icon set (own line icons, no emoji) ===================== */
+const ICON = {
+  gear: `<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>`,
+  back: `<path d="M19 12H5"/><path d="M11 18l-6-6 6-6"/>`,
+  sound: `<path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.4 5.6a9 9 0 0 1 0 12.8"/>`,
+  mute: `<path d="M11 5 6 9H3v6h3l5 4z"/><path d="m22 9-6 6"/><path d="m16 9 6 6"/>`,
+  book: `<path d="M5 3.5h11a2 2 0 0 1 2 2v15H7a2 2 0 0 1-2-2z"/><path d="M5 18.5a2 2 0 0 1 2-2h11"/><path d="M9 7.5h5"/><path d="M9 11h5"/>`,
+  map: `<path d="M3 6.5 9 4l6 2.5L21 4v13.5L15 20l-6-2.5L3 20z"/><path d="M9 4v13.5"/><path d="M15 6.5V20"/>`,
+  scroll: `<path d="M7 4h11a2 2 0 0 1 2 2v1h-4"/><path d="M16 7v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-1h10"/><path d="M7 4a2 2 0 0 0-2 2v11"/><path d="M9 9h4"/><path d="M9 12.5h4"/>`,
+  lock: `<rect x="4.5" y="10.5" width="15" height="10" rx="2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/><circle cx="12" cy="15.5" r="1.2" fill="currentColor"/>`,
+  close: `<path d="M6 6l12 12"/><path d="M18 6 6 18"/>`,
+  cross: `<path d="M12 3v18"/><path d="M6.5 8.5h11"/>`,
+  drum: `<ellipse cx="12" cy="9" rx="8" ry="3.5"/><path d="M4 9v6.5C4 17.4 7.6 19 12 19s8-1.6 8-3.5V9"/><path d="M8 4.5l3 4"/><path d="M16 4.5l-3 4"/>`,
+  q: `<path d="M9.2 9.2a2.9 2.9 0 1 1 4.3 2.5c-.9.5-1.5 1.2-1.5 2.2v.6"/><circle cx="12" cy="18" r=".6" fill="currentColor"/>`,
+  ok: `<path d="M7.5 11v8.5H4.5V11z"/><path d="M7.5 11l3.6-6.3c1.4 0 2.3 1.1 1.9 2.6L12.4 10h5.1a1.9 1.9 0 0 1 1.9 2.2l-1.1 5.7a1.9 1.9 0 0 1-1.9 1.6H7.5"/>`,
+  eye: `<path d="M2.5 12s3.4-5.8 9.5-5.8 9.5 5.8 9.5 5.8-3.4 5.8-9.5 5.8S2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.6"/>`,
+  knife: `<path d="M14.6 3.4c2.6.1 5.9 2.6 6 5.2L10.8 18.4l-4.2-4.2z"/><path d="M5.2 12.6l6.2 6.2"/><path d="M6.6 16.8l-3 3a1.4 1.4 0 0 0 2 2l3-3"/>`,
+  hands: `<path d="m11 17 2 2a1 1 0 1 0 3-3"/><path d="m14 14 2.5 2.5a1 1 0 1 0 3-3l-3.9-3.9a3 3 0 0 0-4.2 0l-.9.9a1 1 0 1 1-3-3l2.8-2.8a5.8 5.8 0 0 1 7.1-.9l.5.3a2 2 0 0 0 1.4.3L21 4"/><path d="m21 3 1 11h-2"/><path d="M3 3 2 14l6.5 6.5a1 1 0 1 0 3-3"/><path d="M3 4h8"/>`,
+};
+const icon = (k, cls = "", sz) => `<svg class="ic ${cls}" ${sz ? `width="${sz}" height="${sz}"` : ""} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICON[k]}</svg>`;
 
 /* ===================== card link encoding ===================== */
 const KEY = "ejfeli-tanu-1462";
@@ -295,12 +322,12 @@ const saveL = () => ls("lobby", L);
 function coverSrc(s) { return `assets/${s.id}/cover.jpg`; }
 function coverFallback(s) {
   const hue = (parseInt(s.id.slice(1)) * 37) % 360;
-  const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 400'><defs><radialGradient id='g' cx='50%' cy='40%' r='75%'><stop offset='0' stop-color='hsl(${hue},35%,32%)'/><stop offset='1' stop-color='#0d0b10'/></radialGradient></defs><rect width='400' height='400' fill='url(#g)'/><text x='200' y='215' font-family='Georgia' font-size='120' fill='#d9b46a' fill-opacity='.35' text-anchor='middle'>✝</text></svg>`;
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 400'><defs><radialGradient id='g' cx='50%' cy='40%' r='75%'><stop offset='0' stop-color='hsl(${hue},35%,32%)'/><stop offset='1' stop-color='#0d0b10'/></radialGradient></defs><rect width='400' height='400' fill='url(#g)'/><path d='M200 130v150M160 175h80' stroke='#d9b46a' stroke-opacity='.35' stroke-width='14' stroke-linecap='round'/></svg>`;
   return "data:image/svg+xml," + encodeURIComponent(svg).replace(/'/g, "%27");
 }
 function lobby() {
   stopNarration();
-  let h = `<div class="row" style="align-items:center;gap:12px;margin-top:4px"><button class="hbtn" id="setb" title="Beállítások" style="flex:0 0 auto;width:46px;height:46px;font-size:1.3rem">⚙️</button><h1 style="margin:0;flex:1">Éjféli Tanú</h1></div><p class="muted">Válassz egy rejtélyt. Koppints rá, és hallgassátok meg a történetet.</p><div class="cat">`;
+  let h = `<div class="row" style="align-items:center;gap:12px;margin-top:4px"><button class="hbtn" id="setb" title="Beállítások" style="flex:0 0 auto;width:46px;height:46px;font-size:1.3rem">${icon("gear")}</button><h1 style="margin:0;flex:1">Éjféli Tanú</h1></div><p class="muted">Válassz egy rejtélyt. Koppints rá, és hallgassátok meg a történetet.</p><div class="cat">`;
   STORIES.forEach(s => h += `<div class="tile" data-st="${s.id}"><img src="${coverSrc(s)}" onerror="this.onerror=null;this.src='${coverFallback(s)}'" alt="">
     <div class="tt"><b>${esc(s.title)}</b>${s.full ? '<span class="badge gold">teszt</span>' : ""}</div></div>`);
   app.innerHTML = h + `</div>`;
@@ -313,10 +340,10 @@ function coverView(id, rect) {
   const el = document.createElement("div"); el.id = "cover"; el.className = "cover";
   el.style.transformOrigin = rect ? `${rect.left + rect.width / 2}px ${rect.top + rect.height / 2}px` : "50% 50%";
   el.innerHTML = `<div class="bg" id="cbg"></div><div class="cin">
-    <button class="hbtn" id="cback" style="position:absolute;left:12px;top:calc(10px + env(safe-area-inset-top))">←</button>
+    <button class="hbtn" id="cback" style="position:absolute;left:12px;top:calc(10px + env(safe-area-inset-top))">${icon("back")}</button>
     <div class="ctext"><h1>${esc(s.title)}</h1><p class="muted small">${esc(s.world)}</p><p class="storytxt" id="ctyped"></p>
-    ${s.common ? `<p style="color:var(--gold2)">👁 ${esc(s.common)}</p>` : ""}
-    <button class="btn ghost" id="cnarr">🔊 Narráció újra</button></div>
+    ${s.common ? `<p style="color:var(--gold2)">${icon("eye", "inl")} ${esc(s.common)}</p>` : ""}
+    <button class="btn ghost" id="cnarr">${icon("sound", "inl")} Narráció újra</button></div>
     <div class="cbot"><button class="btn" id="cstart">Kezdés</button></div></div>`;
   document.body.appendChild(el);
   const bg = new Image(); bg.onload = () => { $("#cbg").style.backgroundImage = `url(${bg.src})`; };
@@ -488,14 +515,6 @@ function readView(step) {
 }
 
 /* ---------- suspicion slider next to each portrait (Márk 2026-10-18), own icon set ---------- */
-const ICON = {
-  q: `<path d="M9.2 9.2a2.9 2.9 0 1 1 4.3 2.5c-.9.5-1.5 1.2-1.5 2.2v.6"/><circle cx="12" cy="18" r=".6" fill="currentColor"/>`,
-  ok: `<path d="M7.5 11v8.5H4.5V11z"/><path d="M7.5 11l3.6-6.3c1.4 0 2.3 1.1 1.9 2.6L12.4 10h5.1a1.9 1.9 0 0 1 1.9 2.2l-1.1 5.7a1.9 1.9 0 0 1-1.9 1.6H7.5"/>`,
-  eye: `<path d="M2.5 12s3.4-5.8 9.5-5.8 9.5 5.8 9.5 5.8-3.4 5.8-9.5 5.8S2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.6"/>`,
-  knife: `<path d="M14.6 3.4c2.6.1 5.9 2.6 6 5.2L10.8 18.4l-4.2-4.2z"/><path d="M5.2 12.6l6.2 6.2"/><path d="M6.6 16.8l-3 3a1.4 1.4 0 0 0 2 2l3-3"/>`,
-  hands: `<path d="m11 17 2 2a1 1 0 1 0 3-3"/><path d="m14 14 2.5 2.5a1 1 0 1 0 3-3l-3.9-3.9a3 3 0 0 0-4.2 0l-.9.9a1 1 0 1 1-3-3l2.8-2.8a5.8 5.8 0 0 1 7.1-.9l.5.3a2 2 0 0 0 1.4.3L21 4"/><path d="m21 3 1 11h-2"/><path d="M3 3 2 14l6.5 6.5a1 1 0 1 0 3-3"/><path d="M3 4h8"/>`,
-};
-const icon = (k, cls = "") => `<svg class="ic ${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICON[k]}</svg>`;
 // others: 0 neutral (grey ?), 1 suspicious (red eye, bottom), 2 innocent (green hand, top). Own: role marker only.
 const SUS = [{pos: 50, col: "#8a8590", ic: "q"}, {pos: 100, col: "#d2554d", ic: "eye"}, {pos: 0, col: "#4caf7a", ic: "ok"}];
 const ROLEMARK = {N: {pos: 0, col: "#4caf7a", ic: "ok"}, S: {pos: 25, col: "#5b9bd5", ic: "eye"}, B: {pos: 75, col: "#e8913a", ic: "hands"}, G: {pos: 100, col: "#d2554d", ic: "knife"}};
@@ -529,9 +548,9 @@ function drawClock(frac, paused, urgent) {
 function sceneView(t) {
   const n = P.n.length, slots = P.ch;
   let h = `<div id="scene"><div class="bg" id="bg"></div>
-    <div class="hud"><div class="hright"><button class="hbtn" id="mapb" title="Térkép">🗺️</button><button class="hbtn" id="storyb" title="A történet">📜</button></div><svg id="clock" viewBox="0 0 100 100"></svg>
-    <div class="hright"><button class="hbtn" id="noteb" title="Jegyzetfüzet">📓</button>${P.p === 0 ? '<button class="hbtn" id="muteb" title="Hang">🔊</button>' : ""}</div></div>
-    <div class="stage"><div class="victim"><div class="vb">✝</div>${esc(S.victim.split(",")[0])}</div>`;
+    <div class="hud"><div class="hright"><button class="hbtn" id="mapb" title="Térkép">${icon("map")}</button><button class="hbtn" id="storyb" title="A történet">${icon("scroll")}</button></div><svg id="clock" viewBox="0 0 100 100"></svg>
+    <div class="hright"><button class="hbtn" id="noteb" title="Jegyzetfüzet">${icon("book")}</button>${P.p === 0 ? `<button class="hbtn" id="muteb" title="Hang">${icon("sound")}</button>` : ""}</div></div>
+    <div class="stage"><div class="victim"><div class="vb">${icon("cross")}</div>${esc(S.victim.split(",")[0])}</div>`;
   slots.forEach((slot, i) => {
     const ang = -Math.PI / 2 + (i + .5) * 2 * Math.PI / n;
     const x = 50 + 37 * Math.cos(ang), y = 50 + 38 * Math.sin(ang);
@@ -543,13 +562,13 @@ function sceneView(t) {
   app.querySelectorAll(".ch").forEach(e => e.onclick = () => charModal(+e.dataset.slot));
   bindPills();
   $("#mapb").onclick = mapModal; $("#noteb").onclick = notesModal; $("#storyb").onclick = storyModal;
-  if ($("#muteb")) $("#muteb").onclick = () => { ensureAudio(); AU.muted = !AU.muted; AU.master.gain.value = AU.muted ? 0 : .9; [AU.music, AU.tension].forEach(a => a && (a.muted = AU.muted)); $("#muteb").textContent = AU.muted ? "🔇" : "🔊"; };
+  if ($("#muteb")) $("#muteb").onclick = () => { ensureAudio(); AU.muted = !AU.muted; AU.master.gain.value = AU.muted ? 0 : .9; [AU.music, AU.tension].forEach(a => a && (a.muted = AU.muted)); $("#muteb").innerHTML = icon(AU.muted ? "mute" : "sound"); };
   if (P.p === 0) { ensureAudio(); startMusic(S); }
 }
 function modal(inner, cls = "") {
   closeModal();
   const m = document.createElement("div"); m.className = "modal"; m.id = "modal";
-  m.innerHTML = `<div class="box ${cls}"><button class="x" id="mx">×</button>${inner}</div>`;
+  m.innerHTML = `<div class="box ${cls}"><button class="x" id="mx">${icon("close")}</button>${inner}</div>`;
   document.body.appendChild(m);
   $("#mx").onclick = closeModal; m.onclick = e => { if (e.target === m) closeModal(); };
   return m;
@@ -560,19 +579,19 @@ function charModal(slot) {
   const c = S.chars[slot];
   modal(`${zoomable(pimg(S, slot, {cls: "zoomimg"}))}<h2 style="margin-top:10px">${esc(c.name)}</h2><p class="muted small">${esc(c.title)}</p>
     <div class="kv"><b>Mindenki látta</b>${esc(c.dispute)}</div><div class="kv"><b>Mindenki tudja</b>${esc(c.weapon)}</div>
-    ${slot === SLOT ? `<div class="mine"><div class="row" style="align-items:center"><h3 style="margin:0">🔒 Csak neked</h3><div class="role ${ME.role}" style="font-size:1.15rem;text-align:right">${ME.roleName}</div></div>
+    ${slot === SLOT ? `<div class="mine"><div class="row" style="align-items:center"><h3 style="margin:0">${icon("lock", "inl")} Csak neked</h3><div class="role ${ME.role}" style="font-size:1.15rem;text-align:right">${ME.roleName}</div></div>
       <details open><summary>A szereped és hogyan nyersz</summary>${myRole()}</details>
       <details><summary>Amit tudsz (1-5)</summary>${myCard()}</details>
       <details><summary>Mini küldetés (opcionális)</summary><div class="panel">${esc(ME.mission)}</div></details></div>` : ""}`);
 }
 function mapModal() {
-  modal(`<h2>${esc(S.title)}: alaprajz</h2>${zoomable(`<img class="zoomimg" src="assets/${S.id}/map.jpg" onerror="this.onerror=null;this.src='assets/maps/${S.id}.png'">`)}<p class="small">${esc(S.mapNote)}</p>${S.common ? `<p class="small" style="color:var(--gold2)">👁 ${esc(S.common)}</p>` : ""}`);
+  modal(`<h2>${esc(S.title)}: alaprajz</h2>${zoomable(`<img class="zoomimg" src="assets/${S.id}/map.jpg" onerror="this.onerror=null;this.src='assets/maps/${S.id}.png'">`)}<p class="small">${esc(S.mapNote)}</p>${S.common ? `<p class="small" style="color:var(--gold2)">${icon("eye", "inl")} ${esc(S.common)}</p>` : ""}`);
 }
 function storyModal() {
   modal(`<h2>${esc(S.title)}</h2><p class="muted small">${esc(S.world)}</p><p class="storytxt" id="mtyped"></p>
     <div class="kv"><b>Az áldozat</b>${esc(S.victim)}</div><div class="kv"><b>A tetthely</b>${esc(S.scene)}</div><div class="kv"><b>A halál oka</b>${esc(S.weapon)}</div>
     ${S.common ? `<div class="kv"><b>Közösen megállapítottátok</b>${esc(S.common)}</div>` : ""}
-    <button class="btn ghost" id="replay">🔊 Narráció újra</button>`);
+    <button class="btn ghost" id="replay">${icon("sound", "inl")} Narráció újra</button>`);
   narrate(S, $("#mtyped"));
   $("#replay").onclick = () => { ensureAudio(); narrate(S, $("#mtyped")); };
 }
@@ -594,7 +613,7 @@ function tipView(i) {
     ? `<p>Neked nincs valódi megfigyelésed. Válassz egy hazugságot, és mondd el úgy, mintha te figyelted volna meg:</p><ol>${tip.map(x => `<li style="margin:6px 0">${esc(x)}</li>`).join("")}</ol>`
     : `<p style="font-size:1.15rem">${esc(tip)}</p>`;
   if (last && SLOT === 4 && P.n.length === 6) body += `<p style="font-size:1.05rem;border-top:1px solid var(--line);padding-top:10px">${esc(S.accTip)}</p>`;
-  const m = modal(`<h2>👁 Új megfigyelés</h2>${body}<div class="bar" style="margin-top:12px"><i id="tbar"></i></div><p class="small muted">Az óra áll. 30 másodperc múlva eltűnik, és bekerül a lapod 5. pontjába. Hazudhatsz róla.</p>`, "tipbox");
+  const m = modal(`<h2>${icon("eye", "inl")} Új megfigyelés</h2>${body}<div class="bar" style="margin-top:12px"><i id="tbar"></i></div><p class="small muted">Az óra áll. 30 másodperc múlva eltűnik, és bekerül a lapod 5. pontjába. Hazudhatsz róla.</p>`, "tipbox");
   m.querySelector(".x").remove(); m.onclick = null;
   if (!ST.tipSeen[i]) {
     ST.tipSeen[i] = 1;
@@ -632,7 +651,7 @@ function voteFlow() {
     app.querySelectorAll(".grid .c").forEach(e => e.onclick = () => { sel = +e.dataset.j; app.querySelectorAll(".grid .c").forEach(x => x.classList.toggle("on", x === e)); $("#cast").disabled = false; });
     $("#cast").onclick = () => { V.votes[V.i] = sel; V.stage = "pass"; save(); tone(520, .15); voteFlow(); };
   } else if (V.stage === "count") {
-    app.innerHTML = `<div class="center" style="padding-top:18vh"><h1>Számolás...</h1><p class="big">🥁</p></div>`;
+    app.innerHTML = `<div class="center" style="padding-top:18vh"><h1>Számolás...</h1><p class="big drumb">${icon("drum", "", 64)}</p></div>`;
     ensureAudio(); drumroll(3);
     setTimeout(() => { V.stage = "reveal"; save(); voteFlow(); }, 3300);
   } else if (V.stage === "reveal") {
