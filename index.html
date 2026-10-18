@@ -273,6 +273,7 @@ function settingsModal() {
     ${inGame ? `<button class="btn ghost" id="quit" style="margin-top:18px;color:#f19a92;border-color:#f19a9255">${icon("exit", "inl")} Kilépés: feladom a játékot</button>` : ""}`);
   document.querySelectorAll("#modal [data-k]").forEach(e => e.onchange = () => {
     CFG[e.dataset.k] = e.checked; saveCFG(); if (!CFG.narration && window.speechSynthesis) speechSynthesis.cancel();
+    if (e.dataset.k === "music" && $("#cover")) introMusic(CFG.music);
     if (e.dataset.k === "music" && inGame && P.p === 0) { if (!CFG.music) { stopMusic(); AU.mode = null; } else { ensureAudio(); if (AU.drone) AU.drone.gain.value = .05; startMusic(S); } }
   });
   if ($("#quit")) $("#quit").onclick = () => {
@@ -397,6 +398,18 @@ function lobby() {
   app.querySelectorAll(".tile").forEach(e => e.onclick = () => coverView(e.dataset.st, e.getBoundingClientRect()));
   $("#setb").onclick = settingsModal;
 }
+// crime music under the opening narration and the setup dials (Pixabay, Márk 2026-10-18)
+const IMUS = {a: null};
+function introMusic(on) {
+  if (on) {
+    if (IMUS.a || !CFG.music) return;
+    const a = new Audio("assets/music_intro.mp3"); a.loop = true; a.volume = 0; IMUS.a = a;
+    a.play().then(() => { let v = 0; const t = setInterval(() => { if (IMUS.a !== a) return clearInterval(t); v = Math.min(.28, v + .02); a.volume = v; if (v >= .28) clearInterval(t); }, 80); }).catch(() => { IMUS.a = null; });
+  } else if (IMUS.a) {
+    const a = IMUS.a; IMUS.a = null;
+    const t = setInterval(() => { a.volume = Math.max(0, a.volume - .03); if (a.volume <= 0) { clearInterval(t); a.pause(); } }, 60);
+  }
+}
 function coverView(id, rect) {
   const s = STORIES.find(x => x.id === id);
   ensureAudio();
@@ -411,8 +424,9 @@ function coverView(id, rect) {
   const bg = new Image(); bg.onload = () => { $("#cbg").style.backgroundImage = `url(${bg.src})`; };
   bg.onerror = () => { $("#cbg").style.backgroundImage = `url(${coverFallback(s)})`; }; bg.src = coverSrc(s);
   // Start button appears only once the narration has finished (Márk 2026-10-18)
+  introMusic(true);
   narrate(s, $("#ctyped"), () => { const b = $("#cstart"); if (b) b.style.display = ""; });
-  $("#cback").onclick = $("#cother").onclick = () => { stopNarration(); el.remove(); };
+  $("#cback").onclick = $("#cother").onclick = () => { stopNarration(); introMusic(false); el.remove(); };
   $("#cstart").onclick = () => settingsView(s);
 }
 function settingsView(s) {
@@ -477,7 +491,7 @@ function settingsView(s) {
     const x = +(new URLSearchParams(location.search).get("x") || 1);
     const g = Math.random().toString(36).slice(2, 10);
     const base = {v: 4, s: s.id, m: L.mode, n, ch: pick, t0: Date.now(), g, x};
-    removeEventListener("resize", layout); $("#cover").remove();
+    removeEventListener("resize", layout); introMusic(false); $("#cover").remove();
     deal(base, 1);
   };
 }
