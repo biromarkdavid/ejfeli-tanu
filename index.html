@@ -587,7 +587,7 @@ function update(t) {
   if (t.ph === "intro") { const b = $("#ibar"); if (b) { b.style.width = (100 * t.left / INTRO) + "%"; b.parentNode.classList.toggle("low", t.left <= 10); } }
   if (t.ph === "play" || t.ph === "tip") {
     const D = P.m * 60, rem = t.rem;
-    drawClock(rem / D, t.ph === "tip", t.ph === "play" && rem <= 60);
+    drawClock(rem / D, t.ph === "tip", t.ph === "play" && rem <= 60, rem);
     if (P.p === 0 && t.ph === "play") {
       if (rem <= 180) tensionOn(S);
       if (rem <= 60) { const s = Math.ceil(rem * (rem <= 10 ? 2 : 1)); if (s !== AU.lastTick) { AU.lastTick = s; tick(1 - rem / 60); } }
@@ -686,16 +686,50 @@ function drawTray() {
 }
 
 /* ---------- crime scene with clock, map, notebook ---------- */
-function drawClock(frac, paused, urgent) {
+// per-story clock skin (Márk 2026-10-18): face, ring, accent and a small ornament that fits the world
+// orn: studs = rivets on the ring, spokes = ship-wheel handles, spikes = gothic points, stars = little stars
+const CLOCK_THEME = {
+  S01: {face: "#efe2c4", ring: "#b8902f", ring2: "#6e5418", ink: "#2b2014", wedge: "#a3282a", orn: "studs", n: 4},
+  S02: {face: "#eadfc8", ring: "#9c7a43", ring2: "#4a3720", ink: "#2a2018", wedge: "#7a1f1f", orn: "studs", n: 12},
+  S03: {face: "#ddd6d0", ring: "#3a3036", ring2: "#a9a9b3", ink: "#1c1418", wedge: "#8b0000", orn: "spikes", n: 12},
+  S04: {face: "#ece4f6", ring: "#3d2b6b", ring2: "#d9b46a", ink: "#24183f", wedge: "#7a3fb8", orn: "stars", n: 8},
+  S05: {face: "#e8d9b5", ring: "#6b4423", ring2: "#c9a64b", ink: "#2b1c0e", wedge: "#9b2d20", orn: "spokes", n: 8},
+  S06: {face: "#f3efe6", ring: "#1d3557", ring2: "#c9a64b", ink: "#14213d", wedge: "#b5332e", orn: "studs", n: 12},
+  S07: {face: "#f4efe3", ring: "#c9a64b", ring2: "#7a5a1e", ink: "#2b2418", wedge: "#9b3a24", orn: "stars", n: 12},
+  S08: {face: "#f2f4f7", ring: "#2b2f36", ring2: "#9aa3ad", ink: "#1b1f24", wedge: "#c0392b", orn: "studs", n: 4},
+  S09: {face: "#ece6da", ring: "#2f4f3a", ring2: "#8b1e2d", ink: "#1e2a21", wedge: "#8b1e2d", orn: "studs", n: 8},
+  S10: {face: "#0f1b2b", ring: "#1f6f8b", ring2: "#5bc0eb", ink: "#d8f3ff", wedge: "#e94f37", orn: "spikes", n: 4}};
+function clockOrnament(T) {
+  let h = "";
+  for (let i = 0; i < T.n; i++) {
+    const a = i * 2 * Math.PI / T.n, sx = Math.sin(a), cy = -Math.cos(a), at = (r) => `${(50 + r * sx).toFixed(2)} ${(50 + r * cy).toFixed(2)}`;
+    if (T.orn === "studs") h += `<circle cx="${50 + 49.5 * sx}" cy="${50 + 49.5 * cy}" r="1.6" fill="${T.ring2}"/>`;
+    else if (T.orn === "spokes") h += `<line x1="${50 + 52 * sx}" y1="${50 + 52 * cy}" x2="${50 + 58 * sx}" y2="${50 + 58 * cy}" stroke="${T.ring}" stroke-width="3.2" stroke-linecap="round"/><circle cx="${50 + 58 * sx}" cy="${50 + 58 * cy}" r="2.2" fill="${T.ring2}"/>`;
+    else if (T.orn === "spikes") { const b = .09; h += `<path d="M${at(57)} L${(50 + 52 * Math.sin(a - b)).toFixed(2)} ${(50 - 52 * Math.cos(a - b)).toFixed(2)} L${(50 + 52 * Math.sin(a + b)).toFixed(2)} ${(50 - 52 * Math.cos(a + b)).toFixed(2)} Z" fill="${T.ring2}"/>`; }
+    else if (T.orn === "stars") { const c = [50 + 49.5 * sx, 50 + 49.5 * cy]; let d = ""; for (let k = 0; k < 10; k++) { const r = k % 2 ? .9 : 2.2, q = k * Math.PI / 5; d += `${k ? "L" : "M"}${(c[0] + r * Math.sin(q)).toFixed(2)} ${(c[1] - r * Math.cos(q)).toFixed(2)}`; } h += `<path d="${d}Z" fill="${T.ring2}"/>`; }
+  }
+  return h;
+}
+function drawClock(frac, paused, urgent, rem) {
   const el = $("#clock"); if (!el) return;
+  const T = CLOCK_THEME[S && S.id] || CLOCK_THEME.S01;
+  el.setAttribute("viewBox", "-9 -9 118 118");
   frac = Math.max(0, Math.min(1, frac));
   const a = frac * 2 * Math.PI, r = 44, x = 50 + r * Math.sin(a), y = 50 - r * Math.cos(a);
-  const wedge = frac >= .999 ? `<circle cx="50" cy="50" r="${r}" fill="#c0392b"/>` : frac <= 0 ? "" :
-    `<path d="M50 50 L50 ${50 - r} A${r} ${r} 0 ${a > Math.PI ? 1 : 0} 1 ${x.toFixed(2)} ${y.toFixed(2)} Z" fill="#c0392b"/>`;
-  let ticks = ""; for (let i = 0; i < 60; i++) { const b = i * 6 * Math.PI / 180, l = i % 5 ? 3 : 7; ticks += `<line x1="${50 + 47 * Math.sin(b)}" y1="${50 - 47 * Math.cos(b)}" x2="${50 + (47 - l) * Math.sin(b)}" y2="${50 - (47 - l) * Math.cos(b)}" stroke="#2b2233" stroke-width="${i % 5 ? .6 : 1.4}"/>`; }
-  el.innerHTML = `<circle cx="50" cy="50" r="49" fill="#efe6d2" stroke="#8a6d3b" stroke-width="2"/>${wedge}${ticks}
-    <line x1="50" y1="50" x2="${x.toFixed(2)}" y2="${y.toFixed(2)}" stroke="#2b2233" stroke-width="2.4" stroke-linecap="round"/>
-    <circle cx="50" cy="50" r="4" fill="#2b2233"/>${paused ? `<rect x="42" y="64" width="5" height="14" fill="#2b2233"/><rect x="53" y="64" width="5" height="14" fill="#2b2233"/>` : ""}`;
+  const wedge = frac >= .999 ? `<circle cx="50" cy="50" r="${r}" fill="${T.wedge}"/>` : frac <= 0 ? "" :
+    `<path d="M50 50 L50 ${50 - r} A${r} ${r} 0 ${a > Math.PI ? 1 : 0} 1 ${x.toFixed(2)} ${y.toFixed(2)} Z" fill="${T.wedge}" fill-opacity=".9"/>`;
+  let ticks = ""; for (let i = 0; i < 60; i++) { const b = i * 6 * Math.PI / 180, l = i % 5 ? 3 : 7; ticks += `<line x1="${50 + 45 * Math.sin(b)}" y1="${50 - 45 * Math.cos(b)}" x2="${50 + (45 - l) * Math.sin(b)}" y2="${50 - (45 - l) * Math.cos(b)}" stroke="${T.ink}" stroke-width="${i % 5 ? .6 : 1.4}"/>`; }
+  // digital readout either side of the pivot (the pivot reads as the colon)
+  let dig = "";
+  if (rem !== undefined) { const t = Math.max(0, Math.ceil(rem)), mm = String(Math.floor(t / 60)).padStart(2, "0"), ss = String(t % 60).padStart(2, "0");
+    const txt = (xx, anchor, v) => `<text x="${xx}" y="51" text-anchor="${anchor}" dominant-baseline="middle" font-family="Inter,sans-serif" font-weight="800" font-size="17" fill="${T.ink}" stroke="${T.face}" stroke-width="3" paint-order="stroke">${v}</text>`;
+    dig = txt(44, "end", mm) + txt(56, "start", ss); }
+  // spokes and spikes stick out behind the ring, studs and stars sit on it
+  const orn = clockOrnament(T), out = T.orn === "spokes" || T.orn === "spikes";
+  el.innerHTML = `${out ? orn : ""}<circle cx="50" cy="50" r="52" fill="${T.ring}"/><circle cx="50" cy="50" r="49.5" fill="none" stroke="${T.ring2}" stroke-width="1.2"/>${out ? "" : orn}
+    <circle cx="50" cy="50" r="47" fill="${T.face}"/>${wedge}${ticks}${dig}
+    <line x1="50" y1="50" x2="${x.toFixed(2)}" y2="${y.toFixed(2)}" stroke="${T.ink}" stroke-width="2.4" stroke-linecap="round"/>
+    <circle cx="50" cy="50" r="4" fill="${T.ink}"/>${paused ? `<rect x="42" y="66" width="5" height="12" fill="${T.ink}"/><rect x="53" y="66" width="5" height="12" fill="${T.ink}"/>` : ""}`;
   el.classList.toggle("urgent", !!urgent); el.classList.toggle("paused", !!paused);
 }
 function sceneView(t) {
@@ -874,7 +908,7 @@ function voteFlow() {
     V._t = setInterval(() => {
       if (!$("#now")) return clearInterval(V._t);
       const rem = (V.extraEnd - Date.now()) / 1000 * P.x;
-      drawClock(rem / 180, false, rem <= 30);
+      drawClock(rem / 180, false, rem <= 30, rem);
       if (rem <= 60) { const sec = Math.ceil(rem); if (sec !== last) { last = sec; tick(1 - rem / 60); } }
       if (rem <= 0) go();
     }, 200);
