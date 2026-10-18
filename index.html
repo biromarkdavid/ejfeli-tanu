@@ -104,6 +104,17 @@ label{display:block;margin:8px 0 4px;color:var(--muted);font-size:.9rem}
 .reveal .rvrole{font:800 1.7rem 'Playfair Display',serif;margin:6px 0;text-shadow:0 2px 12px #000;letter-spacing:.02em}
 .reveal p{color:#eee;text-shadow:0 1px 6px #000}
 .reveal .ballot{text-align:left}
+.reveal.done .rvin{justify-content:flex-start;padding-top:calc(14vh + env(safe-area-inset-top))}
+.reveal.done::after{background:linear-gradient(180deg,#0006,#000d 45%,#000f)}
+.reveal .rvmore{text-align:left;background:#000a;border:1px solid #ffffff22;border-radius:14px;padding:4px 14px;margin:8px 0}
+.reveal .rvmore .tog{border-top:0;margin:0}.reveal .rvmore .tog+.tog{border-top:1px solid #ffffff22}
+.rvroles{display:grid;grid-template-columns:repeat(3,1fr);gap:14px 8px;margin:22px 0 8px}
+.rvroles .rr{display:flex;flex-direction:column;align-items:center;gap:3px}
+.rvroles .av{width:68px;height:68px;border-radius:50%;overflow:hidden;position:relative;border:2px solid #ffffff66;background:#2a2430}
+.rvroles .av img{position:absolute;width:210%;left:-55%;top:-6%;max-width:none}
+.rvroles i{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:var(--c);color:#fff;border:1.5px solid #fff;margin-top:-14px;position:relative}
+.rvroles i .ic{width:15px;height:15px}
+.rvroles small{font-size:.74rem;line-height:1.15;color:#fff}.rvroles small.muted{color:#bbb;font-size:.66rem;letter-spacing:.05em}
 .suspick{margin-top:14px;border-top:1px solid var(--line);padding-top:12px}
 .suspick b{display:block;color:var(--gold);font-size:.82rem;letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px}
 .suspick .opts{display:flex;gap:6px}
@@ -965,7 +976,15 @@ function voteRender(st, revealing, iVoted, guess) {
       VOTE.outcome = "evil";
       h = wrap(st.j, `${note}<p class="rvrole" style="color:#5fc98d">ÁRTATLAN volt.</p><p class="rvrole" style="color:#e8574a">A gonoszok nyertek!</p>`);
     }
-    if (VOTE.outcome) h = h.replace(/<\/div><\/div>$/, `<button class="btn" id="fin">Megoldás és szerepek</button></div></div>`);
+    // outcome known: text moves up, and everyone's portrait shows the role they really had (Márk 2026-10-18)
+    if (VOTE.outcome) {
+      const roles = `<div class="rvroles"${P.ch.length === 4 ? ' style="grid-template-columns:repeat(4,1fr)"' : ""}>` + P.ch.map(sl => { const c = S.chars[sl], m = MARK[c.role];
+        return `<div class="rr"><div class="av">${pimg(S, sl)}</div><i style="--c:${m.col}">${icon(m.ic)}</i><small>${esc(c.name)}</small><small class="muted">${c.roleName}</small></div>`; }).join("") + `</div>`;
+      // one closing screen instead of 2-3 steps: verdict, true roles, solution and missions (as toggles), new game
+      const more = `<div class="rvmore"><details class="tog"><summary>Mi történt valójában</summary><p>${esc(S.solution)}</p></details>
+        <details class="tog"><summary>Titkos küldetések</summary>${P.ch.map(sl => `<p class="small"><b>${esc(S.chars[sl].name)}</b>: ${esc(S.chars[sl].mission)}</p>`).join("")}<p class="small muted">Meséljétek el, kinek sikerült!</p></details></div>`;
+      h = h.replace('<div class="reveal">', '<div class="reveal done">').replace(/<\/div><\/div>$/, `${roles}${more}<button class="btn" id="new">Új játék</button></div></div>`);
+    }
   }
   app.innerHTML = h; window.scrollTo(0, 0);
   if ($("#skip")) $("#skip").onclick = () => { $("#skip").disabled = true; syncPost({s: {r: st.r}}); };
@@ -974,7 +993,7 @@ function voteRender(st, revealing, iVoted, guess) {
     app.querySelectorAll(".vrow").forEach(e => e.onclick = () => { sel = +e.dataset.j; app.querySelectorAll(".vrow").forEach(x => x.classList.toggle("on", x === e)); $("#gcast").disabled = false; });
     $("#gcast").onclick = () => { $("#gcast").disabled = true; syncPost({g: {j: sel}}); };
   }
-  if ($("#fin")) $("#fin").onclick = () => { VOTE.fin = VOTE.outcome; voteTick(); };
+  if ($("#new")) $("#new").onclick = () => { location.hash = ""; location.reload(); };
   if (st.phase === "verdict" && VOTE.outcome && !VOTE.toned) { VOTE.toned = 1; tone(VOTE.outcome === "good" ? 660 : 160, 1.2, "triangle", .3); }
 }
 function finalView(outcome) {
