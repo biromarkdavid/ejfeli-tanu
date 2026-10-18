@@ -302,9 +302,10 @@ function tokHTML(tok, k) {
 const NARR = {gen: 0};
 function stopNarration() { NARR.gen++; if (window.speechSynthesis) speechSynthesis.cancel(); if (NARR.audio) NARR.audio.pause(); }
 // el: container to type into (or null for voice only). Reveals the text progressively in sync with the voice.
-function narrate(story, el) {
+function narrate(story, el, onDone) {
   stopNarration();
   const gen = ++NARR.gen, parts = storyParts(story), done = parts.map(() => 0);
+  let fin = false; const finish = () => { if (!fin && gen === NARR.gen) { fin = true; if (onDone) onDone(); } };
   const voiceOn = CFG.narration && !!window.speechSynthesis;
   const draw = () => { if (el && gen === NARR.gen) el.innerHTML = parts.map((tok, i) => tokHTML(tok, done[i])).join(done[0] >= plainOf(parts[0]).length && parts.length > 1 ? " " : "") + (done[parts.length - 1] < plainOf(parts[parts.length - 1]).length ? `<span class="caret">▍</span>` : ""); };
   const typeTo = (i, target) => { done[i] = Math.max(done[i], Math.min(target, plainOf(parts[i]).length)); draw(); };
@@ -313,7 +314,7 @@ function narrate(story, el) {
     if (gen !== NARR.gen || i >= parts.length) return;
     const text = plainOf(parts[i]);
     let timer = setInterval(() => { if (gen !== NARR.gen) return clearInterval(timer); typeTo(i, done[i] + 1); if (!voiceOn && done[i] >= text.length) { clearInterval(timer); next(); } }, voiceOn ? 62 : 45);
-    const next = () => { clearInterval(timer); typeTo(i, text.length); if (i < parts.length - 1) { scream(); setTimeout(() => runPart(i + 1), 1700); } };
+    const next = () => { clearInterval(timer); typeTo(i, text.length); if (i < parts.length - 1) { scream(); setTimeout(() => runPart(i + 1), 1700); } else finish(); };
     if (voiceOn) {
       const u = new SpeechSynthesisUtterance(text); u.lang = "hu-HU"; u.rate = .95;
       const v = speechSynthesis.getVoices().find(v => /^hu/i.test(v.lang)); if (v) u.voice = v;
@@ -323,7 +324,7 @@ function narrate(story, el) {
       speechSynthesis.speak(u);
     }
   };
-  if (el) { el.onclick = () => { parts.forEach((p, i) => done[i] = plainOf(p).length); draw(); }; draw(); }
+  if (el) { el.onclick = () => { parts.forEach((p, i) => done[i] = plainOf(p).length); draw(); finish(); }; draw(); }
   runPart(0);
 }
 
@@ -352,16 +353,15 @@ function coverView(id, rect) {
   el.style.transformOrigin = rect ? `${rect.left + rect.width / 2}px ${rect.top + rect.height / 2}px` : "50% 50%";
   el.innerHTML = `<div class="bg" id="cbg"></div><div class="cin">
     <button class="hbtn" id="cback" style="position:absolute;left:12px;top:calc(10px + env(safe-area-inset-top))">${icon("back")}</button>
-    <div class="ctext"><h1>${esc(s.title)}</h1><p class="muted small">${esc(s.world)}</p><p class="storytxt" id="ctyped"></p>
-    ${s.common ? `<p style="color:var(--gold2)">${icon("eye", "inl")} ${esc(s.common)}</p>` : ""}
-    <button class="btn ghost" id="cnarr">${icon("sound", "inl")} Narráció újra</button></div>
-    <div class="cbot"><button class="btn" id="cstart">Kezdés</button></div></div>`;
+    <div class="ctext"><h1>${esc(s.title)}</h1><p class="muted small">${esc(s.world)}</p><p class="storytxt" id="ctyped"></p></div>
+    <div class="cbot"><button class="btn" id="cstart" style="display:none">Játék kezdése</button></div>
+    <button class="btn ghost" id="cother" style="opacity:.6;color:#c9c4bc;border-color:#ffffff33;margin:8px 0 0">Másik történetet választok</button></div>`;
   document.body.appendChild(el);
   const bg = new Image(); bg.onload = () => { $("#cbg").style.backgroundImage = `url(${bg.src})`; };
   bg.onerror = () => { $("#cbg").style.backgroundImage = `url(${coverFallback(s)})`; }; bg.src = coverSrc(s);
-  narrate(s, $("#ctyped"));
-  $("#cnarr").onclick = () => narrate(s, $("#ctyped"));
-  $("#cback").onclick = () => { stopNarration(); el.remove(); };
+  // Start button appears only once the narration has finished (Márk 2026-10-18)
+  narrate(s, $("#ctyped"), () => { const b = $("#cstart"); if (b) b.style.display = ""; });
+  $("#cback").onclick = $("#cother").onclick = () => { stopNarration(); el.remove(); };
   $("#cstart").onclick = () => settingsView(s);
 }
 function settingsView(s) {
