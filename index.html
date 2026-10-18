@@ -47,6 +47,8 @@ label{display:block;margin:8px 0 4px;color:var(--muted);font-size:.9rem}
 .topbar{position:sticky;top:0;z-index:5;background:var(--bg);padding:10px 0 8px}
 .bar{height:10px;border-radius:99px;background:var(--panel2);overflow:hidden;position:relative}
 .bar>i{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(90deg,var(--gold),var(--gold2));border-radius:99px}
+.bar>i{transition:width .25s linear,background .4s}
+.bar.low>i{background:linear-gradient(90deg,#c0392b,#e8574a);box-shadow:0 0 10px #e8574a88}
 .bar .tick{position:absolute;top:0;bottom:0;width:2px;background:var(--bg)}
 .steps{display:flex;justify-content:space-between;font-size:.8rem;color:var(--muted);margin-top:6px}
 .steps b{color:var(--gold2)}
@@ -577,7 +579,7 @@ function render(t) {
   if (t.ph === "tip") tipView(t.i);
 }
 function update(t) {
-  if (t.ph === "intro") { const el = $("#ileft"); if (el) el.textContent = `A nyomozás ${Math.ceil(t.left)} mp múlva indul.`; }
+  if (t.ph === "intro") { const b = $("#ibar"); if (b) { b.style.width = (100 * t.left / INTRO) + "%"; b.parentNode.classList.toggle("low", t.left <= 10); } }
   if (t.ph === "play" || t.ph === "tip") {
     const D = P.m * 60, rem = t.rem;
     drawClock(rem / D, t.ph === "tip", t.ph === "play" && rem <= 60);
@@ -586,7 +588,7 @@ function update(t) {
       if (rem <= 60) { const s = Math.ceil(rem * (rem <= 10 ? 2 : 1)); if (s !== AU.lastTick) { AU.lastTick = s; tick(1 - rem / 60); } }
     }
   }
-  if (t.ph === "tip") { const b = $("#tbar"); if (b) b.style.width = (100 * t.left / TIP) + "%"; }
+  if (t.ph === "tip") { const b = $("#tbar"); if (b) { b.style.width = (100 * t.left / TIP) + "%"; b.parentNode.classList.toggle("low", t.left <= 10); } }
 }
 function waitView() {
   app.innerHTML = `<div class="center" style="padding-top:12vh"><h1>${esc(S.title)}</h1>
@@ -600,7 +602,7 @@ function waitView() {
 function readHead(step) {
   const names = ["1. Ki vagy", "2. Amit tudsz", "3. Mini küldetés"];
   return `<div class="topbar"><div class="steps">${names.map((s, i) => i === step ? `<b>${s}</b>` : `<span>${s}</span>`).join("")}</div>
-    <div class="small center muted" id="ileft" style="margin-top:6px"></div></div>`;
+    <div class="bar" style="margin-top:8px" title="A nyomozás indulásáig"><i id="ibar" style="width:100%"></i></div></div>`;
 }
 function myRole() {
   return `<div class="panel"><div class="kv"><b>Mi történt veled</b>${esc(ME.roleText)}</div><div class="kv"><b>Hogyan nyersz</b>${esc(ME.win)}</div></div>`;
@@ -624,7 +626,7 @@ function readView(step) {
       <div class="role ${ME.role}">${ME.roleName}</div></div></div>${myRole()}`;
   } else if (step === 1) {
     h += `<h2>Te és ${esc(S.victim.split(",")[0])}</h2>${myCard()}
-      <p class="small muted">A játék alatt időnként 30 másodpercre új megfigyelést kapsz. Ezek ide, az 5. pontba kerülnek. Senki más nem látja őket: hazudhatsz róluk. A lapodat a játék alatt is megnézheted: koppints a saját képedre.</p>`;
+      <p class="small muted">A játék alatt időnként 30 másodpercre új megfigyelést kapsz. Ezek ide, a Megfigyeléseid részbe kerülnek. Senki más nem látja őket: hazudhatsz róluk. A lapodat a játék alatt is megnézheted: koppints a saját képedre.</p>`;
   } else if (step === 2) {
     h += `<p class="badge gold" style="margin-top:6px">Opcionális extra · csak neked</p><h2>Mini küldetés</h2><div class="panel" style="font-size:1.12rem">${esc(ME.mission)}</div>
       <p class="small muted">Nem kötelező és nem ér pontot: egy jópofa csavar a történetben. Ha a játék közben sikerül, a végén elmesélheted.</p>`;
@@ -756,7 +758,7 @@ function tipView(i) {
     ? `<p>Neked nincs valódi megfigyelésed. Válassz egy hazugságot, és mondd el úgy, mintha te figyelted volna meg:</p><ol>${tip.map(x => `<li style="margin:6px 0">${esc(x)}</li>`).join("")}</ol>`
     : `<p style="font-size:1.15rem">${esc(tip)}</p>`;
   if (last && SLOT === 4 && P.n.length === 6) body += `<p style="font-size:1.05rem;border-top:1px solid var(--line);padding-top:10px">${esc(S.accTip)}</p>`;
-  const m = modal(`<h2>${icon("eye", "inl")} Új megfigyelés</h2>${body}<div class="bar" style="margin-top:12px"><i id="tbar"></i></div><p class="small muted">Az óra áll. 30 másodperc múlva eltűnik, és bekerül a lapod 5. pontjába. Hazudhatsz róla.</p>`, "tipbox");
+  const m = modal(`<h2>${icon("eye", "inl")} Új megfigyelés</h2>${body}<div class="bar" style="margin-top:12px"><i id="tbar"></i></div><p class="small muted">Az óra áll. 30 másodperc múlva eltűnik, és bekerül a lapod Megfigyeléseid részébe. Hazudhatsz róla.</p>`, "tipbox");
   m.querySelector(".x").remove(); m.onclick = null;
   if (!ST.tipSeen[i]) {
     ST.tipSeen[i] = 1;
