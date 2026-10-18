@@ -407,12 +407,14 @@ function narrate(story, el, onDone) {
   const voiceOn = CFG.narration && !!window.speechSynthesis;
   const draw = () => { if (el && gen === NARR.gen) el.innerHTML = parts.map((tok, i) => tokHTML(tok, done[i])).join(done[0] >= plainOf(parts[0]).length && parts.length > 1 ? " " : "") + (done[parts.length - 1] < plainOf(parts[parts.length - 1]).length ? `<span class="caret">▍</span>` : ""); };
   const typeTo = (i, target) => { done[i] = Math.max(done[i], Math.min(target, plainOf(parts[i]).length)); draw(); };
-  const scream = () => { if (CFG.sfx || CFG.narration) { const a = SCREAM.a || new Audio("assets/sfx_scream.mp3"); a.currentTime = 0; a.volume = 1; a.play().catch(() => {}); } };
+  // ~5 s drawn-out scream; the music ducks under it, the story goes on once it fades
+  const scream = () => { if (CFG.sfx || CFG.narration) { const a = SCREAM.a || new Audio("assets/sfx_scream.mp3"); a.currentTime = 0; a.volume = 1; a.play().catch(() => {});
+    const m = IMUS.a || AU.music; if (m) { const v = m.volume; m.volume = v * .25; setTimeout(() => { if (m.volume < v) m.volume = v; }, 4600); } } };
   const runPart = i => {
     if (gen !== NARR.gen || i >= parts.length) return;
     const text = plainOf(parts[i]);
     let timer = setInterval(() => { if (gen !== NARR.gen) return clearInterval(timer); typeTo(i, done[i] + 1); if (!voiceOn && done[i] >= text.length) { clearInterval(timer); next(); } }, voiceOn ? 62 : 45);
-    const next = () => { clearInterval(timer); typeTo(i, text.length); if (i < parts.length - 1) { scream(); setTimeout(() => runPart(i + 1), 1700); } else finish(); };
+    const next = () => { clearInterval(timer); typeTo(i, text.length); if (i < parts.length - 1) { scream(); setTimeout(() => runPart(i + 1), 4300); } else finish(); };
     if (voiceOn) {
       const u = new SpeechSynthesisUtterance(text); u.lang = "hu-HU"; u.rate = .95;
       const v = speechSynthesis.getVoices().find(v => /^hu/i.test(v.lang)); if (v) u.voice = v;
