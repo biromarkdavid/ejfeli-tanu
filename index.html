@@ -69,10 +69,11 @@ label{display:block;margin:8px 0 4px;color:var(--muted);font-size:.9rem}
 .stage{position:absolute;left:0;right:0;top:calc(min(34vw,150px) + 30px);bottom:calc(10px + env(safe-area-inset-bottom));z-index:2}
 .victim{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);text-align:center;color:#e6c7c2;font-size:.8rem;pointer-events:none}
 .victim .vb{font-size:2.2rem;opacity:.7}
-.ch{position:absolute;width:min(22vw,104px);transform:translate(-50%,-50%);text-align:center;cursor:pointer}
-.ch img{width:100%;aspect-ratio:2/3;object-fit:cover;border-radius:12px;border:2px solid #ffffff55;box-shadow:0 6px 18px #000a;background:#2a2430}
+.ch{position:absolute;width:min(24vw,96px);transform:translate(-50%,-50%);text-align:center;cursor:pointer}
+.ch .av{width:min(17vw,68px);height:min(17vw,68px);margin:0 auto;border-radius:50%;overflow:hidden;border:2px solid #ffffffaa;box-shadow:0 4px 14px #000c;background:#2a2430;position:relative}
+.ch .av img{position:absolute;width:210%;left:-55%;top:-6%;max-width:none}
 .ch span{display:block;font-size:.74rem;line-height:1.2;margin-top:4px;text-shadow:0 1px 4px #000;color:#fff}
-.ch.me img{border-color:var(--gold)}
+.ch.me .av{border-color:var(--gold);border-width:3px}
 .subs{position:absolute;left:12px;right:12px;bottom:calc(14px + env(safe-area-inset-bottom));z-index:4;background:#000000b8;border:1px solid #ffffff22;border-radius:14px;padding:14px;max-height:46vh;overflow:auto}
 .modal{position:fixed;inset:0;z-index:20;background:#000000d8;display:flex;align-items:center;justify-content:center;padding:16px}
 .modal .box{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:16px;max-width:520px;width:100%;max-height:92vh;overflow:auto;position:relative}
@@ -410,7 +411,7 @@ function sceneView(t) {
   slots.forEach((slot, i) => {
     const ang = -Math.PI / 2 + (i + .5) * 2 * Math.PI / n;
     const x = 50 + 37 * Math.cos(ang), y = 50 + 38 * Math.sin(ang);
-    h += `<div class="ch ${i === P.p ? "me" : ""}" data-slot="${slot}" style="left:${x}%;top:${y}%">${pimg(S, slot)}<span>${esc(S.chars[slot].name)}<br><span style="opacity:.75">${i === P.p ? "te: koppints a lapodért" : esc(P.n[i])}</span></span></div>`;
+    h += `<div class="ch ${i === P.p ? "me" : ""}" data-slot="${slot}" style="left:${x}%;top:${y}%"><div class="av">${pimg(S, slot)}</div><span>${esc(S.chars[slot].name)}<br><span style="opacity:.75">${i === P.p ? "te: koppints a lapodért" : esc(P.n[i])}</span></span></div>`;
   });
   h += `</div></div>`;
   app.innerHTML = h;
