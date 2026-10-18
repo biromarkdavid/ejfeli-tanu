@@ -131,6 +131,16 @@ textarea{width:100%;min-height:42vh;padding:12px;border-radius:12px;border:1px s
 .modal .x .ic{width:22px;height:22px}
 .victim .vb .ic{width:34px;height:34px;opacity:.7}
 .drumb .ic{animation:pulse .25s infinite}
+.chead{display:flex;align-items:center;gap:12px;padding-right:34px;margin-bottom:8px}
+.chead .av{width:64px;height:64px;border-radius:50%;overflow:hidden;position:relative;border:2px solid var(--gold);flex:0 0 auto;background:#2a2430}
+.chead .av img{position:absolute;width:210%;left:-55%;top:-6%;max-width:none}
+.zoomb{width:46px;height:46px;flex:0 0 auto;background:var(--panel2)}
+.photo{position:fixed;inset:0;z-index:40;background:#000;display:flex;flex-direction:column}
+.pwrap{flex:1;overflow:auto;touch-action:pan-x pan-y pinch-zoom;display:flex;align-items:center;justify-content:center}
+.pwrap .pimg{max-width:100%;max-height:100%;object-fit:contain;cursor:zoom-in}
+.pwrap.z{display:block}.pwrap.z .pimg{max-width:none;max-height:none;width:260%;cursor:zoom-out}
+.pcap{padding:10px 16px calc(34px + env(safe-area-inset-bottom));font-size:.9rem;color:#ddd;background:#111}
+.phint{position:absolute;bottom:calc(10px + env(safe-area-inset-bottom));left:0;right:0;text-align:center;color:#fff9;font-size:.8rem;margin:0;pointer-events:none}
 .big{font:800 2rem "Playfair Display",serif;text-align:center;margin:10px 0}
 </style>
 </head>
@@ -170,6 +180,7 @@ function pimg(story, slot, opts = {}) {
 
 /* ===================== icon set (own line icons, no emoji) ===================== */
 const ICON = {
+  zoom: `<circle cx="10.5" cy="10.5" r="6.5"/><path d="m20 20-4.8-4.8"/><path d="M10.5 7.5v6"/><path d="M7.5 10.5h6"/>`,
   gear: `<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>`,
   back: `<path d="M19 12H5"/><path d="M11 18l-6-6 6-6"/>`,
   sound: `<path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.4 5.6a9 9 0 0 1 0 12.8"/>`,
@@ -577,15 +588,27 @@ function closeModal() { const m = $("#modal"); if (m) { if (m.querySelector("#mt
 function zoomable(html) { return `<div class="zoomwrap" onclick="this.classList.toggle('z')">${html}</div><p class="small muted center">Koppints a nagyításhoz.</p>`; }
 function charModal(slot) {
   const c = S.chars[slot];
-  modal(`${zoomable(pimg(S, slot, {cls: "zoomimg"}))}<h2 style="margin-top:10px">${esc(c.name)}</h2><p class="muted small">${esc(c.title)}</p>
+  modal(`<div class="chead"><div class="av">${pimg(S, slot)}</div><div style="flex:1"><h2 style="margin:0">${esc(c.name)}</h2><p class="muted small" style="margin:2px 0 0">${esc(c.title)}</p></div>
+    <button class="hbtn zoomb" id="zoomb" title="Nagyítás">${icon("zoom")}</button></div>
     <div class="kv"><b>Mindenki látta</b>${esc(c.dispute)}</div><div class="kv"><b>Mindenki tudja</b>${esc(c.weapon)}</div>
     ${slot === SLOT ? `<div class="mine"><div class="row" style="align-items:center"><h3 style="margin:0">${icon("lock", "inl")} Csak neked</h3><div class="role ${ME.role}" style="font-size:1.15rem;text-align:right">${ME.roleName}</div></div>
       <details open><summary>A szereped és hogyan nyersz</summary>${myRole()}</details>
       <details><summary>Amit tudsz (1-5)</summary>${myCard()}</details>
       <details><summary>Mini küldetés (opcionális)</summary><div class="panel">${esc(ME.mission)}</div></details></div>` : ""}`);
+  $("#zoomb").onclick = () => photoView(S, slot);
+}
+function photoView(story, slot, html, caption) {
+  const v = document.createElement("div"); v.className = "photo"; v.id = "photo";
+  v.innerHTML = `<button class="hbtn" id="phx" style="position:absolute;right:12px;top:calc(10px + env(safe-area-inset-top));z-index:2">${icon("close")}</button>
+    <div class="pwrap" id="pwrap">${html || pimg(story, slot, {cls: "pimg"})}</div>${caption ? `<div class="pcap">${caption}</div>` : ""}<p class="phint">Csippents vagy koppints a nagyításhoz</p>`;
+  document.body.appendChild(v);
+  const w = $("#pwrap");
+  w.onclick = e => { const z = w.classList.toggle("z"); if (z) { const r = w.getBoundingClientRect(); requestAnimationFrame(() => { w.scrollLeft = (e.clientX - r.left) * 1.6 - r.width / 2 + w.scrollLeft; w.scrollTop = (e.clientY - r.top) * 1.6; }); } };
+  $("#phx").onclick = () => v.remove();
 }
 function mapModal() {
-  modal(`<h2>${esc(S.title)}: alaprajz</h2>${zoomable(`<img class="zoomimg" src="assets/${S.id}/map.jpg" onerror="this.onerror=null;this.src='assets/maps/${S.id}.png'">`)}<p class="small">${esc(S.mapNote)}</p>${S.common ? `<p class="small" style="color:var(--gold2)">${icon("eye", "inl")} ${esc(S.common)}</p>` : ""}`);
+  photoView(S, 0, `<img class="pimg" src="assets/${S.id}/map.jpg" onerror="this.onerror=null;this.src='assets/maps/${S.id}.png'">`,
+    `${esc(S.mapNote)}${S.common ? `<br><span style="color:var(--gold2)">${icon("eye", "inl")} ${esc(S.common)}</span>` : ""}`);
 }
 function storyModal() {
   modal(`<h2>${esc(S.title)}</h2><p class="muted small">${esc(S.world)}</p><p class="storytxt" id="mtyped"></p>
