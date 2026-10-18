@@ -94,6 +94,18 @@ textarea{width:100%;min-height:42vh;padding:12px;border-radius:12px;border:1px s
 .evil{filter:sepia(.4) saturate(1.6) hue-rotate(-25deg) contrast(1.15) brightness(.8)}
 .flip{animation:flip 1.2s ease}
 @keyframes flip{0%{transform:rotateY(90deg)}100%{transform:rotateY(0)}}
+.cat{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+.tile{position:relative;aspect-ratio:1/1;border-radius:16px;overflow:hidden;cursor:pointer;border:1px solid var(--line);box-shadow:0 6px 18px #0008}
+.tile img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .3s}
+.tile:active img{transform:scale(1.05)}
+.tile .tt{position:absolute;left:0;right:0;bottom:0;padding:24px 10px 9px;background:linear-gradient(transparent,#000d);font-size:.92rem;line-height:1.25}
+.tile .tt .badge{margin-left:6px}
+.cover{position:fixed;inset:0;z-index:30;background:#0d0b10;animation:zoomin .6s cubic-bezier(.2,.8,.2,1)}
+@keyframes zoomin{from{transform:scale(.3);opacity:.2;border-radius:30px}to{transform:scale(1);opacity:1;border-radius:0}}
+.cover .bg{position:absolute;inset:0;background-size:cover;background-position:center;filter:brightness(.55)}
+.cover .cin{position:absolute;inset:0;display:flex;flex-direction:column;padding:calc(70px + env(safe-area-inset-top)) 16px calc(16px + env(safe-area-inset-bottom));max-width:560px;margin:0 auto}
+.cover .ctext{flex:1;overflow:auto;background:#000000a8;border:1px solid #ffffff22;border-radius:16px;padding:16px;margin-bottom:12px;animation:fadein 1.2s .4s both}
+@keyframes fadein{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
 .big{font:800 2rem "Playfair Display",serif;text-align:center;margin:10px 0}
 </style>
 </head>
@@ -102,8 +114,6 @@ textarea{width:100%;min-height:42vh;padding:12px;border-radius:12px;border:1px s
 <script>
 "use strict";
 /* ===================== constants ===================== */
-const READ = [30, 60, 30];          // seconds for the three card steps (total 2:00): role, info, mini mission
-const OVERTURE = 45;                // narration window before the clock starts
 const TIP = 30;                     // seconds a private tip stays on screen, clock paused
 const TIPS_AT = {15: [450], 30: [1200, 600], 60: [2700, 1800, 900]};  // remaining seconds
 const ROUND = "ABC";
@@ -215,49 +225,69 @@ function narrate(story) {
   });
 }
 
-/* ===================== lobby (host) ===================== */
-const L = ls("lobby") || {story: "S01", mode: 30, names: ["", "", "", ""], pick: [0, 1, 2, 3], gather: 90};
+/* ===================== main menu: catalog -> cover + narration -> settings (host) ===================== */
+const L = Object.assign({mode: 30, players: 4}, ls("lobby") || {});
+const saveL = () => ls("lobby", L);
+function coverSrc(s) { return `assets/${s.id}/cover.jpg`; }
+function coverFallback(s) {
+  const hue = (parseInt(s.id.slice(1)) * 37) % 360;
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 400'><defs><radialGradient id='g' cx='50%' cy='40%' r='75%'><stop offset='0' stop-color='hsl(${hue},35%,32%)'/><stop offset='1' stop-color='#0d0b10'/></radialGradient></defs><rect width='400' height='400' fill='url(#g)'/><text x='200' y='215' font-family='Georgia' font-size='120' fill='#d9b46a' fill-opacity='.35' text-anchor='middle'>✝</text></svg>`;
+  return "data:image/svg+xml," + encodeURIComponent(svg).replace(/'/g, "%27");
+}
 function lobby() {
-  const S = STORIES.find(s => s.id === L.story);
-  const n = L.names.length;
-  let h = `<h1>Éjféli Tanú</h1><p class="muted">Titkos szerepes gyilkosos partijáték 4-6 főre. Mindenki a saját telefonján játszik, ez a telefon a játékvezetőé (ő is játszik).</p>`;
-  h += `<div class="panel"><h3>1. Történet</h3>`;
-  STORIES.forEach(s => h += `<div class="story ${s.id === L.story ? "on" : ""}" data-st="${s.id}"><div><b>${esc(s.title)}</b> ${s.full ? '<span class="badge gold">teszt: teljesen kész</span>' : '<span class="badge">vázlat</span>'}<div class="small muted">${esc(s.world)}</div></div></div>`);
-  h += `</div><div class="panel"><h3>2. Játékidő</h3><div class="chips">` +
+  window.speechSynthesis && speechSynthesis.cancel();
+  let h = `<h1 style="margin-top:6px">Éjféli Tanú</h1><p class="muted">Válassz egy rejtélyt. Koppints rá, és hallgassátok meg a történetet.</p><div class="cat">`;
+  STORIES.forEach(s => h += `<div class="tile" data-st="${s.id}"><img src="${coverSrc(s)}" onerror="this.onerror=null;this.src='${coverFallback(s)}'" alt="">
+    <div class="tt"><b>${esc(s.title)}</b>${s.full ? '<span class="badge gold">teszt</span>' : ""}</div></div>`);
+  app.innerHTML = h + `</div>`;
+  app.querySelectorAll(".tile").forEach(e => e.onclick = () => coverView(e.dataset.st, e.getBoundingClientRect()));
+}
+function coverView(id, rect) {
+  const s = STORIES.find(x => x.id === id);
+  ensureAudio();
+  const el = document.createElement("div"); el.id = "cover"; el.className = "cover";
+  el.style.transformOrigin = rect ? `${rect.left + rect.width / 2}px ${rect.top + rect.height / 2}px` : "50% 50%";
+  el.innerHTML = `<div class="bg" id="cbg"></div><div class="cin">
+    <button class="hbtn" id="cback" style="position:absolute;left:12px;top:calc(10px + env(safe-area-inset-top))">←</button>
+    <div class="ctext"><h1>${esc(s.title)}</h1><p class="muted small">${esc(s.world)}</p><p>${esc(s.intro)}</p>
+    ${s.common ? `<p style="color:var(--gold2)">👁 ${esc(s.common)}</p>` : ""}
+    <button class="btn ghost" id="cnarr">🔊 Narráció újra</button></div>
+    <div class="cbot"><button class="btn" id="cstart">Kezdés</button></div></div>`;
+  document.body.appendChild(el);
+  const bg = new Image(); bg.onload = () => { $("#cbg").style.backgroundImage = `url(${bg.src})`; };
+  bg.onerror = () => { $("#cbg").style.backgroundImage = `url(${coverFallback(s)})`; }; bg.src = `assets/${s.id}/scene.jpg`;
+  narrate(s);
+  $("#cnarr").onclick = () => narrate(s);
+  $("#cback").onclick = () => { window.speechSynthesis && speechSynthesis.cancel(); el.remove(); };
+  $("#cstart").onclick = () => settingsView(s);
+}
+function settingsView(s) {
+  const box = $(".cbot");
+  box.innerHTML = `<div class="panel" style="margin:0"><h3>Időkeret</h3><div class="chips">` +
     [15, 30, 60].map(m => `<span class="chip ${L.mode === m ? "on" : ""}" data-mode="${m}">${m} perc</span>`).join("") +
-    `</div><p class="small muted">15 perc: 1 titkos tipp · 30 perc: 2 · 60 perc: 3. Előtte a történet és 2 perc a saját lap elolvasására.</p></div>`;
-  h += `<div class="panel"><h3>3. Játékosok</h3><p class="small muted">Elég a neveket megadni, a karaktereket a gép sorsolja ki. Az első a játékvezető (ezen a telefonon), ő is játszik.</p>`;
-  for (let i = 0; i < n; i++) {
-    h += `<div style="margin:6px 0"><input data-name="${i}" placeholder="${i === 0 ? "Te (játékvezető)" : (i + 1) + ". játékos"}" value="${esc(L.names[i])}"></div>`;
-  }
-  h += `<div class="row"><button class="btn ghost" id="minus" ${n <= 4 ? "disabled" : ""}>− játékos</button><button class="btn ghost" id="plus" ${n >= 6 ? "disabled" : ""}>+ játékos</button></div>`;
-  h += `</div>`;
-  h += `<div class="panel"><h3>4. Indulás</h3><p class="small muted">Mindenki beolvassa a saját QR-kódját, aztán együtt indítjátok: a játékvezető számol, 3, 2, 1, és mindenki egyszerre megnyomja az „Indul” gombot.</p><div id="err" class="small" style="color:var(--red)"></div><button class="btn" id="go">QR-kódok kiosztása</button></div>`;
-  app.innerHTML = h;
-  const save = () => ls("lobby", L);
-  app.querySelectorAll("[data-st]").forEach(e => e.onclick = () => { L.story = e.dataset.st; save(); lobby(); });
-  app.querySelectorAll("[data-mode]").forEach(e => e.onclick = () => { L.mode = +e.dataset.mode; save(); lobby(); });
-  app.querySelectorAll("[data-name]").forEach(e => e.oninput = () => { L.names[+e.dataset.name] = e.value; save(); });
-  $("#plus").onclick = () => { L.names.push(""); L.pick = [...Array(L.names.length).keys()]; save(); lobby(); };
-  $("#minus").onclick = () => { L.names.pop(); L.pick = [...Array(L.names.length).keys()]; save(); lobby(); };
-  $("#go").onclick = () => {
-    const names = L.names.map((s, i) => s.trim() || (i === 0 ? "Játékvezető" : (i + 1) + ". játékos"));
-    const pick = [...Array(n).keys()]; for (let i = n - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [pick[i], pick[j]] = [pick[j], pick[i]]; }
-    ensureAudio();
+    `</div><h3 style="margin-top:12px">Játékosok</h3><div class="chips">` +
+    [4, 5, 6].map(n => `<span class="chip ${L.players === n ? "on" : ""}" data-pl="${n}">${n} fő</span>`).join("") +
+    `</div><button class="btn" id="solve" style="margin-top:14px">Oldjuk meg a gyilkosságot!</button></div>`;
+  box.querySelectorAll("[data-mode]").forEach(e => e.onclick = () => { L.mode = +e.dataset.mode; saveL(); settingsView(s); });
+  box.querySelectorAll("[data-pl]").forEach(e => e.onclick = () => { L.players = +e.dataset.pl; saveL(); settingsView(s); });
+  $("#solve").onclick = () => {
+    window.speechSynthesis && speechSynthesis.cancel();
+    const n = L.players, pick = [...Array(n).keys()];
+    for (let i = n - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [pick[i], pick[j]] = [pick[j], pick[i]]; }
     const x = +(new URLSearchParams(location.search).get("x") || 1);
-    const base = {v: 3, s: L.story, m: L.mode, n: names, ch: pick, t0: Date.now(), x};  // t0 is only the game id; the clock starts when the players press "Indul"
-    ls("deal", base);
+    const g = Math.random().toString(36).slice(2, 10);
+    const base = {v: 4, s: s.id, m: L.mode, n, ch: pick, t0: Date.now(), g, x};
+    $("#cover").remove();
     deal(base, 1);
   };
 }
 function deal(base, i) {
-  const n = base.n.length;
+  const n = base.n;
   if (i >= n) { location.hash = "c=" + encodeCard({...base, p: 0}); return; }
-  const S = STORIES.find(s => s.id === base.s);
-  app.innerHTML = `<h2 class="center" style="margin-top:4vh">${esc(base.n[i])}</h2><p class="center muted">Olvasd be a telefonoddal. Csak a saját kódodat nézd!</p>
+  app.innerHTML = `<h2 class="center" style="margin-top:4vh">${i + 1}. játékos</h2><p class="center muted">Olvasd be a telefonoddal. Csak a saját kódodat nézd!</p>
     <div class="center"><div class="qrbox" id="qr"></div></div>
     <p class="center small muted">${i}/${n - 1}</p>
-    <button class="btn" id="next">${i < n - 1 ? "Következő játékos" : "Kész: saját lapom megnyitása"}</button>
+    <button class="btn" id="next">${i < n - 1 ? "Következő játékos" : "Kész: a saját lapom (1. játékos)"}</button>
     <button class="btn ghost" id="back">Vissza</button>`;
   new QRCode($("#qr"), {text: cardUrl({...base, p: i}), width: 240, height: 240, correctLevel: QRCode.CorrectLevel.L});
   $("#next").onclick = () => deal(base, i + 1);
@@ -267,14 +297,24 @@ function deal(base, i) {
 /* ===================== game (every phone) ===================== */
 let P, S, ME, SLOT, NOW = () => Date.now();
 const ST = {userStep: 0, key: "", tipSeen: {}, start: 0};
+const lab = j => S.chars[P.ch[j]].name;
+// The clock starts when the FIRST player finishes their 3 intro steps. Phones share that moment through
+// a tiny public pub/sub topic (ntfy.sh, random topic per game). Offline, a phone starts when its own player finishes.
+const SYNC = {es: null};
+function syncTopic() { return `ejfeli-tanu-${P.g || P.t0}`; }
+function syncListen() {
+  try {
+    SYNC.es = new EventSource(`https://ntfy.sh/${syncTopic()}/sse?since=all`);
+    SYNC.es.onmessage = ev => {
+      try { const m = JSON.parse(JSON.parse(ev.data).message || "{}"); if (m.start && (!ST.start || m.start < ST.start)) { ST.start = m.start; saveST(); ST.key = ""; loop(); } } catch (e) {}
+    };
+  } catch (e) {}
+}
+function syncSend(start) { fetch(`https://ntfy.sh/${syncTopic()}`, {method: "POST", body: JSON.stringify({start})}).catch(() => {}); }
 function TL() {
-  if (!ST.start) return {ph: "wait", left: 0};
+  if (!ST.start) return {ph: "intro"};
   let e = (NOW() - ST.start) / 1000 * P.x;
-  if (e < 0) return {ph: "wait", left: -e};
-  if (e < OVERTURE) return {ph: "ovr", e, left: OVERTURE - e};
-  e -= OVERTURE;
-  if (e < 120) return {ph: "read", e, ts: e < READ[0] ? 0 : e < READ[0] + READ[1] ? 1 : 2, left: 120 - e};
-  e -= 120;
+  if (e < 0) e = 0;
   const D = P.m * 60, T = TIPS_AT[P.m];
   for (let i = 0; i < T.length; i++) {
     const st = (D - T[i]) + TIP * i;
@@ -286,42 +326,34 @@ function TL() {
 }
 function startGame(hash) {
   try { P = decodeCard(hash); } catch (e) { app.innerHTML = `<h2>Hibás kód</h2><p>Olvasd be újra a QR-kódot.</p>`; return; }
+  if (typeof P.n === "number") P.n = Array.from({length: P.n}, (_, i) => `${i + 1}. játékos`);
   S = STORIES.find(s => s.id === P.s); SLOT = P.ch[P.p]; ME = S.chars[SLOT];
   const saved = ls("st-" + P.t0 + "-" + P.p); if (saved) Object.assign(ST, saved);
   ST.key = "";
   if ("wakeLock" in navigator) { const wl = () => navigator.wakeLock.request("screen").catch(() => {}); wl(); document.addEventListener("visibilitychange", () => document.visibilityState === "visible" && wl()); }
   document.addEventListener("click", () => P.p === 0 && ensureAudio(), {capture: true});
+  syncListen();
   setInterval(loop, 200); loop();
 }
 const saveST = () => ls("st-" + P.t0 + "-" + P.p, {userStep: ST.userStep, tipSeen: ST.tipSeen, start: ST.start});
 function loop() {
-  const t = TL();
-  let key = t.ph + (t.ph === "wait" ? (ST.start ? "1" : "0") : "");
-  if (t.ph === "read") key += Math.max(t.ts, ST.userStep);
-  if (t.ph === "tip") key += t.i;
+  const t = TL(), done = ST.userStep >= 3;
+  let key = t.ph === "end" ? "end" : (done ? "scene" : "read" + ST.userStep) + (ST.start ? "+" : "");
+  if (t.ph === "tip") key += "tip" + t.i;
   if (key !== ST.key) { ST.key = key; render(t); }
   update(t);
 }
 function render(t) {
   closeModal();
-  if (t.ph === "wait") return waitView();
-  if (t.ph === "read") return readView(Math.max(t.ts, ST.userStep));
-  if (t.ph === "ovr") return storyView();
   if (t.ph === "end") return endView();
-  sceneView(t);
+  if (ST.userStep < 3) readView(ST.userStep); else sceneView(t);
   if (t.ph === "tip") tipView(t.i);
 }
 function update(t) {
-  if (t.ph === "wait") { const el = $("#wleft"); if (el) el.textContent = Math.ceil(t.left) + " mp"; }
-  if (t.ph === "ovr") { const b = $("#obar"); if (b) b.style.width = (100 * t.left / OVERTURE) + "%"; }
-  if (t.ph === "read") {
-    const bar = $("#rbar"); if (bar) bar.style.width = (100 * t.left / 120) + "%";
-    if (t.left < 10 && $("#rwarn")) $("#rwarn").textContent = "Mindjárt indul a játék!";
-  }
   if (t.ph === "play" || t.ph === "tip") {
     const D = P.m * 60, rem = t.rem;
     drawClock(rem / D, t.ph === "tip", t.ph === "play" && rem <= 60);
-    if (P.p === 0 && t.ph === "play") {
+    if (P.p === 0 && t.ph === "play" && ST.userStep >= 3) {
       if (rem <= 180) tensionOn(S);
       if (rem <= 60) { const s = Math.ceil(rem * (rem <= 10 ? 2 : 1)); if (s !== AU.lastTick) { AU.lastTick = s; tick(1 - rem / 60); } }
     }
@@ -329,30 +361,11 @@ function update(t) {
   if (t.ph === "tip") { const b = $("#tbar"); if (b) b.style.width = (100 * t.left / TIP) + "%"; }
 }
 
-/* ---------- before start: no character yet ---------- */
-function waitView() {
-  app.innerHTML = `<div class="center" style="padding-top:12vh"><h1>${esc(S.title)}</h1><p class="muted">${esc(S.world)}</p>
-    <div class="panel"><p>Szia, <b>${esc(P.n[P.p])}</b>! Először meghallgatjátok a történetet, utána kapja meg mindenki a karakterét.</p>
-    ${ST.start ? `<p class="big" id="wleft"></p>` : `<p class="small">Ha mindenki beolvasta a kódját, ${P.p === 0 ? "számolj hangosan" : `${esc(P.n[0])} hangosan számol`}: 3, 2, 1, és mindenki egyszerre nyomja meg:</p><button class="btn" id="startb" style="font-size:1.3rem;padding:20px">Indul!</button>`}</div>
-    ${P.p === 0 ? '<button class="btn ghost" id="snd">🔊 Hang bekapcsolása (narráció, zene)</button>' : ""}</div>`;
-  if ($("#startb")) $("#startb").onclick = () => { ensureAudio(); ST.start = Date.now() + 1000; saveST(); ST.key = ""; loop(); };
-  if ($("#snd")) $("#snd").onclick = () => { ensureAudio(); tone(660, .3); $("#snd").textContent = "🔊 Hang bekapcsolva"; };
-}
-/* ---------- the story is told first ---------- */
-function storyView() {
-  app.innerHTML = `<div id="scene"><div class="bg" id="bg"></div>
-    <div class="hud"><div style="flex:1"><div class="bar"><i id="obar"></i></div></div></div>
-    <div class="subs" style="top:calc(60px + env(safe-area-inset-top));bottom:auto;max-height:none"><h2>${esc(S.title)}</h2><p style="font-size:1.05rem">${esc(S.intro)}</p>
-    ${S.common ? `<p style="color:var(--gold2)">👁 ${esc(S.common)}</p>` : ""}<p class="small muted">Utána mindenki megkapja a karakterét a saját telefonján.</p>
-    ${P.p === 0 ? '<button class="btn ghost" id="narr">🔊 Narráció újra</button>' : ""}</div></div>`;
-  const bg = new Image(); bg.onload = () => { $("#bg").style.backgroundImage = `url(${bg.src})`; }; bg.onerror = () => $("#bg").classList.add("none"); bg.src = `assets/${S.id}/scene.jpg`;
-  if (P.p === 0) { ensureAudio(); narrate(S); $("#narr").onclick = () => narrate(S); }
-}
-/* ---------- card: 2-minute reading in 3 steps (shown already while waiting for the start) ---------- */
+/* ---------- own introduction in 3 steps (no timer; the first player to finish starts the clock) ---------- */
 function readHead(step) {
   const names = ["1. Ki vagy", "2. Amit tudsz", "3. Mini küldetés"];
-  return `<div class="topbar"><div class="bar"><i id="rbar"></i><span class="tick" style="left:25%"></span><span class="tick" style="left:50%"></span></div>
-    <div class="steps">${names.map((s, i) => i === step ? `<b>${s}</b>` : `<span>${s}</span>`).join("")}</div><div id="rwarn" class="small center" style="color:var(--red)"></div></div>`;
+  return `<div class="topbar"><div class="steps">${names.map((s, i) => i === step ? `<b>${s}</b>` : `<span>${s}</span>`).join("")}</div>
+    ${ST.start ? `<div class="small center" style="color:var(--red);margin-top:6px">⏱ Az óra már elindult: fejezd be, és csatlakozz!</div>` : ""}</div>`;
 }
 function myRole() {
   return `<div class="panel"><div class="kv"><b>Mi történt veled</b>${esc(ME.roleText)}</div><div class="kv"><b>Hogyan nyersz</b>${esc(ME.win)}</div></div>`;
@@ -369,23 +382,26 @@ function myCard() {
     <div class="kv"><b>Tárgyad</b>${esc(ME.item)} Megmutathatod bárkinek, vagy eldughatod.</div></div>`;
 }
 function readView(step) {
-  const next = `<button class="btn" id="nx">${step < 2 ? "Tovább" : "Kész, várom a többieket"}</button>`;
-  // order (Márk 2026-10-18): who you are and your role, then what you know, then the optional mini mission
+  const last = step === 2;
   let h = readHead(step);
   if (step === 0) {
-    h += `<div class="row" style="align-items:flex-start;gap:14px;margin-top:8px">${pimg(S, SLOT, {cls: "pfp"})}<div style="flex:2"><h2 style="margin:0">${esc(ME.name)}</h2><p class="muted small">${esc(ME.title)} · ${esc(P.n[P.p])}</p>
-      <div class="role ${ME.role}">${ME.roleName}</div></div></div>${myRole()}
-`;
+    h += `<div class="row" style="align-items:flex-start;gap:14px;margin-top:8px">${pimg(S, SLOT, {cls: "pfp"})}<div style="flex:2"><h2 style="margin:0">${esc(ME.name)}</h2><p class="muted small">${esc(ME.title)}</p>
+      <div class="role ${ME.role}">${ME.roleName}</div></div></div>${myRole()}`;
   } else if (step === 1) {
     h += `<h2>Te és ${esc(S.victim.split(",")[0])}</h2>${myCard()}
       <p class="small muted">A játék alatt időnként 30 másodpercre kapsz egy titkos tippet. Senki más nem látja: hazudhatsz róla. A lapodat a játék alatt is megnézheted: koppints a saját képedre.</p>`;
   } else {
     h += `<p class="badge gold" style="margin-top:6px">Opcionális extra · csak neked</p><h2>Mini küldetés</h2><div class="panel" style="font-size:1.12rem">${esc(ME.mission)}</div>
-      <p class="small muted">Nem kötelező és nem ér pontot: egy jópofa csavar a történetben. Ha a játék közben sikerül, a végén elmesélheted.</p>`;
+      <p class="small muted">Nem kötelező és nem ér pontot: egy jópofa csavar a történetben. Ha a játék közben sikerül, a végén elmesélheted.</p>
+      <p class="small muted">Aki elsőként a végére ér, az indítja mindenkinél a visszaszámlálást.</p>`;
   }
-  app.innerHTML = h + next;
-  if ($("#snd")) $("#snd").onclick = () => { ensureAudio(); tone(660, .3); $("#snd").textContent = "🔊 Hang bekapcsolva"; };
-  $("#nx").onclick = () => { if (step < 2) { ST.userStep = step + 1; saveST(); loop(); } else { $("#nx").disabled = true; $("#nx").textContent = "Várjuk, hogy lejárjon az idő..."; } };
+  app.innerHTML = h + `<button class="btn" id="nx">${last ? (ST.start ? "Csatlakozom a nyomozáshoz" : "Indulhat a nyomozás!") : "Tovább"}</button>`;
+  $("#nx").onclick = () => {
+    ensureAudio();
+    ST.userStep = step + 1;
+    if (ST.userStep >= 3 && !ST.start) { ST.start = Date.now(); syncSend(ST.start); }
+    saveST(); ST.key = ""; loop();
+  };
   window.scrollTo(0, 0);
 }
 
@@ -411,7 +427,7 @@ function sceneView(t) {
   slots.forEach((slot, i) => {
     const ang = -Math.PI / 2 + (i + .5) * 2 * Math.PI / n;
     const x = 50 + 37 * Math.cos(ang), y = 50 + 38 * Math.sin(ang);
-    h += `<div class="ch ${i === P.p ? "me" : ""}" data-slot="${slot}" style="left:${x}%;top:${y}%"><div class="av">${pimg(S, slot)}</div><span>${esc(S.chars[slot].name)}<br><span style="opacity:.75">${i === P.p ? "te: koppints a lapodért" : esc(P.n[i])}</span></span></div>`;
+    h += `<div class="ch ${i === P.p ? "me" : ""}" data-slot="${slot}" style="left:${x}%;top:${y}%"><div class="av">${pimg(S, slot)}</div><span>${esc(S.chars[slot].name)}${i === P.p ? `<br><span style="opacity:.8">te: koppints a lapodért</span>` : ""}</span></div>`;
   });
   h += `</div></div>`;
   app.innerHTML = h;
@@ -432,8 +448,8 @@ function modal(inner, cls = "") {
 function closeModal() { const m = $("#modal"); if (m) m.remove(); }
 function zoomable(html) { return `<div class="zoomwrap" onclick="this.classList.toggle('z')">${html}</div><p class="small muted center">Koppints a nagyításhoz.</p>`; }
 function charModal(slot) {
-  const c = S.chars[slot], who = P.n[P.ch.indexOf(slot)];
-  modal(`${zoomable(pimg(S, slot, {cls: "zoomimg"}))}<h2 style="margin-top:10px">${esc(c.name)}</h2><p class="muted small">${esc(c.title)} · játssza: ${esc(who)}</p>
+  const c = S.chars[slot];
+  modal(`${zoomable(pimg(S, slot, {cls: "zoomimg"}))}<h2 style="margin-top:10px">${esc(c.name)}</h2><p class="muted small">${esc(c.title)}</p>
     <div class="kv"><b>Mindenki látta</b>${esc(c.dispute)}</div><div class="kv"><b>Mindenki tudja</b>${esc(c.weapon)}</div>
     ${slot === SLOT ? `<h3 style="margin-top:14px">🔒 Csak neked</h3><div class="role ${ME.role}" style="font-size:1.2rem">${ME.roleName}</div>${myRole()}
       <div class="panel"><div class="kv"><b>Titkos küldetésed</b>${esc(ME.mission)}</div></div>${myCard()}` : ""}`);
@@ -475,7 +491,7 @@ function tipView(i) {
 function endView() {
   if (P.p === 0 && AU.mode !== "done") stopMusic();
   if (P.p !== 0) {
-    app.innerHTML = `<div class="center" style="padding-top:12vh"><h1>Lejárt az idő!</h1><p>A titkos szavazás <b>${esc(P.n[0])}</b> telefonján megy: adjátok körbe.</p><p class="muted small">Ott derül ki az eredmény is.</p></div>`;
+    app.innerHTML = `<div class="center" style="padding-top:12vh"><h1>Lejárt az idő!</h1><p>A titkos szavazás a játékvezető (1. játékos) telefonján megy: adjátok körbe.</p><p class="muted small">Ott derül ki az eredmény is.</p></div>`;
     return;
   }
   voteFlow();
@@ -484,17 +500,22 @@ function voteFlow() {
   const k = "vote-" + P.t0, V = ls(k) || {i: 0, stage: "pass", votes: {}}, n = P.n.length, save = () => ls(k, V);
   const roleOf = i => S.chars[P.ch[i]].role;
   if (V.stage === "pass") {
-    if (V.i >= n) { V.stage = "count"; save(); return voteFlow(); }
-    app.innerHTML = `<div class="center" style="padding-top:8vh"><h1>Titkos szavazás</h1><p>Add a telefont neki:</p><p class="big">${esc(P.n[V.i])}</p>
-      <p class="muted small">${V.i}/${n} szavazott. Senki ne nézzen oda!</p><button class="btn" id="me">Én vagyok ${esc(P.n[V.i])}, szavazok</button></div>`;
-    $("#me").onclick = () => { ensureAudio(); V.stage = "pick"; save(); voteFlow(); };
+    const voted = Object.keys(V.votes).length;
+    if (voted >= n) { V.stage = "count"; save(); return voteFlow(); }
+    app.innerHTML = `<div class="center" style="padding-top:8vh"><h1>Titkos szavazás</h1><p>Add tovább a telefont annak, aki még nem szavazott.</p>
+      <p class="big">${voted}/${n}</p><p class="muted small">Senki ne nézzen oda!</p><button class="btn" id="me">Én jövök</button></div>`;
+    $("#me").onclick = () => { ensureAudio(); V.stage = "who"; save(); voteFlow(); };
+  } else if (V.stage === "who") {
+    app.innerHTML = `<h2>Ki vagy?</h2><p class="small muted">Koppints a saját karakteredre.</p><div class="grid">` +
+      P.ch.map((sl, j) => j in V.votes ? "" : `<div class="c" data-j="${j}">${pimg(S, sl)}<b>${esc(S.chars[sl].name)}</b></div>`).join("") + `</div>`;
+    app.querySelectorAll(".grid .c").forEach(e => e.onclick = () => { V.i = +e.dataset.j; V.stage = "pick"; save(); voteFlow(); });
   } else if (V.stage === "pick") {
     let sel = null;
-    app.innerHTML = `<h2>${esc(P.n[V.i])}, ki a gyilkos?</h2><p class="small muted">A szavazatodat senki nem látja.${V.round2 ? " Második kör: csak a döntetlenben érintettek közül választhatsz." : ""}</p><div class="grid">` +
-      P.ch.map((sl, j) => j === V.i || (V.round2 && !V.cands.includes(j)) ? "" : `<div class="c" data-j="${j}">${pimg(S, sl)}<b>${esc(S.chars[sl].name)}</b><br><span class="muted">${esc(P.n[j])}</span></div>`).join("") +
+    app.innerHTML = `<h2>${esc(lab(V.i))}, ki a gyilkos?</h2><p class="small muted">A szavazatodat senki nem látja.${V.round2 ? " Második kör: csak a döntetlenben érintettek közül választhatsz." : ""}</p><div class="grid">` +
+      P.ch.map((sl, j) => j === V.i || (V.round2 && !V.cands.includes(j)) ? "" : `<div class="c" data-j="${j}">${pimg(S, sl)}<b>${esc(S.chars[sl].name)}</b></div>`).join("") +
       `</div><button class="btn" id="cast" disabled>Leadom a szavazatom</button>`;
     app.querySelectorAll(".grid .c").forEach(e => e.onclick = () => { sel = +e.dataset.j; app.querySelectorAll(".grid .c").forEach(x => x.classList.toggle("on", x === e)); $("#cast").disabled = false; });
-    $("#cast").onclick = () => { V.votes[V.i] = sel; V.i++; V.stage = "pass"; save(); tone(520, .15); voteFlow(); };
+    $("#cast").onclick = () => { V.votes[V.i] = sel; V.stage = "pass"; save(); tone(520, .15); voteFlow(); };
   } else if (V.stage === "count") {
     app.innerHTML = `<div class="center" style="padding-top:18vh"><h1>Számolás...</h1><p class="big">🥁</p></div>`;
     ensureAudio(); drumroll(3);
@@ -514,19 +535,19 @@ function voteFlow() {
       if (!V.noteShown) { V.noteShown = 1; save(); setTimeout(() => modal(`<h2>Újra döntetlen</h2>${note}<button class="btn" onclick="closeModal()">Értem, jöjjön az ítélet</button>`), 50); }
     }
     if (top.length > 1 && !V.round2) {
-      h += `<p class="big">Döntetlen!</p><p class="center">${top.map(j => `<b>${esc(P.n[j])}</b> (${esc(S.chars[P.ch[j]].name)})`).join(" és ")} ugyanannyi szavazatot kapott.</p>
+      h += `<p class="big">Döntetlen!</p><p class="center">${top.map(j => `<b>${esc(lab(j))}</b>`).join(" és ")} ugyanannyi szavazatot kapott.</p>
         <p class="center">Még <b>3 perc</b> érvelés, aztán új titkos szavazás, de már csak közöttük. Ebben a körben még mindenki szavazata számít.</p>
         <p class="center small muted">Ha másodszor is döntetlen lesz, ${n === 6 ? "a bűntárs" : "a gyilkos"} szavazatát a gép kiveszi, így biztosan lesz ítélet.</p><button class="btn" id="extra">Indul a 3 perc</button>`;
       V.cands = top;
     } else {
       h += note;
       const j = top[0], r = roleOf(j), sl = P.ch[j], evil = r === "G" || r === "B";
-      h += `<div class="center flip">${pimg(S, sl, {cls: "pfp", evil})}</div><p class="big">${esc(S.chars[sl].name)}</p><p class="center muted">${esc(P.n[j])} · ${max} szavazat</p>`;
-      if (r === "G") { h += `<p class="big" style="color:var(--red)">A GYILKOS volt!</p><p class="center">Utolsó esély: ha kitalálja, ki a szemtanú, mégis a gonoszok nyernek.</p><button class="btn" id="g">${esc(P.n[j])}, tippelj a szemtanúra</button>`; V.conv = j; }
+      h += `<div class="center flip">${pimg(S, sl, {cls: "pfp", evil})}</div><p class="big">${esc(S.chars[sl].name)}</p><p class="center muted">${max} szavazat</p>`;
+      if (r === "G") { h += `<p class="big" style="color:var(--red)">A GYILKOS volt!</p><p class="center">Utolsó esély: ha kitalálja, ki a szemtanú, mégis a gonoszok nyernek.</p><button class="btn" id="g">${esc(lab(j))}, tippelj a szemtanúra</button>`; V.conv = j; }
       else if (r === "B") { h += `<p class="big" style="color:var(--red)">A BŰNTÁRS volt!</p><p class="big" style="color:var(--green)">Az ártatlanok nyertek!</p>`; V.outcome = "good"; }
       else { h += `<p class="big" style="color:var(--green)">ÁRTATLAN volt.</p><p class="big" style="color:var(--red)">A gonoszok nyertek!</p>`; V.outcome = "evil"; }
     }
-    h += `<div class="panel small"><b>Szavazatok:</b> ${P.n.map((nm, j) => `${esc(nm)}: ${tally[j]}`).join(" · ")}</div>`;
+    h += `<div class="panel small"><b>Szavazatok:</b> ${P.ch.map((sl, j) => `${esc(lab(j))}: ${tally[j]}`).join(" · ")}</div>`;
     if (V.outcome) h += `<button class="btn" id="fin">Megoldás és szerepek</button>`;
     app.innerHTML = h; save();
     tone(V.outcome === "good" ? 660 : 160, 1.2, "triangle", .3);
@@ -536,7 +557,7 @@ function voteFlow() {
   } else if (V.stage === "extra") {
     app.innerHTML = `<div class="center" style="padding-top:4vh"><h1>Még 3 perc!</h1><p>Győzzétek meg egymást: ${V.cands.map(j => `<b>${esc(S.chars[P.ch[j]].name)}</b>`).join(" vagy ")}?</p>
       <svg id="clock" viewBox="0 0 100 100" style="width:60vw;max-width:260px;height:auto"></svg><button class="btn" id="now">Kész, szavazzunk most</button></div>`;
-    const go = () => { clearInterval(V._t); V.stage = "pass"; V.i = 0; V.votes = {}; V.round2 = 1; save(); voteFlow(); };
+    const go = () => { clearInterval(V._t); V.stage = "pass"; V.votes = {}; V.round2 = 1; save(); voteFlow(); };
     $("#now").onclick = go;
     let last = -1;
     V._t = setInterval(() => {
@@ -548,8 +569,8 @@ function voteFlow() {
     }, 200);
   } else if (V.stage === "guess") {
     let sel = null; const j0 = V.conv;
-    app.innerHTML = `<h2>${esc(P.n[j0])}: ki a szemtanú?</h2><div class="grid">` +
-      P.ch.map((sl, j) => j === j0 ? "" : `<div class="c" data-j="${j}">${pimg(S, sl)}<b>${esc(S.chars[sl].name)}</b><br><span class="muted">${esc(P.n[j])}</span></div>`).join("") +
+    app.innerHTML = `<h2>${esc(lab(j0))}: ki a szemtanú?</h2><div class="grid">` +
+      P.ch.map((sl, j) => j === j0 ? "" : `<div class="c" data-j="${j}">${pimg(S, sl)}<b>${esc(S.chars[sl].name)}</b></div>`).join("") +
       `</div><button class="btn" id="cast" disabled>Ez a tippem</button>`;
     app.querySelectorAll(".grid .c").forEach(e => e.onclick = () => { sel = +e.dataset.j; app.querySelectorAll(".grid .c").forEach(x => x.classList.toggle("on", x === e)); $("#cast").disabled = false; });
     $("#cast").onclick = () => { V.guess = sel; V.outcome = roleOf(sel) === "S" ? "evil" : "good"; V.stage = "guessed"; save(); voteFlow(); };
@@ -562,9 +583,9 @@ function voteFlow() {
   } else {
     let h = `<p class="big" style="color:${V.outcome === "good" ? "var(--green)" : "var(--red)"}">${V.outcome === "good" ? "Az ártatlanok nyertek!" : "A gonoszok nyertek!"}</p>
       <div class="panel"><h3>Mi történt valójában</h3><p>${esc(S.solution)}</p></div><h3>Ki kicsoda volt</h3><div class="grid">`;
-    P.ch.forEach((sl, j) => { const c = S.chars[sl], ev = c.role === "G" || c.role === "B"; h += `<div class="c">${pimg(S, sl, {evil: ev})}<b>${esc(c.name)}</b><br>${esc(P.n[j])}<br><span class="badge ${ev ? "red" : c.role === "S" ? "blue" : ""}">${c.roleName}</span></div>`; });
+    P.ch.forEach((sl, j) => { const c = S.chars[sl], ev = c.role === "G" || c.role === "B"; h += `<div class="c">${pimg(S, sl, {evil: ev})}<b>${esc(c.name)}</b><br><span class="badge ${ev ? "red" : c.role === "S" ? "blue" : ""}">${c.roleName}</span></div>`; });
     h += `</div><div class="panel"><h3>Titkos küldetések</h3><p class="small muted">Meséljétek el, kinek sikerült!</p>` +
-      P.ch.map((sl, j) => `<p class="small"><b>${esc(P.n[j])}</b> (${esc(S.chars[sl].name)}): ${esc(S.chars[sl].mission)}</p>`).join("") +
+      P.ch.map((sl, j) => `<p class="small"><b>${esc(S.chars[sl].name)}</b>: ${esc(S.chars[sl].mission)}</p>`).join("") +
       `</div><button class="btn" id="new">Új játék</button>`;
     app.innerHTML = h;
     $("#new").onclick = () => { location.hash = ""; location.reload(); };
