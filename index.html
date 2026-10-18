@@ -72,6 +72,14 @@ label{display:block;margin:8px 0 4px;color:var(--muted);font-size:.9rem}
 .ch{position:absolute;width:min(24vw,96px);transform:translate(-50%,-50%);text-align:center;cursor:pointer}
 .ch .av{width:min(17vw,68px);height:min(17vw,68px);margin:0 auto;border-radius:50%;overflow:hidden;border:2px solid #ffffffaa;box-shadow:0 4px 14px #000c;background:#2a2430;position:relative}
 .ch .av img{position:absolute;width:210%;left:-55%;top:-6%;max-width:none}
+.avw{position:relative;width:min(17vw,68px);margin:0 auto}
+.pill{position:absolute;left:calc(100% - 8px);top:2px;bottom:2px;width:22px;border-radius:0 14px 14px 0;background:#15121acc;border:1.5px solid #ffffff55;border-left:none;overflow:visible;cursor:pointer;z-index:2}
+.pill .band{position:absolute;left:0;right:0;opacity:.35}
+.pill .band.g{top:0;height:33%;background:#4caf7a;border-radius:0 12px 0 0}.pill .band.n{top:33%;height:34%;background:#8a8590}.pill .band.r{bottom:0;height:33%;background:#d2554d;border-radius:0 0 12px 0}
+.pill.own{background:var(--c);opacity:.9}
+.pill .knob{position:absolute;left:50%;width:22px;height:22px;margin:-11px 0 0 -11px;border-radius:50%;display:grid;place-items:center;color:#fff;box-shadow:0 2px 6px #000a;transition:top .25s,background .25s;border:1.5px solid #fff}
+.pill .knob .ic{width:14px;height:14px}
+.pill .knob[style*="top:0%"]{margin-top:0}.pill .knob[style*="top:100%"]{margin-top:-22px}
 .ch span{display:block;font-size:.74rem;line-height:1.2;margin-top:4px;text-shadow:0 1px 4px #000;color:#fff}
 .ch.me .av{border-color:var(--gold);border-width:3px}
 .subs{position:absolute;left:12px;right:12px;bottom:calc(14px + env(safe-area-inset-bottom));z-index:4;background:#000000b8;border:1px solid #ffffff22;border-radius:14px;padding:14px;max-height:46vh;overflow:auto}
@@ -111,6 +119,12 @@ textarea{width:100%;min-height:42vh;padding:12px;border-radius:12px;border:1px s
 .storytxt{font-size:1.05rem;line-height:1.6;cursor:pointer}
 .storytxt .key{color:var(--gold2);text-decoration:underline;text-underline-offset:3px}
 .caret{animation:blink .8s steps(1) infinite;color:var(--gold)} @keyframes blink{50%{opacity:0}}
+.mine{margin-top:18px;border:2px solid var(--gold);border-radius:18px;padding:14px;background:linear-gradient(180deg,#2c2316,#1c1922)}
+.mine details{border-top:1px solid #ffffff22;margin-top:10px;padding-top:8px}
+.mine summary{cursor:pointer;font-weight:600;color:var(--gold2);list-style:none;display:flex;justify-content:space-between;align-items:center;padding:4px 0}
+.mine summary::after{content:"▾";transition:transform .2s}.mine details:not([open]) summary::after{transform:rotate(-90deg)}
+.mine summary::-webkit-details-marker{display:none}
+.mine .panel{margin:8px 0 2px}
 .big{font:800 2rem "Playfair Display",serif;text-align:center;margin:10px 0}
 </style>
 </head>
@@ -473,6 +487,32 @@ function readView(step) {
   window.scrollTo(0, 0);
 }
 
+/* ---------- suspicion slider next to each portrait (Márk 2026-10-18), own icon set ---------- */
+const ICON = {
+  q: `<path d="M9.2 9.2a2.9 2.9 0 1 1 4.3 2.5c-.9.5-1.5 1.2-1.5 2.2v.6"/><circle cx="12" cy="18" r=".6" fill="currentColor"/>`,
+  ok: `<path d="M7.5 11v8.5H4.5V11z"/><path d="M7.5 11l3.6-6.3c1.4 0 2.3 1.1 1.9 2.6L12.4 10h5.1a1.9 1.9 0 0 1 1.9 2.2l-1.1 5.7a1.9 1.9 0 0 1-1.9 1.6H7.5"/>`,
+  eye: `<path d="M2.5 12s3.4-5.8 9.5-5.8 9.5 5.8 9.5 5.8-3.4 5.8-9.5 5.8S2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.6"/>`,
+  knife: `<path d="M14.6 3.4c2.6.1 5.9 2.6 6 5.2L10.8 18.4l-4.2-4.2z"/><path d="M5.2 12.6l6.2 6.2"/><path d="M6.6 16.8l-3 3a1.4 1.4 0 0 0 2 2l3-3"/>`,
+  hands: `<path d="m11 17 2 2a1 1 0 1 0 3-3"/><path d="m14 14 2.5 2.5a1 1 0 1 0 3-3l-3.9-3.9a3 3 0 0 0-4.2 0l-.9.9a1 1 0 1 1-3-3l2.8-2.8a5.8 5.8 0 0 1 7.1-.9l.5.3a2 2 0 0 0 1.4.3L21 4"/><path d="m21 3 1 11h-2"/><path d="M3 3 2 14l6.5 6.5a1 1 0 1 0 3-3"/><path d="M3 4h8"/>`,
+};
+const icon = (k, cls = "") => `<svg class="ic ${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICON[k]}</svg>`;
+// others: 0 neutral (grey ?), 1 suspicious (red eye, bottom), 2 innocent (green hand, top). Own: role marker only.
+const SUS = [{pos: 50, col: "#8a8590", ic: "q"}, {pos: 100, col: "#d2554d", ic: "eye"}, {pos: 0, col: "#4caf7a", ic: "ok"}];
+const ROLEMARK = {N: {pos: 0, col: "#4caf7a", ic: "ok"}, S: {pos: 25, col: "#5b9bd5", ic: "eye"}, B: {pos: 75, col: "#e8913a", ic: "hands"}, G: {pos: 100, col: "#d2554d", ic: "knife"}};
+function notesKey() { return "notes-" + P.t0 + "-" + P.p; }
+function pillHTML(slot, mine) {
+  const m = mine ? ROLEMARK[ME.role] : SUS[((ls(notesKey()) || {}).sus || {})[slot] || 0];
+  return `<div class="pill ${mine ? "own" : ""}" data-pill="${slot}" style="--c:${m.col}">${mine ? "" : `<i class="band g"></i><i class="band n"></i><i class="band r"></i>`}
+    <span class="knob" style="top:${m.pos}%;background:${m.col}">${icon(m.ic)}</span></div>`;
+}
+function cycleSus(slot) {
+  const N = ls(notesKey()) || {text: "", sus: {}};
+  N.sus[slot] = ((N.sus[slot] || 0) + 1) % 3; ls(notesKey(), N);
+  const el = document.querySelector(`[data-pill="${slot}"]`); if (el) el.outerHTML = pillHTML(slot, false);
+  bindPills();
+}
+function bindPills() { document.querySelectorAll(".pill:not(.own)").forEach(p => p.onclick = e => { e.stopPropagation(); cycleSus(+p.dataset.pill); }); }
+
 /* ---------- crime scene with clock, map, notebook ---------- */
 function drawClock(frac, paused, urgent) {
   const el = $("#clock"); if (!el) return;
@@ -495,12 +535,13 @@ function sceneView(t) {
   slots.forEach((slot, i) => {
     const ang = -Math.PI / 2 + (i + .5) * 2 * Math.PI / n;
     const x = 50 + 37 * Math.cos(ang), y = 50 + 38 * Math.sin(ang);
-    h += `<div class="ch ${i === P.p ? "me" : ""}" data-slot="${slot}" style="left:${x}%;top:${y}%"><div class="av">${pimg(S, slot)}</div><span>${esc(S.chars[slot].name)}${i === P.p ? `<br><span style="opacity:.8">te: koppints a lapodért</span>` : ""}</span></div>`;
+    h += `<div class="ch ${i === P.p ? "me" : ""}" data-slot="${slot}" style="left:${x}%;top:${y}%"><div class="avw"><div class="av">${pimg(S, slot)}</div>${pillHTML(slot, i === P.p)}</div><span>${esc(S.chars[slot].name)}${i === P.p ? `<br><span style="opacity:.8">te: koppints a lapodért</span>` : ""}</span></div>`;
   });
   h += `</div></div>`;
   app.innerHTML = h;
   const bg = new Image(); bg.onload = () => { $("#bg").style.backgroundImage = `url(${bg.src})`; const v = $(".victim"); if (v) v.style.display = "none"; }; bg.onerror = () => $("#bg").classList.add("none"); bg.src = `assets/${S.id}/scene.jpg`;
   app.querySelectorAll(".ch").forEach(e => e.onclick = () => charModal(+e.dataset.slot));
+  bindPills();
   $("#mapb").onclick = mapModal; $("#noteb").onclick = notesModal; $("#storyb").onclick = storyModal;
   if ($("#muteb")) $("#muteb").onclick = () => { ensureAudio(); AU.muted = !AU.muted; AU.master.gain.value = AU.muted ? 0 : .9; [AU.music, AU.tension].forEach(a => a && (a.muted = AU.muted)); $("#muteb").textContent = AU.muted ? "🔇" : "🔊"; };
   if (P.p === 0) { ensureAudio(); startMusic(S); }
@@ -519,8 +560,10 @@ function charModal(slot) {
   const c = S.chars[slot];
   modal(`${zoomable(pimg(S, slot, {cls: "zoomimg"}))}<h2 style="margin-top:10px">${esc(c.name)}</h2><p class="muted small">${esc(c.title)}</p>
     <div class="kv"><b>Mindenki látta</b>${esc(c.dispute)}</div><div class="kv"><b>Mindenki tudja</b>${esc(c.weapon)}</div>
-    ${slot === SLOT ? `<h3 style="margin-top:14px">🔒 Csak neked</h3><div class="role ${ME.role}" style="font-size:1.2rem">${ME.roleName}</div>${myRole()}
-      <div class="panel"><div class="kv"><b>Titkos küldetésed</b>${esc(ME.mission)}</div></div>${myCard()}` : ""}`);
+    ${slot === SLOT ? `<div class="mine"><div class="row" style="align-items:center"><h3 style="margin:0">🔒 Csak neked</h3><div class="role ${ME.role}" style="font-size:1.15rem;text-align:right">${ME.roleName}</div></div>
+      <details open><summary>A szereped és hogyan nyersz</summary>${myRole()}</details>
+      <details><summary>Amit tudsz (1-5)</summary>${myCard()}</details>
+      <details><summary>Mini küldetés (opcionális)</summary><div class="panel">${esc(ME.mission)}</div></details></div>` : ""}`);
 }
 function mapModal() {
   modal(`<h2>${esc(S.title)}: alaprajz</h2>${zoomable(`<img class="zoomimg" src="assets/${S.id}/map.jpg" onerror="this.onerror=null;this.src='assets/maps/${S.id}.png'">`)}<p class="small">${esc(S.mapNote)}</p>${S.common ? `<p class="small" style="color:var(--gold2)">👁 ${esc(S.common)}</p>` : ""}`);
@@ -534,13 +577,13 @@ function storyModal() {
   $("#replay").onclick = () => { ensureAudio(); narrate(S, $("#mtyped")); };
 }
 function notesModal() {
-  const k = "notes-" + P.t0 + "-" + P.p, N = ls(k) || {text: "", sus: {}};
+  const k = notesKey(), N = ls(k) || {text: "", sus: {}};
   const lab = ["?", "gyanús", "tiszta"];
   const chips = () => P.ch.map(sl => `<button data-s="${sl}" class="s${N.sus[sl] || 0}">${esc(S.chars[sl].name)}: ${lab[N.sus[sl] || 0]}</button>`).join("");
   modal(`<h2>Jegyzetfüzet</h2><p class="small muted">Csak a te telefonodon látszik.</p><div class="sus" id="sus">${chips()}</div>
     <textarea id="nt" placeholder="Ki mit mondott, ki hazudhat, ki hol volt...">${esc(N.text)}</textarea>`);
   $("#nt").oninput = e => { N.text = e.target.value; ls(k, N); };
-  const bind = () => $("#sus").querySelectorAll("button").forEach(b => b.onclick = () => { const s = +b.dataset.s; N.sus[s] = ((N.sus[s] || 0) + 1) % 3; ls(k, N); $("#sus").innerHTML = chips(); bind(); });
+  const bind = () => $("#sus").querySelectorAll("button").forEach(b => b.onclick = () => { const s = +b.dataset.s; N.sus[s] = ((N.sus[s] || 0) + 1) % 3; ls(k, N); $("#sus").innerHTML = chips(); bind(); const el = document.querySelector(`[data-pill="${s}"]`); if (el) { el.outerHTML = pillHTML(s, false); bindPills(); } });
   bind();
 }
 
