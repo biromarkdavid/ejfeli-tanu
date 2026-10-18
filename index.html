@@ -87,6 +87,23 @@ label{display:block;margin:8px 0 4px;color:var(--muted);font-size:.9rem}
 .ch .nw{font-style:normal;white-space:nowrap}
 .ch .mk{display:inline-grid;place-items:center;width:1.15em;height:1.15em;border-radius:50%;background:var(--c);border:1px solid #fff;vertical-align:-.22em;margin-left:4px;box-shadow:0 1px 3px #000a;line-height:0}
 .ch .mk .ic{width:.72em;height:.72em}
+.ballot .vrow{display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid var(--line);border-radius:14px;background:var(--panel2);margin:8px 0;cursor:pointer}
+.ballot .vrow.on{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold) inset;background:#2c2316}
+.ballot .vrow .av{width:54px;height:54px;border-radius:50%;overflow:hidden;position:relative;flex:0 0 auto;border:2px solid #ffffff55;background:#2a2430}
+.ballot .vrow .av img{position:absolute;width:210%;left:-55%;top:-6%;max-width:none}
+.ballot .vrow .nm{flex:1;min-width:0}.ballot .vrow .nm b{display:block}.ballot .vrow .nm small{color:var(--muted);font-size:.8rem}
+.ballot .mymk{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:.66rem;color:var(--c);font-weight:600;flex:0 0 auto}
+.ballot .mymk i{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:var(--c);color:#fff}
+.ballot .mymk .ic{width:15px;height:15px}
+.reveal{position:fixed;inset:0;z-index:5;overflow:auto;background:#000}
+.reveal .rvbg{position:fixed;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 20%;filter:grayscale(1) contrast(1.15) brightness(.6);animation:rvzoom 6s ease-out both}
+@keyframes rvzoom{from{transform:scale(1.12)}to{transform:scale(1)}}
+.reveal::after{content:"";position:fixed;inset:0;background:linear-gradient(180deg,#0000 25%,#000c 62%,#000f);pointer-events:none}
+.reveal .rvin{position:relative;z-index:2;min-height:100%;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-end;padding:40vh 18px calc(22px + env(safe-area-inset-bottom));text-align:center;max-width:560px;margin:0 auto}
+.reveal .rvname{font:700 2.1rem 'Playfair Display',serif;color:#fff;margin:0 0 4px;text-shadow:0 2px 12px #000}
+.reveal .rvrole{font:800 1.7rem 'Playfair Display',serif;margin:6px 0;text-shadow:0 2px 12px #000;letter-spacing:.02em}
+.reveal p{color:#eee;text-shadow:0 1px 6px #000}
+.reveal .ballot{text-align:left}
 .suspick{margin-top:14px;border-top:1px solid var(--line);padding-top:12px}
 .suspick b{display:block;color:var(--gold);font-size:.82rem;letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px}
 .suspick .opts{display:flex;gap:6px}
@@ -532,16 +549,21 @@ const ST = {userStep: 0, key: "", tipSeen: {}, start: 0};
 const lab = j => S.chars[P.ch[j]].name;
 // The host starts the game for everyone ("Mindenki beolvasta: indulás!"); the start moment reaches the other
 // phones through a tiny public pub/sub topic (ntfy.sh, random topic per game). Offline phones get a manual start button.
-const SYNC = {es: null};
+const SYNC = {es: null, msgs: []};  // msgs: votes / witness guess / skip, with the ntfy server time
 function syncTopic() { return `ejfeli-tanu-${P.g || P.t0}`; }
 function syncListen() {
   try {
     SYNC.es = new EventSource(`https://ntfy.sh/${syncTopic()}/sse?since=all`);
     SYNC.es.onmessage = ev => {
-      try { const m = JSON.parse(JSON.parse(ev.data).message || "{}"); if (m.start && (!ST.start || m.start < ST.start)) { ST.start = m.start; saveST(); ST.key = ""; loop(); } } catch (e) {}
+      try {
+        const d = JSON.parse(ev.data), m = JSON.parse(d.message || "{}");
+        if (m.start && (!ST.start || m.start < ST.start)) { ST.start = m.start; saveST(); ST.key = ""; loop(); }
+        if ((m.v || m.g || m.s) && !SYNC.msgs.some(x => x.id === d.id)) SYNC.msgs.push({id: d.id, t: d.time * 1000, m});
+      } catch (e) {}
     };
   } catch (e) {}
 }
+function syncPost(obj) { fetch(`https://ntfy.sh/${syncTopic()}`, {method: "POST", body: JSON.stringify(obj), keepalive: true}).catch(() => {}); }
 function syncSend(start) { fetch(`https://ntfy.sh/${syncTopic()}`, {method: "POST", body: JSON.stringify({start}), keepalive: true}).catch(() => {}); }
 const INTRO = 60;  // everyone gets the same 1 minute for the 3 intro steps, then the clock starts together
 function TL() {
@@ -584,11 +606,12 @@ function render(t) {
   closeModal();
   if (t.ph === "wait") return waitView();
   if (t.ph === "intro") return readView(ST.userStep);
-  if (t.ph === "end") return endView();
+  if (t.ph === "end") return ls("vote-" + P.t0) ? voteFlow() : endView();
   sceneView(t);
   if (t.ph === "tip") tipView(t.i);
 }
 function update(t) {
+  if (t.ph === "end") { if (ls("vote-" + P.t0)) return; return voteTick(); }
   if (t.ph === "intro") { const b = $("#ibar"); if (b) { b.style.width = (100 * t.left / INTRO) + "%"; b.parentNode.classList.toggle("low", t.left <= 10); } }
   if (t.ph === "play" || t.ph === "tip") {
     const D = P.m * 60, rem = t.rem;
@@ -829,15 +852,141 @@ function tipView(i) {
     saveST(); ensureAudio(); chime(); if (navigator.vibrate) navigator.vibrate([120, 80, 120]); }
 }
 
-/* ---------- end: secret vote on the host phone ---------- */
+/* ---------- end: everyone votes on their own phone (Márk 2026-10-18) ----------
+   Votes go through the game's ntfy topic. Every phone replays the same message log with the same rules,
+   so all of them reach the same verdict. 30 s per round; whoever has not voted by then abstains. */
+const VOTE_S = 30, TALK_S = 180, REVEAL = 3300;
+const VOTE = {sel: {}, mine: {}, drum: {}, key: ""};
+function gameEndAt() { return ST.start + (INTRO + P.m * 60 + TIP * TIPS_AT[P.m].length) / P.x * 1000; }
+function seedPick(arr, salt) { let h = 7; for (const c of String(P.g || P.t0) + salt) h = (h * 31 + c.charCodeAt(0)) >>> 0; return arr[h % arr.length]; }
+function voteState(now) {
+  const n = P.ch.length, roleOf = i => S.chars[P.ch[i]].role, dropRole = n === 6 ? "B" : "G";
+  let r = 1, start = gameEndAt(), kind = "main", cands = null, outB;
+  for (;;) {
+    const dl = start + VOTE_S * 1000 / P.x, pool = [...Array(n).keys()].filter(j => j !== outB && (!cands || cands.includes(j)));
+    const st = {r, start, dl, kind, pool, outB, n};
+    const votes = {}; let last = 0;
+    SYNC.msgs.forEach(x => { const v = x.m.v; if (v && v.r === r && x.t <= dl + 999 && pool.includes(v.j) && v.p !== v.j && v.p >= 0 && v.p < n) { votes[v.p] = v.j; last = Math.max(last, x.t); } });
+    st.votes = votes;
+    const done = Object.keys(votes).length >= n;
+    if (!done && now < dl + 2500) { st.phase = "vote"; return st; }   // a little grace for votes still in flight
+    st.resolve = done ? Math.min(last, dl) : dl + 2500;
+    const count = skip => { const t = Array(n).fill(0); Object.entries(votes).forEach(([v, j]) => { if (!(skip && roleOf(+v) === dropRole)) t[j]++; }); return t; };
+    let tally = count(false), max = Math.max(...pool.map(j => tally[j])), top = pool.filter(j => tally[j] === max), next;
+    if (top.length > 1 && kind !== "tie") { st.tie = top; next = {kind: "tie", cands: top}; }
+    else {
+      if (top.length > 1) {   // second tie: the evil vote that only steers is dropped, then lots
+        st.dropped = dropRole; tally = count(true); max = Math.max(...pool.map(j => tally[j])); top = pool.filter(j => tally[j] === max);
+        if (top.length > 1) { st.lot = 1; top = [seedPick(top, "r" + r)]; }
+      }
+      st.j = top[0]; st.role = roleOf(st.j); st.max = max;
+      if (st.role === "B" && outB === undefined) next = {kind: "revote", outB: st.j};
+      else { st.tally = tally; st.phase = "verdict"; return st; }
+    }
+    st.tally = tally;
+    // 3 minutes of arguing before the next round; anyone can cut it short
+    let ns = st.resolve + (REVEAL + TALK_S * 1000) / P.x;
+    SYNC.msgs.forEach(x => { if (x.m.s && x.m.s.r === r && x.t >= st.resolve) ns = Math.min(ns, Math.max(x.t, st.resolve + REVEAL)); });
+    st.next = ns;
+    if (now < ns) { st.phase = "between"; return st; }
+    r++; start = ns; kind = next.kind; cands = next.cands || null; if (next.outB !== undefined) outB = next.outB;
+  }
+}
 function endView() {
   if (P.p === 0 && AU.mode !== "done") stopMusic();
-  if (P.p !== 0) {
-    app.innerHTML = `<div class="center" style="padding-top:12vh"><h1>Lejárt az idő!</h1><p>A titkos szavazás a játékvezető (1. játékos) telefonján megy: adjátok körbe.</p><p class="muted small">Ott derül ki az eredmény is.</p></div>`;
+  VOTE.key = ""; voteTick();
+}
+function voteTick() {
+  if (ls("vote-" + P.t0)) return;   // the offline one-phone vote was chosen
+  const now = NOW(), st = voteState(now);
+  const revealing = (st.phase === "between" || st.phase === "verdict") && now < st.resolve + REVEAL / P.x;
+  let guess = null;
+  if (st.phase === "verdict" && st.role === "G") SYNC.msgs.forEach(x => { if (!guess && x.m.g && x.t >= st.resolve) guess = x.m.g.j; });
+  const iVoted = st.votes[P.p] !== undefined || VOTE.mine[st.r] !== undefined;
+  const key = [st.phase, st.r, revealing, iVoted, guess, VOTE.fin].join("|");
+  if (key !== VOTE.key) { VOTE.key = key; voteRender(st, revealing, iVoted, guess); }
+  // live bits: countdown bar, vote counter, discussion clock
+  const left = (st.dl - now) / 1000 * P.x, b = $("#vbar");
+  if (b) { b.style.width = Math.max(0, 100 * left / VOTE_S) + "%"; b.parentNode.classList.toggle("low", left <= 10); }
+  const c = $("#vcount"); if (c) c.textContent = `${Object.keys(st.votes).length}/${st.n}`;
+  if (st.phase === "between" && !revealing) { const rem = (st.next - now) / 1000 * P.x; drawClock(rem / TALK_S, false, rem <= 30, rem); }
+}
+function voteRender(st, revealing, iVoted, guess) {
+  const roleOf = i => S.chars[P.ch[i]].role, nm = j => esc(S.chars[P.ch[j]].name);
+  const bar = `<div class="bar" style="margin:6px 0 4px"><i id="vbar" style="width:100%"></i></div>`;
+  if (VOTE.fin) return finalView(VOTE.fin);
+  if (st.phase === "vote" && !iVoted) {
+    const hint = st.kind === "tie" ? "Döntő kör: csak a döntetlenben érintettek közül választhatsz." : st.outB !== undefined ? "A bűntárs már lebukott, őt nem jelölheted." : "A szavazatodat senki nem látja.";
+    const rows = st.pool.filter(j => j !== P.p).map(j => { const sl = P.ch[j], c = S.chars[sl], k = susOf(sl), m = MARK[k];
+      return `<div class="vrow ${VOTE.sel[st.r] === j ? "on" : ""}" data-j="${j}"><div class="av">${pimg(S, sl)}</div><div class="nm"><b>${esc(c.name)}</b><small>${esc(c.title)}</small></div>
+        ${k !== "Q" ? `<div class="mymk" style="--c:${m.col}"><i>${icon(m.ic)}</i>${SUSLAB[k]}</div>` : ""}</div>`; }).join("");
+    app.innerHTML = `<div class="ballot"><h2 style="margin:8px 0 2px">${st.r > 1 ? st.r + ". szavazás: " : ""}Ki a gyilkos?</h2>${bar}<p class="small muted" style="margin:4px 0 8px">${hint} Aki 30 másodpercen belül nem szavaz, tartózkodik.</p>${rows}
+      <button class="btn" id="cast" ${VOTE.sel[st.r] === undefined ? "disabled" : ""}>Leadom a szavazatom</button>
+      ${P.p === 0 && st.r === 1 ? `<button class="btn ghost small" id="offline" style="opacity:.6">Nincs internet? Szavazás egy telefonon, körbeadva</button>` : ""}</div>`;
+    app.querySelectorAll(".vrow").forEach(e => e.onclick = () => { VOTE.sel[st.r] = +e.dataset.j; app.querySelectorAll(".vrow").forEach(x => x.classList.toggle("on", x === e)); $("#cast").disabled = false; });
+    $("#cast").onclick = () => { const j = VOTE.sel[st.r]; if (j === undefined) return; VOTE.mine[st.r] = j; syncPost({v: {r: st.r, p: P.p, j}}); tone(520, .15); voteTick(); };
+    if ($("#offline")) $("#offline").onclick = () => { ls("vote-" + P.t0, {i: 0, stage: "pass", votes: {}}); voteFlow(); };
     return;
   }
-  voteFlow();
+  if (st.phase === "vote") {
+    app.innerHTML = `<div class="center" style="padding-top:12vh"><h1>Leadtad a szavazatod</h1>${bar}<p>Várjuk a többieket: <b id="vcount"></b></p><p class="small muted">Az eredmény mindenki telefonján egyszerre jelenik meg.</p></div>`;
+    return;
+  }
+  if (revealing) {
+    app.innerHTML = `<div class="center" style="padding-top:18vh"><h1>Számolás...</h1><p class="big drumb">${icon("drum", "", 64)}</p></div>`;
+    if (!VOTE.drum[st.r]) { VOTE.drum[st.r] = 1; ensureAudio(); drumroll(3); }
+    return;
+  }
+  // verdict screens: the accused fills the screen in black and white, the text sits on top; no vote counts (Márk 2026-10-18)
+  const talk = `<div class="center"><svg id="clock" viewBox="0 0 100 100" style="width:44vw;max-width:190px;height:auto"></svg></div><button class="btn" id="skip">Kész, szavazzunk most</button>`;
+  const wrap = (j, inner) => `<div class="reveal">${pimg(S, P.ch[j], {cls: "rvbg"})}<div class="rvin"><p class="rvname">${nm(j)}</p>${inner}</div></div>`;
+  const pickList = (title) => `<div class="ballot"><h3 style="margin:10px 0 0">${title}</h3>` + [...Array(st.n).keys()].filter(j => j !== st.j).map(j =>
+    `<div class="vrow" data-j="${j}"><div class="av">${pimg(S, P.ch[j])}</div><div class="nm"><b>${nm(j)}</b><small>${esc(S.chars[P.ch[j]].title)}</small></div></div>`).join("") + `</div><button class="btn" id="gcast" disabled>Ő a szemtanú</button>`;
+  let h;
+  if (st.phase === "between" && st.tie) {
+    h = `<h1 class="center">Döntetlen!</h1><p class="center">${st.tie.map(j => `<b>${nm(j)}</b>`).join(" és ")} ugyanannyi szavazatot kapott.</p>
+      <p class="center">3 perc érvelés, aztán új titkos szavazás, de már csak közöttük. Ha újra döntetlen, ${st.n === 6 ? "a bűntárs" : "a gyilkos"} szavazata nem számít.</p>${talk}`;
+  } else if (st.phase === "between") {
+    h = wrap(st.j, `<p class="rvrole" style="color:#f0a35e">A BŰNTÁRS volt!</p><p><b>„Volt egy társam.”</b> A gyilkos még köztetek van.</p>
+      <p class="small">3 perc érvelés, aztán új titkos szavazás. A bűntárs már nem jelölhető, de ő is szavaz.</p>${talk}`);
+  } else {
+    const r = st.role;
+    const note = st.dropped ? `<p class="small">Újra döntetlen lett, ezért ${st.dropped === "B" ? "a bűntárs" : "a gyilkos"} szavazata nem számított.${st.lot ? " Még így is döntetlen maradt, sorsolás döntött." : ""}</p>` : "";
+    if (r === "G" && guess === null) {
+      // the murderer guesses the witness: on his own phone, or on the host phone passed to him
+      const mine = st.j === P.p, host = P.p === 0;
+      h = wrap(st.j, `${note}<p class="rvrole" style="color:#e8574a">A GYILKOS volt!</p><p>Elkaptátok. Most még tippelhet, ki a szemtanú: ha eltalálja, a gonoszok nyernek.</p>
+        ${mine ? pickList("Ki a szemtanú?") : host ? `<p class="small">Add oda ezt a telefont neki, vagy a saját telefonján tippel.</p>${pickList(nm(st.j) + ": ki a szemtanú?")}` : ""}`);
+    } else if (r === "G") {
+      const ok = roleOf(guess) === "S"; VOTE.outcome = ok ? "evil" : "good";
+      h = wrap(st.j, `<p class="rvrole" style="color:#e8574a">A GYILKOS volt!</p><p>A szemtanú-tippje: <b>${nm(guess)}</b></p>
+        <p class="rvrole" style="color:${ok ? "#e8574a" : "#5fc98d"}">${ok ? "Eltalálta! A gonoszok nyertek!" : "Nem ő a szemtanú. Az ártatlanok nyertek!"}</p>`);
+    } else {
+      VOTE.outcome = "evil";
+      h = wrap(st.j, `${note}<p class="rvrole" style="color:#5fc98d">ÁRTATLAN volt.</p><p class="rvrole" style="color:#e8574a">A gonoszok nyertek!</p>`);
+    }
+    if (VOTE.outcome) h = h.replace(/<\/div><\/div>$/, `<button class="btn" id="fin">Megoldás és szerepek</button></div></div>`);
+  }
+  app.innerHTML = h; window.scrollTo(0, 0);
+  if ($("#skip")) $("#skip").onclick = () => { $("#skip").disabled = true; syncPost({s: {r: st.r}}); };
+  if ($("#gcast")) {
+    let sel = null;
+    app.querySelectorAll(".vrow").forEach(e => e.onclick = () => { sel = +e.dataset.j; app.querySelectorAll(".vrow").forEach(x => x.classList.toggle("on", x === e)); $("#gcast").disabled = false; });
+    $("#gcast").onclick = () => { $("#gcast").disabled = true; syncPost({g: {j: sel}}); };
+  }
+  if ($("#fin")) $("#fin").onclick = () => { VOTE.fin = VOTE.outcome; voteTick(); };
+  if (st.phase === "verdict" && VOTE.outcome && !VOTE.toned) { VOTE.toned = 1; tone(VOTE.outcome === "good" ? 660 : 160, 1.2, "triangle", .3); }
 }
+function finalView(outcome) {
+  let h = `<p class="big" style="color:${outcome === "good" ? "var(--green)" : "var(--red)"}">${outcome === "good" ? "Az ártatlanok nyertek!" : "A gonoszok nyertek!"}</p>
+    <div class="panel"><h3>Mi történt valójában</h3><p>${esc(S.solution)}</p></div><h3>Ki kicsoda volt</h3><div class="grid">`;
+  P.ch.forEach(sl => { const c = S.chars[sl], ev = c.role === "G" || c.role === "B"; h += `<div class="c">${pimg(S, sl, {evil: ev})}<b>${esc(c.name)}</b><br><span class="badge ${ev ? "red" : c.role === "S" ? "blue" : ""}">${c.roleName}</span></div>`; });
+  h += `</div><div class="panel"><h3>Titkos küldetések</h3><p class="small muted">Meséljétek el, kinek sikerült!</p>` +
+    P.ch.map(sl => `<p class="small"><b>${esc(S.chars[sl].name)}</b>: ${esc(S.chars[sl].mission)}</p>`).join("") + `</div><button class="btn" id="new">Új játék</button>`;
+  app.innerHTML = h; window.scrollTo(0, 0);
+  $("#new").onclick = () => { location.hash = ""; location.reload(); };
+}
+/* ---------- offline fallback: the old secret vote on the host phone, passed around ---------- */
 function voteFlow() {
   const k = "vote-" + P.t0, V = ls(k) || {i: 0, stage: "pass", votes: {}}, n = P.n.length, save = () => ls(k, V);
   const roleOf = i => S.chars[P.ch[i]].role;
