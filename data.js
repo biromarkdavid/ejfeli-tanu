@@ -178,49 +178,49 @@ window.STORIES = [
 ],
 "tips": {
 "A": [
-"Tipp: aki ma éjjel méreggel, korommal vagy bármivel dolgozott, annak nem tiszta a keze. Nézd meg a kezeket a képeken!",
+"Kay keze mellett a terítőn maszatos ujjnyomok maradtak, mintha valakinek festékes vagy kormos lett volna a keze. Érdemes megnézni a kezeket.",
 [
-"Mondd, hogy a tipped szerint a gyilkos köpenyén pókháló van.",
-"Mondd, hogy a tipped szerint a méreg a királyné kertjéből jött.",
-"Mondd, hogy láttad Merlint a pince ajtajában."
+"Mondd, hogy pókhálót láttál valaki köpenyén a pince ajtajánál.",
+"Mondd, hogy éjjel valaki lila bogyókat szedett a királyné kertjében.",
+"Mondd, hogy Merlin tornyából valaki a pince felé sietett."
 ],
-"Tipp: a gyilkos tudja, hogy valaki látta. Ha túl biztos vagy, lebuksz. Kérdezz, ne vádolj!",
-"Tipp: a pincébe csak a konyhán át lehet lejutni. Nézd meg a térképet, és kérdezd meg, ki járt a konyhán!",
-"Tipp: Kay két embert is fenyegetett ma este azzal, hogy „elmondja a királynak”. Kérdezd meg, kit!",
+"A lakoma végén valaki hosszan a pincelépcső felé nézett. Lehet, hogy a gyilkos sejti, hogy nem volt egyedül.",
+"A konyhán át valaki a pince felé sietett, és a léptei nyomán halk fémes csörgés hallatszott.",
+"A csillagnaplódban ez áll: 23:50-kor Morgana sápadtan, pókhálós köpenyben érkezett a toronyba.",
 [
-"Mondd, hogy a tipped szerint a méreg Morgana ládikójából való.",
-"Mondd, hogy láttál egy lila foltos kesztyűt a pincében.",
-"Mondd, hogy Guinevere a pince felől jött."
+"Mondd, hogy Morgana ládikója nyitva állt, és ő maga hajolt fölé.",
+"Mondd, hogy egy lila foltos kesztyűt találtál a pincében.",
+"Mondd, hogy Guinevere a pince felől jött vissza."
 ]
 ],
 "B": [
-"Tipp: a lovagok páncélja hangos. Kérdezd meg, ki hallott páncélcsörgést a pincénél!",
+"A pincelépcsőn egy finom selyemkendő hevert, a sarkában hímzett G betűvel. Lovag ilyet nem hord.",
 [
-"Mondd, hogy a tipped szerint a gyilkos ruhája tiszta maradt.",
-"Mondd, hogy Guinevere kezén lila foltot láttál.",
-"Mondd, hogy a pohárnok (Gawain) egyedül járt a kupáknál."
+"Mondd, hogy a gyilkos ruhája tiszta volt, láttad a sötétben.",
+"Mondd, hogy Guinevere ujjain lila foltot láttál.",
+"Mondd, hogy a pohárnok egyedül járt a kupáknál."
 ],
-"Tipp: a nadragulya lila foltot hagy az ujjakon, ami napokig nem jön le. Nézd meg a kezeket!",
-"Tipp: kérdezd meg Lancelotot, mit csinált a fegyverteremben, és nézd meg a páncélját: fényes?",
-"Tipp: a nadragulya lila foltot hagy az ujjakon. Nézd meg a kezeket!",
+"A nadragulya leve napokig lilára festi az ujjakat. Aki ma este hozzányúlt, nem tudja lemosni.",
+"A kerti kapunál egy kék köpeny suhant el, a szegélyén bogáncs akadt fenn. Nem a fegyverterem felé ment.",
+"Kay kupájának peremén lilás ujjlenyomatot láttál, mintha lila ujjak fogták volna.",
 [
-"Mondd, hogy a tipped szerint a gyilkos kesztyűt viselt.",
-"Mondd, hogy Merlin naplója hamis.",
-"Mondd, hogy láttad Morganát üvegcsével a kezében."
+"Mondd, hogy a gyilkos fekete kesztyűt viselt, láttad.",
+"Mondd, hogy Merlin éjjel nem is volt a tornyában.",
+"Mondd, hogy Morganát egy üvegcsével a kezében láttad."
 ]
 ],
 "C": [
-"Tipp: a méreg öntésekor kiloccsant a bor. Nézd meg, kinek a ruháján van borfolt!",
+"A pince kövén kiloccsant bor nyoma: aki a kupát töltötte, annak a ruhájára is fröccsenhetett.",
 [
-"Mondd, hogy a tipped szerint a gyilkos keze tiszta.",
-"Mondd, hogy Gawain kancsója mérgezett bort rejtett.",
-"Mondd, hogy Morgana a kertben járt éjjel."
+"Mondd, hogy a gyilkos keze tiszta volt.",
+"Mondd, hogy Gawain kancsójában mérgezett bor volt.",
+"Mondd, hogy Morgana éjjel a kertben járt."
 ],
-"Tipp: ha a gyilkos rád tippel a végén, nyer. Most már szavazz okosan, ne hívd fel magadra a figyelmet!",
-"Tipp: a pincében a bor kiloccsant. Nézd meg, kinek a ruháján van borfolt!",
-"Tipp: Morgana ládikóját kulccsal nyitották, nem feszítették fel. Kinél lehet kulcs?",
+"A pincelépcső alján ott maradt egy félig üres borkancsó. Ha megtalálják, rád gondolnak.",
+"Kay kupája mellett friss borcseppek: aki töltötte, remegett a keze, és a ruhája is megsínylette.",
+"Morgana ládikója nem volt feltörve. Aki kinyitotta, kulccsal tette.",
 [
-"Mondd, hogy a tipped szerint a gyilkos köpenyén pókháló van.",
+"Mondd, hogy pókhálót láttál a gyilkos köpenyén.",
 "Mondd, hogy Lancelot végig a fegyverteremben volt, láttad.",
 "Mondd, hogy Guinevere-nél egy üres üvegcsét láttál."
 ]
@@ -228,6 +228,7 @@ window.STORIES = [
 },
 "accTip": "Tipp (csak 6 főnél): a mérget nem a gyilkos lopta el. Valaki hozzáfért Morgana ládikójához, és odavitte a pincébe. Ha őt elkapjátok, az is győzelem.",
 "mapNote": "A borpincébe csak a konyhán át vezet lépcső. A kertből a konyha ajtaja látszik.",
+"story": "Pünkösd éjszakája van **Camelot váránál**. A nagyteremben száz gyertya ég, a Kerekasztalon sült fácán, mézes bor és friss kenyér illata keveredik. Artúr király nevet, a lovagok egymást túlkiabálva mesélik a napi torna történeteit, a lantos halkan játszik a sarokban. Az est fénypontja a **köszöntő**: éjfélkor **Sir Kay**, a király udvarnagya és mostohatestvére feláll, magasra emeli aranykupáját, és a királyra iszik. Egy korty. Még egy. Aztán a kupa kiesik a kezéből, a bor szétfolyik a terítőn, Kay megtántorodik... [SIKOLY] ...és holtan esik össze a király lábainál. Az udvari orvos megszagolja a kupát, és elsápad: a borban **nadragulya** volt, halálos méreg. A kupát **éjfél előtt a borpincében** töltötték meg. Artúr felpattan, és bezáratja a vár kapuit. Senki nem hagyhatja el Camelotot. **A gyilkos köztetek van**, és a hajnali kakasszóig ki kell deríteni, ki ő.",
 "full": true,
 "common": "Közösen megállapítjátok: Kay kupájában nadragulya volt. A kupát éjfél előtt a borpincében töltötték meg, a pincébe pedig csak a konyhán át lehet lejutni."
 },
@@ -409,15 +410,15 @@ window.STORIES = [
 ],
 "tips": {
 "A": [
-"Tipp: a gyilkos sietett, és a kézelője foltos lett: tinta, vér, bármi. Nézd meg a kézelőket!",
+"a gyilkos sietett, és a kézelője foltos lett: tinta, vér, bármi. Nézd meg a kézelőket!",
 [
 "Mondd, hogy a tipped szerint a gyilkos a sikátorból jött, sáros a cipője.",
 "Mondd, hogy Victoria kezén vért láttál.",
 "Mondd, hogy Molly a hullakamra ajtajánál állt."
 ],
-"Tipp: a gyilkos tudja, hogy valaki látta. Maradj csendben, kérdezz inkább!",
-"Tipp: Hale a halála előtt két embert is megfenyegetett. Kérdezd meg, ki kivel veszekedett ma!",
-"Tipp: a hullakamra hátsó ajtaja a sikátorra nyílik. Nézd meg a térképet!",
+"a gyilkos tudja, hogy valaki látta. Maradj csendben, kérdezz inkább!",
+"Hale a halála előtt két embert is megfenyegetett. Kérdezd meg, ki kivel veszekedett ma!",
+"a hullakamra hátsó ajtaja a sikátorra nyílik. Nézd meg a térképet!",
 [
 "Mondd, hogy a tipped szerint a gyilkos nő volt.",
 "Mondd, hogy láttad Silast késsel.",
@@ -425,15 +426,15 @@ window.STORIES = [
 ]
 ],
 "B": [
-"Tipp: az anatómiai terem padlóját fűrészporral szórják fel. Nézd meg a cipőket!",
+"az anatómiai terem padlóját fűrészporral szórják fel. Nézd meg a cipőket!",
 [
 "Mondd, hogy a tipped szerint a gyilkos kesztyűt viselt.",
 "Mondd, hogy a kocsmában hallottad: Victoria szeretője fenyegette Hale-t.",
 "Mondd, hogy Crane a laborban volt, láttad."
 ],
-"Tipp: valaki a hullakamrát nyitva hagyta a gyilkosnak. Ki tud nyitni?",
-"Tipp: kérdezd meg Crane-t, mi volt a laborban, és kérdezd meg, látta-e valaki ott.",
-"Tipp: aki az anatómiai teremben járt, fűrészport visz a cipőjén. Nézd meg a cipőket!",
+"valaki a hullakamrát nyitva hagyta a gyilkosnak. Ki tud nyitni?",
+"kérdezd meg Crane-t, mi volt a laborban, és kérdezd meg, látta-e valaki ott.",
+"aki az anatómiai teremben járt, fűrészport visz a cipőjén. Nézd meg a cipőket!",
 [
 "Mondd, hogy a tipped szerint a gyilkos cipője sáros.",
 "Mondd, hogy a hullakamra kulcsa Silasnál van.",
@@ -441,15 +442,15 @@ window.STORIES = [
 ]
 ],
 "C": [
-"Tipp: a gyilkos kézelőjén rozsdabarna, száradt folt maradt. Nézd meg a kézelőket!",
+"a gyilkos kézelőjén rozsdabarna, száradt folt maradt. Nézd meg a kézelőket!",
 [
 "Mondd, hogy a tipped szerint a gyilkos kézelője tiszta.",
 "Mondd, hogy Victoria a hullakamrában járt, láttad a sárt.",
 "Mondd, hogy Silas gyertyaviasza vér."
 ],
-"Tipp: ha a gyilkos rád tippel a végén, nyer. Ne vádolj túl hangosan!",
-"Tipp: a gyilkos utána fenollal mosott kezet. A fenol kifehéríti és kirepeszti a bőrt. Nézd meg a kezeket!",
-"Tipp: kérdezd meg, kinek a módszeréről szólt Hale nagy felfedezése.",
+"ha a gyilkos rád tippel a végén, nyer. Ne vádolj túl hangosan!",
+"a gyilkos utána fenollal mosott kezet. A fenol kifehéríti és kirepeszti a bőrt. Nézd meg a kezeket!",
+"kérdezd meg, kinek a módszeréről szólt Hale nagy felfedezése.",
 [
 "Mondd, hogy a tipped szerint a gyilkos nem orvos.",
 "Mondd, hogy Ashby adóslevele a tetthelyen volt.",
@@ -459,6 +460,7 @@ window.STORIES = [
 },
 "accTip": "Tipp (csak 6 főnél): a hullakamrát valaki nyitva hagyta, pedig éjjel zárva van. Kinek van kulcsa?",
 "mapNote": "A hullakamra hátsó ajtaja a sikátorra nyílik. A laborból csak a folyosón át lehet az anatómiai terembe jutni.",
+"story": "London, 1888 ősze. **Whitechapel** utcáira sűrű, sárgás köd telepszik, a gázlámpák fénye alig ér el a macskakövekig. A Szent Lukács Kórházban már csak egyetlen ablak világít: **Dr. Edmund Hale**, a város ünnepelt sebésze az **anatómiai előadóteremben** dolgozik, ahogy minden éjjel. Holnap mutatja be nagy felfedezését a Királyi Társaságnak. Éjfél után a kórház csendes. Csak a víz csöpög valahol, és egy kocsikerék nyikorog a hátsó sikátorban. Hajnalban a takarítónő nyitja az ajtót... [SIKOLY] Hale a saját boncasztala mellett fekszik. A torkát **egyetlen, magabiztos szikevágás** metszette el. Ilyen tiszta vágást csak **orvosi képzettségű kéz** tud ejteni. A rendőrség bezáratja a kórház kapuit. Aki ma éjjel a közelben járt, mind gyanús, és valamelyikőtök hazudik.",
 "full": false,
 "common": ""
 },
@@ -640,15 +642,15 @@ window.STORIES = [
 ],
 "tips": {
 "A": [
-"Tipp: a könyvtárban sötét volt és poros. A gyilkos keze nem maradt tiszta. Nézd meg a kezeket!",
-"Tipp: Harker ma este két embernek is megírta, hogy „mindent tud”. Kérdezd meg, kinek!",
+"a könyvtárban sötét volt és poros. A gyilkos keze nem maradt tiszta. Nézd meg a kezeket!",
+"Harker ma este két embernek is megírta, hogy „mindent tud”. Kérdezd meg, kinek!",
 [
 "Mondd, hogy a tipped szerint a gyilkos a hóból jött be, nedves a cipője.",
 "Mondd, hogy láttad Drakulát a könyvtár ajtajában.",
 "Mondd, hogy Mina naplójában le van írva, hogyan kell vámpírharapást színlelni."
 ],
-"Tipp: a gyilkos tudja, hogy valaki látta. Ne te vádolj elsőként!",
-"Tipp: Lucy nyakán is van seb. Kérdezd meg, honnan.",
+"a gyilkos tudja, hogy valaki látta. Ne te vádolj elsőként!",
+"Lucy nyakán is van seb. Kérdezd meg, honnan.",
 [
 "Mondd, hogy a tipped szerint a gyilkos keze tiszta.",
 "Mondd, hogy Lucy és Harker titkos szerelmesek.",
@@ -656,15 +658,15 @@ window.STORIES = [
 ]
 ],
 "B": [
-"Tipp: vámpír harapott, vagy fém eszköz szúrt? Kérdezd meg, kinél van ezüst eszköz!",
-"Tipp: a sebből vér fröccsent. Nézd meg a gallérokat!",
+"vámpír harapott, vagy fém eszköz szúrt? Kérdezd meg, kinél van ezüst eszköz!",
+"a sebből vér fröccsent. Nézd meg a gallérokat!",
 [
 "Mondd, hogy a tipped szerint a gyilkos gallérja tiszta.",
 "Mondd, hogy Seward táskájából hiányzik az eszköz, és Seward volt a könyvtárban.",
 "Mondd, hogy a gróf szobájában vért láttál."
 ],
-"Tipp: Van Helsing a kápolnát mondja. A kápolnából hova vezet lépcső? Nézd meg a térképet!",
-"Tipp: a seb vérzett. Nézd meg, kinek a gallérján van vércsepp!",
+"Van Helsing a kápolnát mondja. A kápolnából hova vezet lépcső? Nézd meg a térképet!",
+"a seb vérzett. Nézd meg, kinek a gallérján van vércsepp!",
 [
 "Mondd, hogy a tipped szerint a gyilkos nő volt.",
 "Mondd, hogy Mina a könyvtárban járt.",
@@ -672,15 +674,15 @@ window.STORIES = [
 ]
 ],
 "C": [
-"Tipp: a fegyvert a kriptából hozták. Nézd meg a cipőket: kinek a talpán van sötét kriptaföld?",
-"Tipp: Harker egy professzorról jegyzetelt. Kérdezd meg, ki látta a jegyzetfüzetét!",
+"a fegyvert a kriptából hozták. Nézd meg a cipőket: kinek a talpán van sötét kriptaföld?",
+"Harker egy professzorról jegyzetelt. Kérdezd meg, ki látta a jegyzetfüzetét!",
 [
 "Mondd, hogy a tipped szerint a gyilkos cipője havas.",
 "Mondd, hogy Lucy a kriptában járt, láttad.",
 "Mondd, hogy Drakula nem vámpír, csak hazudik."
 ],
-"Tipp: ha a gyilkos rád tippel a végén, nyer. Hagyd, hogy más mondja ki a nevét!",
-"Tipp: a kriptaföld sötét, nehéz. Nézd meg a cipőket!",
+"ha a gyilkos rád tippel a végén, nyer. Hagyd, hogy más mondja ki a nevét!",
+"a kriptaföld sötét, nehéz. Nézd meg a cipőket!",
 [
 "Mondd, hogy a tipped szerint a gyilkos nem viselt cipőt.",
 "Mondd, hogy Mina ezüst gombostűje a tetthelyen volt.",
@@ -690,6 +692,7 @@ window.STORIES = [
 },
 "accTip": "Tipp (csak 6 főnél): a fegyver nem a gyilkosé. Valaki levitte a kriptába, hogy a gyilkos megtalálja. Ha őt elkapjátok, az is győzelem.",
 "mapNote": "A kriptába a kápolnából vezet lépcső. A könyvtárba a toronyból és a nagyteremből is be lehet jutni.",
+"story": "Erdély, 1893. Hóvihar tombol a **Borgó-hágón**, a farkasok üvöltése a kastély falaiig hallatszik. Drakula gróf ősi kastélyában vendégek éjszakáznak: egy londoni ügyvéd, a menyasszonya, egy híres professzor, egy orvos és a gróf különös szolgája. A vacsorán veszekedés tört ki, mindenki idegesen vonult vissza. Éjfélkor a szél kifújja a gyertyákat... [SIKOLY] **Jonathan Harkert**, a fiatal ügyvédet a **könyvtárban** találják meg, a karosszékében ülve, holtan. A nyakán **két apró, kerek seb**. Mindenki a grófra néz. De a szőnyegen friss sárnyomok és egy apró ezüstös karcolás árulkodik: a vámpírok nem hagynak nyomot. Vagy mégis? A hóvihar miatt senki nem hagyhatja el a kastélyt. **A gyilkos köztetek van.**",
 "full": false,
 "common": ""
 },
@@ -871,15 +874,15 @@ window.STORIES = [
 ],
 "tips": {
 "A": [
-"Tipp: a csillagvizsgálóban holdkőpor és égett pergamen szóródott szét. Nézd meg, kinek a talárja nem tiszta!",
-"Tipp: a gyilkos tudja, hogy valaki látta. Ne te vádolj elsőként!",
+"a csillagvizsgálóban holdkőpor és égett pergamen szóródott szét. Nézd meg, kinek a talárja nem tiszta!",
+"a gyilkos tudja, hogy valaki látta. Ne te vádolj elsőként!",
 [
 "Mondd, hogy a tipped szerint a gyilkos keze tintás.",
 "Mondd, hogy Seraphine a csillagvizsgálóba ment.",
 "Mondd, hogy Grey kulcsa hiányzik."
 ],
-"Tipp: a csillagvizsgálóba csak a lépcsőházon át lehet feljutni. Ki járt ott?",
-"Tipp: Thorne ma három embert is fenyegetett. Kérdezd meg, kit és mivel!",
+"a csillagvizsgálóba csak a lépcsőházon át lehet feljutni. Ki járt ott?",
+"Thorne ma három embert is fenyegetett. Kérdezd meg, kit és mivel!",
 [
 "Mondd, hogy a tipped szerint a gyilkos nem varázsló.",
 "Mondd, hogy Bram egész este a könyvtárban volt.",
@@ -887,15 +890,15 @@ window.STORIES = [
 ]
 ],
 "B": [
-"Tipp: a fagyvarázs kékre festi a varázsló ujjbegyeit. Nézd meg a kezeket!",
-"Tipp: kérdezd meg, ki hallott sírást vagy kiáltást a lépcsőházból!",
+"a fagyvarázs kékre festi a varázsló ujjbegyeit. Nézd meg a kezeket!",
+"kérdezd meg, ki hallott sírást vagy kiáltást a lépcsőházból!",
 [
 "Mondd, hogy a tipped szerint a gyilkos taláján égésnyom van.",
 "Mondd, hogy Corvin a csillagvizsgálóból jött ki.",
 "Mondd, hogy Seraphine jégkristályai hiányoznak."
 ],
-"Tipp: a fagy napokig kéken hagyja az ujjbegyeket. Nézd meg a kezeket!",
-"Tipp: Lyra jóslatai tavaly sem váltak be. Kérdezd meg, ki mondta ezt!",
+"a fagy napokig kéken hagyja az ujjbegyeket. Nézd meg a kezeket!",
+"Lyra jóslatai tavaly sem váltak be. Kérdezd meg, ki mondta ezt!",
 [
 "Mondd, hogy a tipped szerint a gyilkos haja kócos.",
 "Mondd, hogy Seraphine az égett talárt próbálta eltüntetni.",
@@ -903,15 +906,15 @@ window.STORIES = [
 ]
 ],
 "C": [
-"Tipp: a tekercs a jóslóteremből tűnt el, nem a könyvtárból. Ki járt a jóslóteremben?",
-"Tipp: ha a gyilkos rád tippel a végén, nyer. Szavazz okosan, beszélj keveset!",
+"a tekercs a jóslóteremből tűnt el, nem a könyvtárból. Ki járt a jóslóteremben?",
+"ha a gyilkos rád tippel a végén, nyer. Szavazz okosan, beszélj keveset!",
 [
 "Mondd, hogy a tipped szerint a gyilkos ujjai tiszták.",
 "Mondd, hogy Corvin a vizsgakérdések miatt ölt.",
 "Mondd, hogy láttad Seraphine-t a lépcsőn felfelé."
 ],
-"Tipp: a gyilkos a lépcsőházon ment fel, és ott látták. Kérdezd meg, ki állt a lépcsőházban!",
-"Tipp: Thorne kezében egy ezüst hajtű lenyomata maradt a dérben. Nézd meg a hajakat!",
+"a gyilkos a lépcsőházon ment fel, és ott látták. Kérdezd meg, ki állt a lépcsőházban!",
+"Thorne kezében egy ezüst hajtű lenyomata maradt a dérben. Nézd meg a hajakat!",
 [
 "Mondd, hogy a tipped szerint a gyilkos keze kormos.",
 "Mondd, hogy Corvin kiégett pálcája a tetthelyen volt.",
@@ -921,6 +924,7 @@ window.STORIES = [
 },
 "accTip": "Tipp (csak 6 főnél): a tekercset nem a gyilkos hozta el. Valaki, akinek a könyvtárban bármi eltűnhet a keze ügyéből. Ha őt elkapjátok, az is győzelem.",
 "mapNote": "A csillagvizsgálóba csak a nagy lépcsőházon át lehet feljutni. A lépcsőházból a jóslóterem és a labor ajtaja is látszik.",
+"story": "A Holdtorony Akadémián teliholdas vizsga van. A diákok idegesen gyakorolják a varázsigéket, a tanárok a folyosókon suttognak. **Aldous Thorne főmágus**, az Akadémia szigorú rektora éjfélkor felmegy a torony tetejére, a **csillagvizsgálóba**, hogy megfigyelje a holdat. Odalent mindenki hallja, ahogy a csillagvizsgáló ajtaja becsapódik. Aztán hirtelen jéghideg szél fut végig a lépcsőházon... [SIKOLY] Thorne a teleszkóp mellett fekszik. A testét **vékony dér** borítja, a szíve megállt. Mellette egy **elszakadt fagytekercs** darabjai, ami a könyvtár zárt részéből tűnt el. A csillagvizsgálóba **csak a nagy lépcsőházon** át lehet feljutni. A torony ajtajai maguktól, bűbájjal záródnak: aki bent van, nem mehet ki. **A gyilkos köztetek van.**",
 "full": false,
 "common": ""
 },
@@ -1102,15 +1106,15 @@ window.STORIES = [
 ],
 "tips": {
 "A": [
-"Tipp: a gyilkos tudja, hogy valaki látta. Most te is gyanús vagy, és ez jó álca.",
-"Tipp: a kajütben vér fröccsent, de sötét volt: minden sötét folt gyanús. Nézd meg az ingujjakat!",
-"Tipp: Kérdezd meg, ki látta a kapitányt utoljára élve, és hol!",
+"a gyilkos tudja, hogy valaki látta. Most te is gyanús vagy, és ez jó álca.",
+"a kajütben vér fröccsent, de sötét volt: minden sötét folt gyanús. Nézd meg az ingujjakat!",
+"Kérdezd meg, ki látta a kapitányt utoljára élve, és hol!",
 [
 "Mondd, hogy a tipped szerint a gyilkos lőporos kezű.",
 "Mondd, hogy Anne kulcsa nélkül senki nem juthatott be.",
 "Mondd, hogy a doki véres rongyot rejtegetett."
 ],
-"Tipp: a vérfolt sötét, mint a rum. Nézd meg az ingujjakat!",
+"a vérfolt sötét, mint a rum. Nézd meg az ingujjakat!",
 [
 "Mondd, hogy a tipped szerint a gyilkos csizmát viselt.",
 "Mondd, hogy Isabella kiszökött, és a kajüt felé ment.",
@@ -1118,15 +1122,15 @@ window.STORIES = [
 ]
 ],
 "B": [
-"Tipp: hallgasd a lépéseket: a kajüt padlóján furcsa, egyenetlen nyomok vannak. Kérdezd meg, ki jár másképp!",
-"Tipp: a konyhából lépcső visz a kajüthöz. Nézd meg a térképet, és kérdezd meg, ki volt a konyhában!",
-"Tipp: a késen lisztes ujjlenyomat volt. Nézd meg a kezeket!",
+"hallgasd a lépéseket: a kajüt padlóján furcsa, egyenetlen nyomok vannak. Kérdezd meg, ki jár másképp!",
+"a konyhából lépcső visz a kajüthöz. Nézd meg a térképet, és kérdezd meg, ki volt a konyhában!",
+"a késen lisztes ujjlenyomat volt. Nézd meg a kezeket!",
 [
 "Mondd, hogy a tipped szerint a gyilkos keze kátrányos.",
 "Mondd, hogy Anne a kajütben járt, láttad.",
 "Mondd, hogy az ágyúlövés jel volt Isabella családjának."
 ],
-"Tipp: a késen liszt maradt. Nézd meg a kezeket!",
+"a késen liszt maradt. Nézd meg a kezeket!",
 [
 "Mondd, hogy a tipped szerint a gyilkos mezítláb volt.",
 "Mondd, hogy a doki rumos üvege véres.",
@@ -1134,15 +1138,15 @@ window.STORIES = [
 ]
 ],
 "C": [
-"Tipp: ha a gyilkos rád tippel a végén, nyer. Hagyd, hogy más vádoljon!",
-"Tipp: a térkép fele valahol a hajón van. Kérdezd meg, ki rejtegethet zsákot, ládát!",
-"Tipp: a kajüt padlóján egy kerek, egyenetlen nyom. Nézd meg a lábakat!",
+"ha a gyilkos rád tippel a végén, nyer. Hagyd, hogy más vádoljon!",
+"a térkép fele valahol a hajón van. Kérdezd meg, ki rejtegethet zsákot, ládát!",
+"a kajüt padlóján egy kerek, egyenetlen nyom. Nézd meg a lábakat!",
 [
 "Mondd, hogy a tipped szerint a gyilkos selyemcipőt viselt.",
 "Mondd, hogy Tobias rajza bizonyítja: ő a gyilkos.",
 "Mondd, hogy Jonah ágyúja célzott lövés volt."
 ],
-"Tipp: a padlón kerek nyom, nem csizmanyom. Nézd meg a lábakat!",
+"a padlón kerek nyom, nem csizmanyom. Nézd meg a lábakat!",
 [
 "Mondd, hogy a tipped szerint a gyilkos lisztes kezű.",
 "Mondd, hogy Anne kulcsa eltűnt.",
@@ -1152,6 +1156,7 @@ window.STORIES = [
 },
 "accTip": "Tipp (csak 6 főnél): az ágyúlövés nem véletlen volt. Valaki elnyomta vele a zajt. Ha őt elkapjátok, az is győzelem.",
 "mapNote": "A konyhából keskeny lépcső visz fel a kapitány kajütjéhez. A raktérből a fogolykamra és a konyha is elérhető.",
+"story": "1720, a Karib-tenger. A **Fekete Albatrosz** kalózhajó viharban hánykolódik, a hullámok átcsapnak a fedélzeten, a kötelek nyikorognak. A legénység egész éjjel a vitorlákkal küzd. Éjfélkor egy ágyúlövés rázza meg a hajót, mindenki odakapja a fejét. Hajnalra elcsendesedik a vihar, a hajósinas viszi a reggelit a kapitánynak... [SIKOLY] **Morgan „Vasfog” Black kapitány** holtan fekszik a **kajütjében**. A mellkasában egy **fűrészes konyhakés** áll, és eltűnt a **kincses térkép fele**. A kajüthöz a konyhából egy keskeny lépcső vezet fel. A hajó nem köthet ki, amíg ki nem derül, ki tette, mert ha nem találjátok meg, a gyilkos a térképpel együtt eltűnik az első kikötőben. **A gyilkos köztetek van.**",
 "full": false,
 "common": ""
 },
@@ -1333,15 +1338,15 @@ window.STORIES = [
 ],
 "tips": {
 "A": [
-"Tipp: a drót és a tinta is nyomot hagy a kézen. Nézd meg, kinek nem tiszta a keze!",
-"Tipp: a gyilkos tudja, hogy valaki látta. Ha túl sokat tudsz, lebuksz.",
-"Tipp: a szivarszalonból belső ajtó nyílik a rádiószobába. Nézd meg a térképet!",
+"a drót és a tinta is nyomot hagy a kézen. Nézd meg, kinek nem tiszta a keze!",
+"a gyilkos tudja, hogy valaki látta. Ha túl sokat tudsz, lebuksz.",
+"a szivarszalonból belső ajtó nyílik a rádiószobába. Nézd meg a térképet!",
 [
 "Mondd, hogy a tipped szerint a gyilkos keze festékes volt.",
 "Mondd, hogy Evelyn a rádiószobában járt éjfélkor.",
 "Mondd, hogy a doki szerint a gyilkos nő."
 ],
-"Tipp: a drót a gyilkos tenyerébe vágott, de a tinta is sötét nyomot hagy. Nézd meg a kezeket!",
+"a drót a gyilkos tenyerébe vágott, de a tinta is sötét nyomot hagy. Nézd meg a kezeket!",
 [
 "Mondd, hogy a tipped szerint a gyilkos tintás kezű.",
 "Mondd, hogy Jack kiabált a rádiószobában.",
@@ -1349,15 +1354,15 @@ window.STORIES = [
 ]
 ],
 "B": [
-"Tipp: a rádiószoba padlóján egy gomb gurult. Nézd meg a mandzsettákat!",
-"Tipp: kérdezd meg, ki járt a szivarszalonban éjfélkor!",
-"Tipp: Vandermeer reggel kilencre valakit a könyvekkel hívatott. Kérdezd meg, kit!",
+"a rádiószoba padlóján egy gomb gurult. Nézd meg a mandzsettákat!",
+"kérdezd meg, ki járt a szivarszalonban éjfélkor!",
+"Vandermeer reggel kilencre valakit a könyvekkel hívatott. Kérdezd meg, kit!",
 [
 "Mondd, hogy a tipped szerint a gyilkos mandzsettája festékes.",
 "Mondd, hogy Henry nem volt a fedélzeten.",
 "Mondd, hogy Evelyn jegyzetei a gyilkosságról szólnak."
 ],
-"Tipp: a padlón egy mandzsettagomb. Nézd meg a mandzsettákat!",
+"a padlón egy mandzsettagomb. Nézd meg a mandzsettákat!",
 [
 "Mondd, hogy a tipped szerint a gyilkos ruháján szivarhamu van.",
 "Mondd, hogy Sophie férje a hajón van.",
@@ -1365,15 +1370,15 @@ window.STORIES = [
 ]
 ],
 "C": [
-"Tipp: a rádiószobában gépzsíros a drót. Nézd meg, kinek a ruháján van zsírfolt!",
-"Tipp: ha a gyilkos rád tippel a végén, nyer. Hagyd, hogy más mondja ki a nevét!",
-"Tipp: a gépzsír nehezen jön ki. Nézd meg a ruhákat!",
+"a rádiószobában gépzsíros a drót. Nézd meg, kinek a ruháján van zsírfolt!",
+"ha a gyilkos rád tippel a végén, nyer. Hagyd, hogy más mondja ki a nevét!",
+"a gépzsír nehezen jön ki. Nézd meg a ruhákat!",
 [
 "Mondd, hogy a tipped szerint a gyilkos ruhája tiszta.",
 "Mondd, hogy Jack rajzán Sophie van az ablakban.",
 "Mondd, hogy Abigail diplomája hamis, és Vandermeer tudta."
 ],
-"Tipp: kérdezd meg, kinek a keze volt ma este a könyvelésben, és ki mehetett volna börtönbe!",
+"kérdezd meg, kinek a keze volt ma este a könyvelésben, és ki mehetett volna börtönbe!",
 [
 "Mondd, hogy a tipped szerint a gyilkos nem a szivarszalonon át jött.",
 "Mondd, hogy Sophie táviratában fenyegetés áll.",
@@ -1383,6 +1388,7 @@ window.STORIES = [
 },
 "accTip": "Tipp (csak 6 főnél): a rádiószoba éjjel zárva van. Valaki nyitva hagyta. Ha őt elkapjátok, az is győzelem.",
 "mapNote": "A rádiószoba ablaka a sétafedélzetre néz. A szivarszalonból egy belső ajtó nyílik a rádiószobába.",
+"story": "1912 áprilisa, az **RMS Aurora** óceánjáró első útja New York felé. A bálteremben ragtime szól, pezsgő folyik, a gazdagok táncolnak, a harmadik osztályon harmonika szól. Fent a sétafedélzeten hideg szél fúj az Atlanti-óceán felől. Éjfélkor a távírász hiába próbálja elérni a rádiószobát, az ajtó résnyire nyitva áll... [SIKOLY] **Cornelius Vandermeer**, a hajózási mágnás holtan fekszik a **rádiószobában**, a nyakán **egy távíródrót** hurkával. A morzegép még kattog, egy félbehagyott távirat lóg ki belőle. A rádiószobába a **szivarszalon belső ajtaján** és a sétafedélzet felől lehet bejutni. A kapitány elrendeli: senki nem hagyhatja el az első osztályt. **A gyilkos köztetek van.**",
 "full": false,
 "common": ""
 },
@@ -1564,15 +1570,15 @@ window.STORIES = [
 ],
 "tips": {
 "A": [
-"Tipp: a kehely arany peremén csillogó ujjnyom maradt. Nézd meg az ujjakat!",
+"a kehely arany peremén csillogó ujjnyom maradt. Nézd meg az ujjakat!",
 [
 "Mondd, hogy a tipped szerint a gyilkos ujjai kormosak.",
 "Mondd, hogy Héra ma kétszer is töltött Aszklépiosznak.",
 "Mondd, hogy Athéné könyvtárában láttad Hermészt, egész este."
 ],
-"Tipp: a gyilkos tudja, hogy valaki látta. Most maradj háttérben!",
-"Tipp: a Léthé az alvilágban folyik. Kérdezd meg, ki járt ma lent!",
-"Tipp: Aszklépiosz ma este három istent is megsértett. Kérdezd meg, mit mondott nekik!",
+"a gyilkos tudja, hogy valaki látta. Most maradj háttérben!",
+"a Léthé az alvilágban folyik. Kérdezd meg, ki járt ma lent!",
+"Aszklépiosz ma este három istent is megsértett. Kérdezd meg, mit mondott nekik!",
 [
 "Mondd, hogy a tipped szerint a gyilkos saruján vasszeg van.",
 "Mondd, hogy Héra kertjében egy fekete flaskát láttál.",
@@ -1580,15 +1586,15 @@ window.STORIES = [
 ]
 ],
 "B": [
-"Tipp: a lakomaterem padlóján fekete vízcseppek. Nézd meg a sarukat!",
+"a lakomaterem padlóján fekete vízcseppek. Nézd meg a sarukat!",
 [
 "Mondd, hogy a tipped szerint a gyilkos saruja aranyszíjas.",
 "Mondd, hogy Aphrodité flaskája tele volt.",
 "Mondd, hogy Athéné tudja, hogyan kell Léthé-vizet hozni."
 ],
-"Tipp: a gyilkos akkor öntött, amikor mindenki máshova nézett. Kérdezd meg, mi történt éjfélkor!",
-"Tipp: a Léthé vize fekete, és csöpög. Nézd meg a sarukat!",
-"Tipp: Hermész a könyvtárat mondja. Kérdezd meg Athénét, látta-e ott!",
+"a gyilkos akkor öntött, amikor mindenki máshova nézett. Kérdezd meg, mi történt éjfélkor!",
+"a Léthé vize fekete, és csöpög. Nézd meg a sarukat!",
+"Hermész a könyvtárat mondja. Kérdezd meg Athénét, látta-e ott!",
 [
 "Mondd, hogy a tipped szerint a gyilkos ruhája tépett.",
 "Mondd, hogy Héra elküldte Hermészt valahová.",
@@ -1596,15 +1602,15 @@ window.STORIES = [
 ]
 ],
 "C": [
-"Tipp: az alvilág kapujánál szürke hamu száll. Nézd meg a ruhák szegélyét!",
+"az alvilág kapujánál szürke hamu száll. Nézd meg a ruhák szegélyét!",
 [
 "Mondd, hogy a tipped szerint a gyilkos szegélye szikraégette.",
 "Mondd, hogy Aphrodité a kehelyhez hajolt.",
 "Mondd, hogy Héphaisztosz hamis kelyhet kovácsolt."
 ],
-"Tipp: ha a gyilkos rád tippel a végén, nyer. Ne vádolj túl hangosan!",
-"Tipp: kérdezd meg, kinek az aranya fogy Apollón kincstárából!",
-"Tipp: a kapunál hamu száll. Nézd meg a szegélyeket!",
+"ha a gyilkos rád tippel a végén, nyer. Ne vádolj túl hangosan!",
+"kérdezd meg, kinek az aranya fogy Apollón kincstárából!",
+"a kapunál hamu száll. Nézd meg a szegélyeket!",
 [
 "Mondd, hogy a tipped szerint a gyilkos szegélye pávatollas.",
 "Mondd, hogy Aphrodité és Hermész együtt jártak lent.",
@@ -1614,6 +1620,7 @@ window.STORIES = [
 },
 "accTip": "Tipp (csak 6 főnél): az aranyalma nem véletlenül gurult el éjfélkor. Valaki elterelte vele a figyelmet. Ha őt elkapjátok, az is győzelem.",
 "mapNote": "Az alvilági kapu a lakomaterem alatt nyílik. A kovácsműhely ajtajából a lakomaasztal vége látszik.",
+"story": "Az Olümposz csúcsán, a felhők felett az istenek nagy lakomát ülnek. Arany kelyhekben nektár csillog, a líra szól, Zeusz villámai a távolban játszanak. Aszklépiosz, a gyógyítás istene, aki még a halottakat is fel tudja támasztani, mosolyogva emeli fel a kelyhét. Éjfélkor egy aranyalma gurul végig az asztalon, minden isten odanéz... Aszklépiosz iszik egy kortyot. Az arca elszürkül, a tekintete kiürül... [SIKOLY] **Aszklépiosz** elfelejtette, hogy halhatatlan. Reggelre halott. A kelyhében **fekete víz** csillog: **Léthé-víz**, a feledés folyójából, ami az **alvilágban** folyik. Zeusz dühösen mennydörög: ha a tettes napkeltéig nem kerül elő, villámmal sújt le mindenkire. **A gyilkos köztetek van.**",
 "full": false,
 "common": ""
 },
@@ -1802,15 +1809,15 @@ window.STORIES = [
 ],
 "tips": {
 "A": [
-"Tipp: a hűtőpanelt szerszámmal kötötték át. Nézd meg, kinek a zsebében van szerszám!",
-"Tipp: a gyilkos tudja, hogy valaki látta. Most te is gyanús vagy, használd ki.",
-"Tipp: a szerverterem üvegfalú. Nézd meg a térképet: honnan lehetett belátni?",
+"a hűtőpanelt szerszámmal kötötték át. Nézd meg, kinek a zsebében van szerszám!",
+"a gyilkos tudja, hogy valaki látta. Most te is gyanús vagy, használd ki.",
+"a szerverterem üvegfalú. Nézd meg a térképet: honnan lehetett belátni?",
 [
 "Mondd, hogy a tipped szerint a gyilkos ingujja feltűrt.",
 "Mondd, hogy Priya tervezte a panelt, ő tudja, hogyan kell átkötni.",
 "Mondd, hogy Sam a szerverterem ajtajában állt."
 ],
-"Tipp: Reyes két embert is reggelre hívatott. Kérdezd meg, kit és miért!",
+"Reyes két embert is reggelre hívatott. Kérdezd meg, kit és miért!",
 [
 "Mondd, hogy a tipped szerint a gyilkos telefonált a tetthelyen.",
 "Mondd, hogy Marcus mesterkártyája hiányzik.",
@@ -1818,15 +1825,15 @@ window.STORIES = [
 ]
 ],
 "B": [
-"Tipp: az átkötött vezeték megégette a gyilkos ujjbegyét. Nézd meg a kezeket!",
-"Tipp: kérdezd meg, ki jött fel a parkolóházból, és mikor!",
-"Tipp: a drótnál szikra pattant. Nézd meg az ujjbegyeket!",
+"az átkötött vezeték megégette a gyilkos ujjbegyét. Nézd meg a kezeket!",
+"kérdezd meg, ki jött fel a parkolóházból, és mikor!",
+"a drótnál szikra pattant. Nézd meg az ujjbegyeket!",
 [
 "Mondd, hogy a tipped szerint a gyilkos ujjbegye kávés.",
 "Mondd, hogy Lena számláján 40 millió szerepel.",
 "Mondd, hogy Oliver a parkolóházban volt, hallottad telefonálni."
 ],
-"Tipp: Oliver a parkolóházat mondja. Sam telefonján van egy fotó. Kérdezd meg!",
+"Oliver a parkolóházat mondja. Sam telefonján van egy fotó. Kérdezd meg!",
 [
 "Mondd, hogy a tipped szerint a gyilkos keze tiszta.",
 "Mondd, hogy Priya titkolt egy hibát.",
@@ -1834,15 +1841,15 @@ window.STORIES = [
 ]
 ],
 "C": [
-"Tipp: a panel szétszedésekor fémforgács hullott. Nézd meg a cipőtalpakat!",
-"Tipp: ha a gyilkos rád tippel a végén, nyer. Hagyd, hogy más mondja ki a nevét!",
-"Tipp: Lena ma engedéllyel járt a szerverteremben. Kérdezd meg, mi okból hazudna!",
+"a panel szétszedésekor fémforgács hullott. Nézd meg a cipőtalpakat!",
+"ha a gyilkos rád tippel a végén, nyer. Hagyd, hogy más mondja ki a nevét!",
+"Lena ma engedéllyel járt a szerverteremben. Kérdezd meg, mi okból hazudna!",
 [
 "Mondd, hogy a tipped szerint a gyilkos cipőtalpa sáros.",
 "Mondd, hogy Lena USB-stickje a panelre volt dugva.",
 "Mondd, hogy Sam fotója hamis."
 ],
-"Tipp: fémforgács a padlón. Nézd meg a cipőtalpakat!",
+"fémforgács a padlón. Nézd meg a cipőtalpakat!",
 [
 "Mondd, hogy a tipped szerint a gyilkos zsebében telefon volt.",
 "Mondd, hogy Marcus a kamerákat kapcsolta le.",
@@ -1852,6 +1859,7 @@ window.STORIES = [
 },
 "accTip": "Tipp (csak 6 főnél): a kamerák 23:20-kor nem maguktól álltak le. Valaki lekapcsolta őket. Ha őt elkapjátok, az is győzelem.",
 "mapNote": "A szerverterem üvegfala a biztonsági pultra és a nyitott irodára néz. A szerverterembe csak kártyával lehet belépni, és a belépés naplózódik, de ma éjjel a napló üres.",
+"story": "Éjjel fél tizenkettő a **NovaBank** üvegtornyában. Holnap reggel indul a bank új mobilappja, a csapat egész éjjel bent virraszt. Pizzás dobozok, energiaitalok, villogó monitorok. A vezérigazgató, **Daniel Reyes** a tárgyalóban kiabál valakivel, aztán az irodából a **szerverterem** felé indul. Pár perc múlva minden képernyő elsötétül, a riasztó felvisít... [SIKOLY] Reyes a szerverterem padlóján fekszik. A **hűtőpanel** halálos **áramütést** adott, valaki szándékosan **átkötötte a vezetéket**. A biztonsági kamerák **23:20 és 23:50 között** nem rögzítettek semmit. Az épület automatikusan lezárt, a lift nem megy, az ajtók nem nyílnak. **A gyilkos köztetek van.**",
 "full": false,
 "common": ""
 },
@@ -2033,15 +2041,15 @@ window.STORIES = [
 ],
 "tips": {
 "A": [
-"Tipp: Max a zuhanás előtt belekapaszkodott valakibe. Nézd meg a kezeket!",
-"Tipp: Max ma este legalább három embert fenyegetett élő adással. Kérdezd meg, kit!",
+"Max a zuhanás előtt belekapaszkodott valakibe. Nézd meg a kezeket!",
+"Max ma este legalább három embert fenyegetett élő adással. Kérdezd meg, kit!",
 [
 "Mondd, hogy a tipped szerint a gyilkos mikroportot viselt, a hangja felvételen van.",
 "Mondd, hogy Chloe a lépcső tetején volt, ő maga mondta.",
 "Mondd, hogy Grace kötőtűje hiányzik."
 ],
-"Tipp: a gyilkos tudja, hogy valaki látta. Most maradj csendben!",
-"Tipp: Max a zuhanás előtt belekapaszkodott valakibe. Nézd meg a kezeket!",
+"a gyilkos tudja, hogy valaki látta. Most maradj csendben!",
+"Max a zuhanás előtt belekapaszkodott valakibe. Nézd meg a kezeket!",
 [
 "Mondd, hogy a tipped szerint a gyilkos sportcipőt viselt.",
 "Mondd, hogy Bruno a lépcsőn ment fel, láttad.",
@@ -2049,15 +2057,15 @@ window.STORIES = [
 ]
 ],
 "B": [
-"Tipp: a lépcső szőnyegén egy nehéz, lapos talpú cipő nyoma. Nézd meg a cipőket!",
-"Tipp: Nadia a rendezői szobát mondja. Onnan fel lehet jutni a lépcső tetejére? Nézd meg a térképet!",
+"a lépcső szőnyegén egy nehéz, lapos talpú cipő nyoma. Nézd meg a cipőket!",
+"Nadia a rendezői szobát mondja. Onnan fel lehet jutni a lépcső tetejére? Nézd meg a térképet!",
 [
 "Mondd, hogy a tipped szerint a gyilkos magassarkút viselt.",
 "Mondd, hogy Bruno katonai papírja hamis.",
 "Mondd, hogy Leo kábelében botlott el Max."
 ],
-"Tipp: a lépcsőn lapos talpú cipő nyoma. Nézd meg a cipőket!",
-"Tipp: a mikrofon 23:50-kor elnémult. Kérdezd meg, ki fér hozzá a hangpulthoz!",
+"a lépcsőn lapos talpú cipő nyoma. Nézd meg a cipőket!",
+"a mikrofon 23:50-kor elnémult. Kérdezd meg, ki fér hozzá a hangpulthoz!",
 [
 "Mondd, hogy a tipped szerint a gyilkos kézfeje tiszta.",
 "Mondd, hogy Grace nem az, akinek mondja magát.",
@@ -2065,15 +2073,15 @@ window.STORIES = [
 ]
 ],
 "C": [
-"Tipp: Max utolsó forgatókönyv-lapja hiányzik. Kérdezd meg, ki látta, és mi állt rajta!",
-"Tipp: ha a gyilkost a karmolás alapján keresitek, ketten maradnak. Kérdezd meg, ki mivel bizonyítja, hol volt!",
+"Max utolsó forgatókönyv-lapja hiányzik. Kérdezd meg, ki látta, és mi állt rajta!",
+"ha a gyilkost a karmolás alapján keresitek, ketten maradnak. Kérdezd meg, ki mivel bizonyítja, hol volt!",
 [
 "Mondd, hogy a tipped szerint a gyilkos headsetet viselt, de nem a stábból.",
 "Mondd, hogy Chloe fotóján Bruno látszik.",
 "Mondd, hogy Grace a lépcső tetején kötött."
 ],
-"Tipp: ha a gyilkos rád tippel a végén, nyer. Ne te mondd ki elsőként!",
-"Tipp: kérdezd meg, ki hamisíthatta a nézői szavazatokat!",
+"ha a gyilkos rád tippel a végén, nyer. Ne te mondd ki elsőként!",
+"kérdezd meg, ki hamisíthatta a nézői szavazatokat!",
 [
 "Mondd, hogy a tipped szerint a gyilkos katona volt.",
 "Mondd, hogy Leo kamerája végig a nagytermet vette.",
@@ -2083,6 +2091,7 @@ window.STORIES = [
 },
 "accTip": "Tipp (csak 6 főnél): Max mikrofonja nem magától némult el. Valaki a hangpultnál segített. Ha őt elkapjátok, az is győzelem.",
 "mapNote": "A toronylépcső tetejére a rendezői szobából és a nagyteremből is fel lehet jutni. A lépcső alja a konyha felé néz.",
+"story": "Éjfél egy skót kastélyban. A „Kastély titkai” valóságshow **utolsó, élő adását** forgatják, milliók nézik a tévé előtt. Kint vihar tombol, a fények villódznak. **Max Sterling**, a műsor sztárműsorvezetője az adás előtt azt súgja a stábnak: „Ma este valaki nagyon megbánja.” Aztán felmegy a **toronylépcsőn**, hogy a tetőről konferálja fel a finálét. A mikrofonja hirtelen elnémul... [SIKOLY] Max a **toronylépcső alján** fekszik, nyakát szegve. Valaki **meglökte**. Az élő adás megszakadt, a kamerák elsötétültek. A vihar miatt a stáb és a versenyzők a kastélyban rekedtek, és a kamerák utolsó felvételén valaki a lépcső tetején áll. **A gyilkos köztetek van.**",
 "full": false,
 "common": ""
 },
@@ -2271,15 +2280,15 @@ window.STORIES = [
 ],
 "tips": {
 "A": [
-"Tipp: a zsilip vezérlőpultján foltos kesztyű nyoma. Nézd meg a kesztyűket!",
-"Tipp: Volkova ma két embert is „földi beszélgetéssel” fenyegetett. Kérdezd meg, kit!",
+"a zsilip vezérlőpultján foltos kesztyű nyoma. Nézd meg a kesztyűket!",
+"Volkova ma két embert is „földi beszélgetéssel” fenyegetett. Kérdezd meg, kit!",
 [
 "Mondd, hogy a tipped szerint a gyilkos kesztyűje tiszta volt.",
 "Mondd, hogy Kenji tudja a zsilip orvosi kódját.",
 "Mondd, hogy Nia oxigénpalackja hiányzik."
 ],
-"Tipp: a gyilkos tudja, hogy valaki látta. Most te is gyanús vagy, és ez jó álca.",
-"Tipp: a gépházból szervizalagút vezet a zsiliphez. Nézd meg a térképet!",
+"a gyilkos tudja, hogy valaki látta. Most te is gyanús vagy, és ez jó álca.",
+"a gépházból szervizalagút vezet a zsiliphez. Nézd meg a térképet!",
 [
 "Mondd, hogy a tipped szerint a gyilkos zokniban járt, nem hallottuk a lépteit.",
 "Mondd, hogy Rafael űrruhában járt a zsilipnél.",
@@ -2287,15 +2296,15 @@ window.STORIES = [
 ]
 ],
 "B": [
-"Tipp: a zsilipet csak sisakban lehet felülírni. Nézd meg, kinek az arcán van friss sisaknyom!",
-"Tipp: a sisak nyomot hagy az arcon. Nézd meg az arcokat!",
+"a zsilipet csak sisakban lehet felülírni. Nézd meg, kinek az arcán van friss sisaknyom!",
+"a sisak nyomot hagy az arcon. Nézd meg az arcokat!",
 [
 "Mondd, hogy a tipped szerint a gyilkos arca tiszta.",
 "Mondd, hogy Nia a zsilipnél volt, nem a kupolánál.",
 "Mondd, hogy Leo szerelte a felülíró-panelt, ő tudja kezelni."
 ],
-"Tipp: Ava a gépházat mondja. Kérdezd meg, látta-e ott valaki!",
-"Tipp: kérdezd meg, ki volt ma űrsétán, és miért!",
+"Ava a gépházat mondja. Kérdezd meg, látta-e ott valaki!",
+"kérdezd meg, ki volt ma űrsétán, és miért!",
 [
 "Mondd, hogy a tipped szerint a gyilkos zöld felvarrót viselt.",
 "Mondd, hogy Rafael doboza fegyvert rejt.",
@@ -2303,15 +2312,15 @@ window.STORIES = [
 ]
 ],
 "C": [
-"Tipp: a zsilip padlója mágneses. Nézd meg, ki visel mágnescsizmát!",
-"Tipp: ha ketten maradnak gyanúsítottnak, kérdezd meg, ki tudja bizonyítani, hol volt!",
+"a zsilip padlója mágneses. Nézd meg, ki visel mágnescsizmát!",
+"ha ketten maradnak gyanúsítottnak, kérdezd meg, ki tudja bizonyítani, hol volt!",
 [
 "Mondd, hogy a tipped szerint a gyilkos puha zokniban járt.",
 "Mondd, hogy Rafael medálja a zsilipben volt.",
 "Mondd, hogy Leo szerszámai hiányoznak."
 ],
-"Tipp: ha a gyilkos rád tippel a végén, nyer. Hagyd, hogy más vádoljon!",
-"Tipp: a zsilip padlóján mágnescsizma nyoma. Nézd meg a lábakat!",
+"ha a gyilkos rád tippel a végén, nyer. Hagyd, hogy más vádoljon!",
+"a zsilip padlóján mágnescsizma nyoma. Nézd meg a lábakat!",
 [
 "Mondd, hogy a tipped szerint a gyilkos nem viselt csizmát.",
 "Mondd, hogy Nia tasakjában vegyszer volt.",
@@ -2321,6 +2330,7 @@ window.STORIES = [
 },
 "accTip": "Tipp (csak 6 főnél): a riasztás 23:58-kor nem magától kapcsolt ki. Valaki segített a gyilkosnak. Ha őt elkapjátok, az is győzelem.",
 "mapNote": "A B-zsilip vezérlőpultja a kupola-ablakból látszik. A gépházból szervizalagút vezet a zsiliphez.",
+"story": "2089, az **Orbita** űrállomás, 400 kilométerrel a Föld felett. A legénység holnap indul haza fél év után. Mindenki fáradt, ideges, a Föld kéken ragyog a kupola-ablakban. Éjjel a lakómodulban csend van, csak a ventilátorok zúgnak. Hirtelen piros fény villan, és egy rövid vészjelzés hangzik fel, ami aztán elhallgat... [SIKOLY] **Elena Volkova parancsnok** holtan lebeg a **B-zsilipben**. A belső ajtó kinyílt, miközben a **külső is nyitva** volt. Valaki **kézzel felülírta a zsilipvezérlést**, és a riasztást is kikapcsolták. A zsiliphez a **gépházból szervizalagút** vezet. Az állomás karanténba kapcsol, senki nem hagyhatja el. **A gyilkos köztetek van.**",
 "full": false,
 "common": ""
 }

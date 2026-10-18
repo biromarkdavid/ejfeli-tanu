@@ -108,6 +108,9 @@ textarea{width:100%;min-height:42vh;padding:12px;border-radius:12px;border:1px s
 @keyframes fadein{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
 .tg{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line);cursor:pointer}
 .tg input{width:46px;height:26px;accent-color:var(--gold);flex:0 0 auto}
+.storytxt{font-size:1.05rem;line-height:1.6;cursor:pointer}
+.storytxt .key{color:var(--gold2);text-decoration:underline;text-underline-offset:3px}
+.caret{animation:blink .8s steps(1) infinite;color:var(--gold)} @keyframes blink{50%{opacity:0}}
 .big{font:800 2rem "Playfair Display",serif;text-align:center;margin:10px 0}
 </style>
 </head>
@@ -229,16 +232,47 @@ function stopMusic() {
   [AU.music, AU.tension].forEach(a => a && a.pause()); clearInterval(AU.pulse);
   AU.nodes.forEach(o => { try { o.stop(); } catch (e) {} }); AU.nodes = []; if (AU.drone) AU.drone.gain.value = 0; AU.mode = "done";
 }
-function narrate(story) {
-  if (!CFG.narration) return;
-  const a = new Audio(`assets/${story.id}/narration.mp3`);
-  a.play().catch(() => {
-    if (!window.speechSynthesis) return;
-    speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(story.intro); u.lang = "hu-HU"; u.rate = .95;
-    const v = speechSynthesis.getVoices().find(v => /^hu/i.test(v.lang)); if (v) u.voice = v;
-    speechSynthesis.speak(u);
+/* ---------- narration: typewriter text + voice + scream at the murder (Márk 2026-10-18) ---------- */
+// story text markup: **key fact** = bold+underline, [SIKOLY] = scream moment
+function storyParts(story) {
+  const raw = story.story || story.intro;
+  return raw.split("[SIKOLY]").map(p => {
+    const tok = []; p.split(/(\*\*[^*]+\*\*)/).forEach(t => { if (!t) return; const b = t.startsWith("**"); tok.push({t: b ? t.slice(2, -2) : t, b}); });
+    return tok;
   });
+}
+const plainOf = tok => tok.map(x => x.t).join("");
+function tokHTML(tok, k) {
+  let h = "", n = 0;
+  for (const x of tok) { if (n >= k) break; const s = x.t.slice(0, k - n); n += s.length; h += x.b ? `<b class="key">${esc(s)}</b>` : esc(s); }
+  return h;
+}
+const NARR = {gen: 0};
+function stopNarration() { NARR.gen++; if (window.speechSynthesis) speechSynthesis.cancel(); if (NARR.audio) NARR.audio.pause(); }
+// el: container to type into (or null for voice only). Reveals the text progressively in sync with the voice.
+function narrate(story, el) {
+  stopNarration();
+  const gen = ++NARR.gen, parts = storyParts(story), done = parts.map(() => 0);
+  const voiceOn = CFG.narration && !!window.speechSynthesis;
+  const draw = () => { if (el && gen === NARR.gen) el.innerHTML = parts.map((tok, i) => tokHTML(tok, done[i])).join(done[0] >= plainOf(parts[0]).length && parts.length > 1 ? " " : "") + (done[parts.length - 1] < plainOf(parts[parts.length - 1]).length ? `<span class="caret">▍</span>` : ""); };
+  const typeTo = (i, target) => { done[i] = Math.max(done[i], Math.min(target, plainOf(parts[i]).length)); draw(); };
+  const scream = () => { if (CFG.sfx || CFG.narration) { const a = new Audio("assets/sfx_scream.mp3"); a.volume = .9; a.play().catch(() => {}); } };
+  const runPart = i => {
+    if (gen !== NARR.gen || i >= parts.length) return;
+    const text = plainOf(parts[i]);
+    let timer = setInterval(() => { if (gen !== NARR.gen) return clearInterval(timer); typeTo(i, done[i] + 1); if (!voiceOn && done[i] >= text.length) { clearInterval(timer); next(); } }, voiceOn ? 62 : 45);
+    const next = () => { clearInterval(timer); typeTo(i, text.length); if (i < parts.length - 1) { scream(); setTimeout(() => runPart(i + 1), 1700); } };
+    if (voiceOn) {
+      const u = new SpeechSynthesisUtterance(text); u.lang = "hu-HU"; u.rate = .95;
+      const v = speechSynthesis.getVoices().find(v => /^hu/i.test(v.lang)); if (v) u.voice = v;
+      u.onboundary = e => typeTo(i, e.charIndex + (e.charLength || 1));
+      u.onend = () => { if (gen === NARR.gen) next(); };
+      u.onerror = () => { if (gen === NARR.gen) next(); };
+      speechSynthesis.speak(u);
+    }
+  };
+  if (el) { el.onclick = () => { parts.forEach((p, i) => done[i] = plainOf(p).length); draw(); }; draw(); }
+  runPart(0);
 }
 
 /* ===================== main menu: catalog -> cover + narration -> settings (host) ===================== */
@@ -251,7 +285,7 @@ function coverFallback(s) {
   return "data:image/svg+xml," + encodeURIComponent(svg).replace(/'/g, "%27");
 }
 function lobby() {
-  window.speechSynthesis && speechSynthesis.cancel();
+  stopNarration();
   let h = `<div class="row" style="align-items:center;gap:12px;margin-top:4px"><button class="hbtn" id="setb" title="Beállítások" style="flex:0 0 auto;width:46px;height:46px;font-size:1.3rem">⚙️</button><h1 style="margin:0;flex:1">Éjféli Tanú</h1></div><p class="muted">Válassz egy rejtélyt. Koppints rá, és hallgassátok meg a történetet.</p><div class="cat">`;
   STORIES.forEach(s => h += `<div class="tile" data-st="${s.id}"><img src="${coverSrc(s)}" onerror="this.onerror=null;this.src='${coverFallback(s)}'" alt="">
     <div class="tt"><b>${esc(s.title)}</b>${s.full ? '<span class="badge gold">teszt</span>' : ""}</div></div>`);
@@ -266,16 +300,16 @@ function coverView(id, rect) {
   el.style.transformOrigin = rect ? `${rect.left + rect.width / 2}px ${rect.top + rect.height / 2}px` : "50% 50%";
   el.innerHTML = `<div class="bg" id="cbg"></div><div class="cin">
     <button class="hbtn" id="cback" style="position:absolute;left:12px;top:calc(10px + env(safe-area-inset-top))">←</button>
-    <div class="ctext"><h1>${esc(s.title)}</h1><p class="muted small">${esc(s.world)}</p><p>${esc(s.intro)}</p>
+    <div class="ctext"><h1>${esc(s.title)}</h1><p class="muted small">${esc(s.world)}</p><p class="storytxt" id="ctyped"></p>
     ${s.common ? `<p style="color:var(--gold2)">👁 ${esc(s.common)}</p>` : ""}
     <button class="btn ghost" id="cnarr">🔊 Narráció újra</button></div>
     <div class="cbot"><button class="btn" id="cstart">Kezdés</button></div></div>`;
   document.body.appendChild(el);
   const bg = new Image(); bg.onload = () => { $("#cbg").style.backgroundImage = `url(${bg.src})`; };
   bg.onerror = () => { $("#cbg").style.backgroundImage = `url(${coverFallback(s)})`; }; bg.src = coverSrc(s);
-  narrate(s);
-  $("#cnarr").onclick = () => narrate(s);
-  $("#cback").onclick = () => { window.speechSynthesis && speechSynthesis.cancel(); el.remove(); };
+  narrate(s, $("#ctyped"));
+  $("#cnarr").onclick = () => narrate(s, $("#ctyped"));
+  $("#cback").onclick = () => { stopNarration(); el.remove(); };
   $("#cstart").onclick = () => settingsView(s);
 }
 function settingsView(s) {
@@ -288,7 +322,7 @@ function settingsView(s) {
   box.querySelectorAll("[data-mode]").forEach(e => e.onclick = () => { L.mode = +e.dataset.mode; saveL(); settingsView(s); });
   box.querySelectorAll("[data-pl]").forEach(e => e.onclick = () => { L.players = +e.dataset.pl; saveL(); settingsView(s); });
   $("#solve").onclick = () => {
-    window.speechSynthesis && speechSynthesis.cancel();
+    stopNarration();
     const n = L.players, pick = [...Array(n).keys()];
     for (let i = n - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [pick[i], pick[j]] = [pick[j], pick[i]]; }
     const x = +(new URLSearchParams(location.search).get("x") || 1);
@@ -300,11 +334,17 @@ function settingsView(s) {
 }
 function deal(base, i) {
   const n = base.n;
-  if (i >= n) { location.hash = "c=" + encodeCard({...base, p: 0}); return; }
+  if (i >= n) {
+    // the host starts everyone: 1 minute intro on every phone, then the clock
+    const start = Date.now() + 1500;
+    ls("st-" + base.t0 + "-0", {userStep: 0, tipSeen: {}, start, obs: []});
+    fetch(`https://ntfy.sh/ejfeli-tanu-${base.g}`, {method: "POST", body: JSON.stringify({start}), keepalive: true}).catch(() => {});
+    location.hash = "c=" + encodeCard({...base, p: 0}); return;
+  }
   app.innerHTML = `<h2 class="center" style="margin-top:4vh">${i + 1}. játékos</h2><p class="center muted">Olvasd be a telefonoddal. Csak a saját kódodat nézd!</p>
     <div class="center"><div class="qrbox" id="qr"></div></div>
     <p class="center small muted">${i}/${n - 1}</p>
-    <button class="btn" id="next">${i < n - 1 ? "Következő játékos" : "Kész: a saját lapom (1. játékos)"}</button>
+    <button class="btn" id="next">${i < n - 1 ? "Következő játékos" : "Mindenki beolvasta: indulás!"}</button>
     <button class="btn ghost" id="back">Vissza</button>`;
   new QRCode($("#qr"), {text: cardUrl({...base, p: i}), width: 240, height: 240, correctLevel: QRCode.CorrectLevel.L});
   $("#next").onclick = () => deal(base, i + 1);
@@ -315,8 +355,8 @@ function deal(base, i) {
 let P, S, ME, SLOT, NOW = () => Date.now();
 const ST = {userStep: 0, key: "", tipSeen: {}, start: 0};
 const lab = j => S.chars[P.ch[j]].name;
-// The clock starts when the FIRST player finishes their 3 intro steps. Phones share that moment through
-// a tiny public pub/sub topic (ntfy.sh, random topic per game). Offline, a phone starts when its own player finishes.
+// The host starts the game for everyone ("Mindenki beolvasta: indulás!"); the start moment reaches the other
+// phones through a tiny public pub/sub topic (ntfy.sh, random topic per game). Offline phones get a manual start button.
 const SYNC = {es: null};
 function syncTopic() { return `ejfeli-tanu-${P.g || P.t0}`; }
 function syncListen() {
@@ -327,11 +367,14 @@ function syncListen() {
     };
   } catch (e) {}
 }
-function syncSend(start) { fetch(`https://ntfy.sh/${syncTopic()}`, {method: "POST", body: JSON.stringify({start})}).catch(() => {}); }
+function syncSend(start) { fetch(`https://ntfy.sh/${syncTopic()}`, {method: "POST", body: JSON.stringify({start}), keepalive: true}).catch(() => {}); }
+const INTRO = 60;  // everyone gets the same 1 minute for the 3 intro steps, then the clock starts together
 function TL() {
-  if (!ST.start) return {ph: "intro"};
+  if (!ST.start) return {ph: "wait"};
   let e = (NOW() - ST.start) / 1000 * P.x;
-  if (e < 0) e = 0;
+  if (e < 0) return {ph: "wait", left: -e};
+  if (e < INTRO) return {ph: "intro", left: INTRO - e};
+  e -= INTRO;
   const D = P.m * 60, T = TIPS_AT[P.m];
   for (let i = 0; i < T.length; i++) {
     const st = (D - T[i]) + TIP * i;
@@ -346,79 +389,87 @@ function startGame(hash) {
   if (typeof P.n === "number") P.n = Array.from({length: P.n}, (_, i) => `${i + 1}. játékos`);
   S = STORIES.find(s => s.id === P.s); SLOT = P.ch[P.p]; ME = S.chars[SLOT];
   const saved = ls("st-" + P.t0 + "-" + P.p); if (saved) Object.assign(ST, saved);
+  ST.obs = ST.obs || [];
   ST.key = "";
   if ("wakeLock" in navigator) { const wl = () => navigator.wakeLock.request("screen").catch(() => {}); wl(); document.addEventListener("visibilitychange", () => document.visibilityState === "visible" && wl()); }
   document.addEventListener("click", () => P.p === 0 && ensureAudio(), {capture: true});
   syncListen();
+  if (P.p === 0 && ST.start) syncSend(ST.start);  // the host re-announces the start (the first send may be cut by the page switch)
   setInterval(loop, 200); loop();
 }
-const saveST = () => ls("st-" + P.t0 + "-" + P.p, {userStep: ST.userStep, tipSeen: ST.tipSeen, start: ST.start});
+const saveST = () => ls("st-" + P.t0 + "-" + P.p, {userStep: ST.userStep, tipSeen: ST.tipSeen, start: ST.start, obs: ST.obs});
 function loop() {
-  const t = TL(), done = ST.userStep >= 3;
-  let key = t.ph === "end" ? "end" : (done ? "scene" : "read" + ST.userStep) + (ST.start ? "+" : "");
+  const t = TL();
+  let key = t.ph === "wait" ? "wait" : t.ph === "intro" ? "read" + Math.min(ST.userStep, 3) : t.ph === "end" ? "end" : "scene";
   if (t.ph === "tip") key += "tip" + t.i;
   if (key !== ST.key) { ST.key = key; render(t); }
   update(t);
 }
 function render(t) {
   closeModal();
+  if (t.ph === "wait") return waitView();
+  if (t.ph === "intro") return readView(ST.userStep);
   if (t.ph === "end") return endView();
-  if (ST.userStep < 3) readView(ST.userStep); else sceneView(t);
+  sceneView(t);
   if (t.ph === "tip") tipView(t.i);
 }
 function update(t) {
+  if (t.ph === "intro") { const el = $("#ileft"); if (el) el.textContent = `A nyomozás ${Math.ceil(t.left)} mp múlva indul.`; }
   if (t.ph === "play" || t.ph === "tip") {
     const D = P.m * 60, rem = t.rem;
     drawClock(rem / D, t.ph === "tip", t.ph === "play" && rem <= 60);
-    if (P.p === 0 && t.ph === "play" && ST.userStep >= 3) {
+    if (P.p === 0 && t.ph === "play") {
       if (rem <= 180) tensionOn(S);
       if (rem <= 60) { const s = Math.ceil(rem * (rem <= 10 ? 2 : 1)); if (s !== AU.lastTick) { AU.lastTick = s; tick(1 - rem / 60); } }
     }
   }
   if (t.ph === "tip") { const b = $("#tbar"); if (b) b.style.width = (100 * t.left / TIP) + "%"; }
 }
+function waitView() {
+  app.innerHTML = `<div class="center" style="padding-top:12vh"><h1>${esc(S.title)}</h1>
+    <div class="panel"><p>Várjuk, hogy mindenki beolvassa a kódját.</p><p class="small muted">Amikor a játékvezető elindítja, minden telefonon egyszerre jön a saját karaktered, utána közösen indul az óra.</p></div>
+    <button class="btn ghost" id="manual" style="display:none">Nem indul? Indítás kézzel</button></div>`;
+  setTimeout(() => { const b = $("#manual"); if (b) b.style.display = "block"; }, 20000);
+  $("#manual").onclick = () => { ST.start = Date.now(); saveST(); ST.key = ""; loop(); };
+}
 
-/* ---------- own introduction in 3 steps (no timer; the first player to finish starts the clock) ---------- */
+/* ---------- own introduction in 3 steps: 1 minute for everyone, then the clock starts together ---------- */
 function readHead(step) {
   const names = ["1. Ki vagy", "2. Amit tudsz", "3. Mini küldetés"];
   return `<div class="topbar"><div class="steps">${names.map((s, i) => i === step ? `<b>${s}</b>` : `<span>${s}</span>`).join("")}</div>
-    ${ST.start ? `<div class="small center" style="color:var(--red);margin-top:6px">⏱ Az óra már elindult: fejezd be, és csatlakozz!</div>` : ""}</div>`;
+    <div class="small center muted" id="ileft" style="margin-top:6px"></div></div>`;
 }
 function myRole() {
   return `<div class="panel"><div class="kv"><b>Mi történt veled</b>${esc(ME.roleText)}</div><div class="kv"><b>Hogyan nyersz</b>${esc(ME.win)}</div></div>`;
 }
+// order requested by Márk: public -> appearance -> where -> victim -> observations (incl. the 30 s observations received)
 function myCard() {
+  const obs = (ST.obs || []).map(o => o.lies
+    ? `<li><span class="muted">Hazugság-ötletek (${o.n}. kör):</span> ${o.lies.map(esc).join(" / ")}</li>`
+    : `<li><span class="muted">${o.n}. megfigyelés:</span> ${esc(o.text)}</li>`).join("");
   return `<div class="panel">
-    ${ME.rel ? `<div class="kv"><b>Kapcsolatotok</b>${esc(ME.rel)}</div>` : ""}
-    <div class="kv"><b>A saját okod (titkos)</b>${esc(ME.motive)}</div>
-    <div class="kv"><b>Ezt mindenki tudja rólad</b>${esc(ME.dispute)} ${esc(ME.weapon)}</div>
-    <div class="kv"><b>Hol voltál</b>${esc(ME.hol)}${ME.miert ? `<br><span class="muted">Miért:</span> ${esc(ME.miert)}` : ""}${ME.kivel ? `<br><span class="muted">Kivel:</span> ${esc(ME.kivel)}` : ""}</div>
-    ${ME.claim ? `<div class="kv"><b>Amit mondasz</b>${esc(ME.claim)}</div>` : ""}
-    ${ME.role !== "S" && ME.seen ? `<div class="kv"><b>Amit láttál</b>${esc(ME.seen)}</div>` : ""}
-    <div class="kv"><b>A képeden látszik</b>${esc(ME.traits.join(", "))}. Ha rákérdeznek, találj ki rá magyarázatot!</div>
-    <div class="kv"><b>Tárgyad</b>${esc(ME.item)} Megmutathatod bárkinek, vagy eldughatod.</div></div>`;
+    <div class="kv"><b>1. Ezt mindenki tudja rólad</b>${esc(ME.dispute)} ${esc(ME.weapon)}</div>
+    <div class="kv"><b>2. A megjelenéseden látszik</b>${esc(ME.traits.join(", "))}. Ha rákérdeznek, találj ki rá magyarázatot!</div>
+    <div class="kv"><b>3. Hol voltál a gyilkosság idején</b>${esc(ME.hol)}${ME.miert ? `<br><span class="muted">Miért:</span> ${esc(ME.miert)}` : ""}${ME.kivel ? `<br><span class="muted">Kivel:</span> ${esc(ME.kivel)}` : ""}</div>
+    <div class="kv"><b>4. A kapcsolatod az áldozattal</b>${ME.rel ? esc(ME.rel) + " " : ""}<span class="muted">A titkos okod:</span> ${esc(ME.motive)}</div>
+    <div class="kv"><b>5. Megfigyeléseid</b>${ME.role !== "S" && ME.seen ? esc(ME.seen) : ME.role === "S" ? "Lásd a szerepednél, mit láttál." : ""}${obs ? `<ul style="margin:6px 0 0;padding-left:18px">${obs}</ul>` : ""}</div></div>`;
 }
 function readView(step) {
-  const last = step === 2;
-  let h = readHead(step);
+  let h = readHead(Math.min(step, 2));
   if (step === 0) {
     h += `<div class="row" style="align-items:flex-start;gap:14px;margin-top:8px">${pimg(S, SLOT, {cls: "pfp"})}<div style="flex:2"><h2 style="margin:0">${esc(ME.name)}</h2><p class="muted small">${esc(ME.title)}</p>
       <div class="role ${ME.role}">${ME.roleName}</div></div></div>${myRole()}`;
   } else if (step === 1) {
     h += `<h2>Te és ${esc(S.victim.split(",")[0])}</h2>${myCard()}
-      <p class="small muted">A játék alatt időnként 30 másodpercre kapsz egy titkos tippet. Senki más nem látja: hazudhatsz róla. A lapodat a játék alatt is megnézheted: koppints a saját képedre.</p>`;
-  } else {
+      <p class="small muted">A játék alatt időnként 30 másodpercre új megfigyelést kapsz. Ezek ide, az 5. pontba kerülnek. Senki más nem látja őket: hazudhatsz róluk. A lapodat a játék alatt is megnézheted: koppints a saját képedre.</p>`;
+  } else if (step === 2) {
     h += `<p class="badge gold" style="margin-top:6px">Opcionális extra · csak neked</p><h2>Mini küldetés</h2><div class="panel" style="font-size:1.12rem">${esc(ME.mission)}</div>
-      <p class="small muted">Nem kötelező és nem ér pontot: egy jópofa csavar a történetben. Ha a játék közben sikerül, a végén elmesélheted.</p>
-      <p class="small muted">Aki elsőként a végére ér, az indítja mindenkinél a visszaszámlálást.</p>`;
+      <p class="small muted">Nem kötelező és nem ér pontot: egy jópofa csavar a történetben. Ha a játék közben sikerül, a végén elmesélheted.</p>`;
+  } else {
+    h += `<div class="center" style="padding-top:8vh"><h2>Kész vagy!</h2><p class="muted">Amint lejár a közös 1 perc, mindenkinél egyszerre indul az óra.</p></div>`;
   }
-  app.innerHTML = h + `<button class="btn" id="nx">${last ? (ST.start ? "Csatlakozom a nyomozáshoz" : "Indulhat a nyomozás!") : "Tovább"}</button>`;
-  $("#nx").onclick = () => {
-    ensureAudio();
-    ST.userStep = step + 1;
-    if (ST.userStep >= 3 && !ST.start) { ST.start = Date.now(); syncSend(ST.start); }
-    saveST(); ST.key = ""; loop();
-  };
+  app.innerHTML = h + (step < 3 ? `<button class="btn" id="nx">${step < 2 ? "Tovább" : "Kész"}</button>` : "");
+  if ($("#nx")) $("#nx").onclick = () => { ensureAudio(); ST.userStep = step + 1; saveST(); ST.key = ""; loop(); };
   window.scrollTo(0, 0);
 }
 
@@ -462,7 +513,7 @@ function modal(inner, cls = "") {
   $("#mx").onclick = closeModal; m.onclick = e => { if (e.target === m) closeModal(); };
   return m;
 }
-function closeModal() { const m = $("#modal"); if (m) m.remove(); }
+function closeModal() { const m = $("#modal"); if (m) { if (m.querySelector("#mtyped")) stopNarration(); m.remove(); } }
 function zoomable(html) { return `<div class="zoomwrap" onclick="this.classList.toggle('z')">${html}</div><p class="small muted center">Koppints a nagyításhoz.</p>`; }
 function charModal(slot) {
   const c = S.chars[slot];
@@ -475,11 +526,12 @@ function mapModal() {
   modal(`<h2>${esc(S.title)}: alaprajz</h2>${zoomable(`<img class="zoomimg" src="assets/${S.id}/map.jpg" onerror="this.onerror=null;this.src='assets/maps/${S.id}.png'">`)}<p class="small">${esc(S.mapNote)}</p>${S.common ? `<p class="small" style="color:var(--gold2)">👁 ${esc(S.common)}</p>` : ""}`);
 }
 function storyModal() {
-  modal(`<h2>${esc(S.title)}</h2><p class="muted small">${esc(S.world)}</p><p>${esc(S.intro)}</p>
+  modal(`<h2>${esc(S.title)}</h2><p class="muted small">${esc(S.world)}</p><p class="storytxt" id="mtyped"></p>
     <div class="kv"><b>Az áldozat</b>${esc(S.victim)}</div><div class="kv"><b>A tetthely</b>${esc(S.scene)}</div><div class="kv"><b>A halál oka</b>${esc(S.weapon)}</div>
     ${S.common ? `<div class="kv"><b>Közösen megállapítottátok</b>${esc(S.common)}</div>` : ""}
     <button class="btn ghost" id="replay">🔊 Narráció újra</button>`);
-  $("#replay").onclick = () => { ensureAudio(); narrate(S); };
+  narrate(S, $("#mtyped"));
+  $("#replay").onclick = () => { ensureAudio(); narrate(S, $("#mtyped")); };
 }
 function notesModal() {
   const k = "notes-" + P.t0 + "-" + P.p, N = ls(k) || {text: "", sus: {}};
@@ -496,12 +548,15 @@ function notesModal() {
 function tipView(i) {
   const tip = S.tips[ROUND[i]][SLOT], last = i === TIPS_AT[P.m].length - 1;
   let body = Array.isArray(tip)
-    ? `<p>Neked nem jár igazi tipp. Válassz egy hazugságot, és mondd el úgy, mintha a tipped lenne:</p><ol>${tip.map(x => `<li style="margin:6px 0">${esc(x)}</li>`).join("")}</ol>`
+    ? `<p>Neked nincs valódi megfigyelésed. Válassz egy hazugságot, és mondd el úgy, mintha te figyelted volna meg:</p><ol>${tip.map(x => `<li style="margin:6px 0">${esc(x)}</li>`).join("")}</ol>`
     : `<p style="font-size:1.15rem">${esc(tip)}</p>`;
   if (last && SLOT === 4 && P.n.length === 6) body += `<p style="font-size:1.05rem;border-top:1px solid var(--line);padding-top:10px">${esc(S.accTip)}</p>`;
-  const m = modal(`<h2>🔒 Titkos tipp</h2>${body}<div class="bar" style="margin-top:12px"><i id="tbar"></i></div><p class="small muted">Az óra áll. 30 másodperc múlva eltűnik. Hazudhatsz róla.</p>`, "tipbox");
+  const m = modal(`<h2>👁 Új megfigyelés</h2>${body}<div class="bar" style="margin-top:12px"><i id="tbar"></i></div><p class="small muted">Az óra áll. 30 másodperc múlva eltűnik, és bekerül a lapod 5. pontjába. Hazudhatsz róla.</p>`, "tipbox");
   m.querySelector(".x").remove(); m.onclick = null;
-  if (!ST.tipSeen[i]) { ST.tipSeen[i] = 1; saveST(); ensureAudio(); chime(); if (navigator.vibrate) navigator.vibrate([120, 80, 120]); }
+  if (!ST.tipSeen[i]) {
+    ST.tipSeen[i] = 1;
+    ST.obs.push(Array.isArray(tip) ? {n: i + 1, lies: tip} : {n: i + 1, text: tip + (last && SLOT === 4 && P.n.length === 6 ? " " + S.accTip.replace(/^Tipp[^:]*:\s*/, "") : "")});
+    saveST(); ensureAudio(); chime(); if (navigator.vibrate) navigator.vibrate([120, 80, 120]); }
 }
 
 /* ---------- end: secret vote on the host phone ---------- */
