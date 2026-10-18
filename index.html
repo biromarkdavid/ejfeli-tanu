@@ -159,7 +159,7 @@ textarea{width:100%;min-height:42vh;padding:12px;border-radius:12px;border:1px s
 .tog summary{cursor:pointer;font-weight:600;color:var(--gold2);list-style:none;display:flex;justify-content:space-between;align-items:center;padding:8px 0}
 .tog summary::after{content:"▾";transition:transform .2s}.tog:not([open]) summary::after{transform:rotate(-90deg)}
 .tog summary::-webkit-details-marker{display:none}
-.mine .panel{margin:8px 0 2px}
+.mine .panel{margin:2px 0 6px;padding:0 4px;background:none;border:0;border-radius:0}
 .ic{width:24px;height:24px;display:inline-block;vertical-align:middle;flex:0 0 auto}
 .hbtn .ic{width:26px;height:26px}
 .ic.inl{width:1.1em;height:1.1em;margin-top:-.15em}
@@ -684,7 +684,7 @@ function charModal(slot) {
     <button class="hbtn zoomb" id="zoomb" title="Nagyítás">${icon("zoom")}</button></div>
     <div class="kv"><b>Mindenki látta</b>${esc(c.dispute)}</div><div class="kv"><b>Mindenki tudja</b>${esc(c.weapon)}</div>
     ${slot === SLOT ? `<div class="mine"><div class="row" style="align-items:center"><h3 style="margin:0">${icon("lock", "inl")} Csak neked</h3><div class="role ${ME.role}" style="font-size:1.15rem;text-align:right">${ME.roleName}</div></div>
-      <details open><summary>A szereped és hogyan nyersz</summary>${myRole()}</details>
+      <details><summary>A szereped és hogyan nyersz</summary>${myRole()}</details>
       <details><summary>Amit tudsz (1-5)</summary>${myCard()}</details>
       <details><summary>Mini küldetés (opcionális)</summary><div class="panel">${esc(ME.mission)}</div></details></div>` : ""}`);
   $("#zoomb").onclick = () => photoView(S, slot);
