@@ -68,7 +68,11 @@ label{display:block;margin:8px 0 4px;color:var(--muted);font-size:.9rem}
 #clock.urgent{animation:pulse 1s infinite}
 #clock.paused{opacity:.75}
 @keyframes pulse{50%{transform:scale(1.05)}}
-.stage{position:absolute;left:0;right:0;top:calc(min(34vw,150px) + 30px);bottom:calc(10px + env(safe-area-inset-bottom));z-index:2}
+.stage{position:absolute;left:0;right:0;top:calc(min(34vw,150px) + 30px);bottom:calc(58px + env(safe-area-inset-bottom));z-index:2}
+.tray{position:absolute;left:0;right:0;bottom:calc(12px + env(safe-area-inset-bottom));display:flex;justify-content:center;gap:8px;z-index:3;pointer-events:none}
+.tray .tk{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:var(--c);color:#fff;border:1.5px solid #fff;box-shadow:0 2px 6px #000a;transition:background .3s,opacity .3s}
+.tray .tk .ic{width:19px;height:19px}
+.tray .tk.used{background:#4a4650;opacity:.55;border-color:#ffffff55}
 .victim{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);text-align:center;color:#e6c7c2;font-size:.8rem;pointer-events:none}
 .victim .vb{font-size:2.2rem;opacity:.7}
 .victim.img .vb,.victim.img .vn{visibility:hidden}
@@ -82,7 +86,7 @@ label{display:block;margin:8px 0 4px;color:var(--muted);font-size:.9rem}
 .ch .av img{position:absolute;width:210%;left:-55%;top:-6%;max-width:none}
 .avw{position:relative;width:min(17vw,68px);margin:0 auto}
 .pill{position:absolute;left:calc(100% - 8px);top:2px;bottom:2px;width:22px;border-radius:0 14px 14px 0;background:#15121acc;border:1.5px solid #ffffff55;border-left:none;overflow:visible;cursor:pointer;z-index:2}
-.pill .band{position:absolute;left:0;right:0;opacity:.35}
+.pill .band{position:absolute;left:0;right:0;opacity:.5}
 .pill .band.g{top:0;height:33%;background:#4caf7a;border-radius:0 12px 0 0}.pill .band.n{top:33%;height:34%;background:#8a8590}.pill .band.r{bottom:0;height:33%;background:#d2554d;border-radius:0 0 12px 0}
 .pill.own{background:var(--c);opacity:.9}
 .pill .knob{position:absolute;left:50%;width:22px;height:22px;margin:-11px 0 0 -11px;border-radius:50%;display:grid;place-items:center;color:#fff;box-shadow:0 2px 6px #000a;transition:top .25s,background .25s;border:1.5px solid #fff}
@@ -639,22 +643,40 @@ function readView(step) {
 }
 
 /* ---------- suspicion slider next to each portrait (Márk 2026-10-18), own icon set ---------- */
-// others: 0 neutral (grey ?), 1 suspicious (red eye, bottom), 2 innocent (green hand, top). Own: role marker only.
-const SUS = [{pos: 50, col: "#8a8590", ic: "q"}, {pos: 100, col: "#d2554d", ic: "eye"}, {pos: 0, col: "#4caf7a", ic: "ok"}];
-const ROLEMARK = {N: {pos: 0, col: "#4caf7a", ic: "ok"}, S: {pos: 25, col: "#5b9bd5", ic: "eye"}, B: {pos: 75, col: "#e8913a", ic: "hands"}, G: {pos: 100, col: "#d2554d", ic: "knife"}};
+// Márk 2026-10-18: one slider per portrait, top to bottom: innocent (green hand), witness (blue eye), unknown (grey ?),
+// accomplice (orange handshake, only when one is in play), murderer (red knife). Own portrait: just your role.
+// A tray at the bottom shows every role in play; each mark you hand out (and your own role) greys one out.
+const MARK = {N: {col: "#4caf7a", ic: "ok"}, S: {col: "#5b9bd5", ic: "eye"}, Q: {col: "#8a8590", ic: "q"}, B: {col: "#e8913a", ic: "hands"}, G: {col: "#d2554d", ic: "knife"}};
+const roleOfSlot = sl => S.chars[sl].role;
+const susOrder = () => P.ch.some(sl => roleOfSlot(sl) === "B") ? ["N", "S", "Q", "B", "G"] : ["N", "S", "Q", "G"];
 function notesKey() { return "notes-" + P.t0 + "-" + P.p; }
+function susOf(slot) { const v = ((ls(notesKey()) || {}).sus || {})[slot]; return susOrder().includes(v) ? v : "Q"; }
 function pillHTML(slot, mine) {
-  const m = mine ? ROLEMARK[ME.role] : SUS[((ls(notesKey()) || {}).sus || {})[slot] || 0];
-  return `<div class="pill ${mine ? "own" : ""}" data-pill="${slot}" style="--c:${m.col}">${mine ? "" : `<i class="band g"></i><i class="band n"></i><i class="band r"></i>`}
-    <span class="knob" style="top:${m.pos}%;background:${m.col}">${icon(m.ic)}</span></div>`;
+  const ord = susOrder(), k = mine ? ME.role : susOf(slot), m = MARK[k], n = ord.length, pos = 100 * ord.indexOf(k) / (n - 1);
+  const bands = mine ? "" : ord.map((x, i) => `<i class="band" style="top:${i * 100 / n}%;height:${100 / n}%;background:${MARK[x].col}${i === 0 ? ";border-radius:0 12px 0 0" : i === n - 1 ? ";border-radius:0 0 12px 0" : ""}"></i>`).join("");
+  return `<div class="pill ${mine ? "own" : ""}" data-pill="${slot}" style="--c:${m.col}">${bands}
+    <span class="knob" style="top:${pos}%;background:${m.col}">${icon(m.ic)}</span></div>`;
 }
-function cycleSus(slot) {
-  const N = ls(notesKey()) || {text: "", sus: {}};
-  N.sus[slot] = ((N.sus[slot] || 0) + 1) % 3; ls(notesKey(), N);
+function setSus(slot, k) {
+  const N = ls(notesKey()) || {text: "", sus: {}}; N.sus = N.sus || {};
+  N.sus[slot] = k; ls(notesKey(), N);
   const el = document.querySelector(`[data-pill="${slot}"]`); if (el) el.outerHTML = pillHTML(slot, false);
-  bindPills();
+  bindPills(); drawTray();
 }
-function bindPills() { document.querySelectorAll(".pill:not(.own)").forEach(p => p.onclick = e => { e.stopPropagation(); cycleSus(+p.dataset.pill); }); }
+// tap on a band picks that state
+function bindPills() { document.querySelectorAll(".pill:not(.own)").forEach(p => p.onclick = e => {
+  e.stopPropagation(); const r = p.getBoundingClientRect(), ord = susOrder();
+  setSus(+p.dataset.pill, ord[Math.max(0, Math.min(ord.length - 1, Math.floor((e.clientY - r.top) / r.height * ord.length)))]);
+}); }
+function drawTray() {
+  const t = $("#tray"); if (!t) return;
+  const used = {N: 0, S: 0, B: 0, G: 0}; used[ME.role]++;
+  P.ch.forEach((sl, i) => { if (i !== P.p) { const k = susOf(sl); if (k in used) used[k]++; } });
+  let h = "";
+  ["N", "S", "B", "G"].forEach(k => { const total = P.ch.filter(sl => roleOfSlot(sl) === k).length;
+    for (let i = 0; i < total; i++) h += `<span class="tk ${i < used[k] ? "used" : ""}" style="--c:${MARK[k].col}">${icon(MARK[k].ic)}</span>`; });
+  t.innerHTML = h;
+}
 
 /* ---------- crime scene with clock, map, notebook ---------- */
 function drawClock(frac, paused, urgent) {
@@ -676,13 +698,14 @@ function sceneView(t) {
     <div class="hright"><button class="hbtn" id="mapb" title="Térkép">${icon("map")}</button></div></div>
     <div class="stage"><div class="victim"><div class="vb">${icon("cross")}</div><span class="vn">${esc(S.victim.split(",")[0])}</span></div>
     <button class="helpq" id="storyb" title="A történet">${icon("q")}</button>`;
+  const trayHTML = `<div class="tray" id="tray"></div>`;
   slots.forEach((slot, i) => {
     const ang = -Math.PI / 2 + (i + .5) * 2 * Math.PI / n;
     const x = 50 + 37 * Math.cos(ang), y = 50 + 38 * Math.sin(ang);
     h += `<div class="ch ${i === P.p ? "me" : ""}" data-slot="${slot}" style="left:${x}%;top:${y}%"><div class="avw"><div class="av">${pimg(S, slot)}</div>${pillHTML(slot, i === P.p)}</div><span>${esc(S.chars[slot].name)}${i === P.p ? `<br><span style="opacity:.8">te: koppints a lapodért</span>` : ""}</span></div>`;
   });
-  h += `</div></div>`;
-  app.innerHTML = h;
+  h += `</div>${trayHTML}</div>`;
+  app.innerHTML = h; drawTray();
   const bg = new Image(); bg.onload = () => { $("#bg").style.backgroundImage = `url(${bg.src})`; $(".victim").classList.add("img"); }; bg.onerror = () => $("#bg").classList.add("none"); bg.src = `assets/${S.id}/scene.jpg`;
   app.querySelectorAll(".ch").forEach(e => e.onclick = () => charModal(+e.dataset.slot));
   bindPills();
