@@ -83,12 +83,16 @@ label{display:block;margin:8px 0 4px;color:var(--muted);font-size:.9rem}
 .ch .av{width:min(22vw,88px);height:min(22vw,88px);margin:0 auto;border-radius:50%;overflow:hidden;border:2px solid #ffffffaa;box-shadow:0 4px 14px #000c;background:#2a2430;position:relative}
 .ch .av img{position:absolute;width:210%;left:-55%;top:-6%;max-width:none}
 .avw{position:relative;width:min(22vw,88px);margin:0 auto}
-/* status arc (Márk's sketch 2026-10-18): a half ring on the right side of the portrait, tap a segment to set it */
-.pill{position:absolute;left:50%;top:50%;width:140%;height:140%;transform:translate(-50%,-50%);pointer-events:none;z-index:2}
-.pill svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
-.pill path{pointer-events:stroke;cursor:pointer}
-.pill .knob{position:absolute;width:24px;height:24px;margin:-12px 0 0 -12px;border-radius:50%;display:grid;place-items:center;color:#fff;box-shadow:0 2px 6px #000a;border:1.5px solid #fff;pointer-events:auto;cursor:pointer;transition:left .25s,top .25s,background .25s}
-.pill .knob .ic{width:14px;height:14px}
+
+.ch .mk{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--c);border:1.5px solid #fff;vertical-align:-5px;margin-right:5px;box-shadow:0 1px 4px #000a}
+.ch .mk .ic{width:12px;height:12px}
+.suspick{margin-top:14px;border-top:1px solid var(--line);padding-top:12px}
+.suspick b{display:block;color:var(--gold);font-size:.82rem;letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px}
+.suspick .opts{display:flex;gap:6px}
+.suspick button{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;padding:8px 2px;border-radius:12px;border:1px solid var(--line);background:var(--panel2);color:var(--muted);font:600 .7rem Inter,sans-serif;cursor:pointer}
+.suspick button i{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:#ffffff14;color:var(--c)}
+.suspick button.on{border-color:var(--c);background:color-mix(in srgb,var(--c) 22%,var(--panel2));color:#fff}
+.suspick button.on i{background:var(--c);color:#fff}
 .ch span{display:block;font-size:.8rem;line-height:1.2;margin-top:10px;position:relative;z-index:3;text-shadow:0 1px 4px #000;color:#fff}
 .ch.me .av{border:3px solid #f0d79c;box-shadow:0 0 0 3px #1a1410,0 0 0 5px #d9b46a,0 0 0 6px #1a1410,0 0 0 7px #d9b46a88,0 0 22px 6px #d9b46a77,0 4px 14px #000c}
 .ch.me>span{color:var(--gold2);font-weight:700}
@@ -652,29 +656,21 @@ const roleOfSlot = sl => S.chars[sl].role;
 const susOrder = () => P.ch.some(sl => roleOfSlot(sl) === "B") ? ["N", "S", "Q", "B", "G"] : ["N", "S", "Q", "G"];
 function notesKey() { return "notes-" + P.t0 + "-" + P.p; }
 function susOf(slot) { const v = ((ls(notesKey()) || {}).sus || {})[slot]; return susOrder().includes(v) ? v : "Q"; }
-function pillHTML(slot, mine) {
-  const ord = susOrder(), k = mine ? ME.role : susOf(slot), m = MARK[k], n = ord.length, R = mine ? 45 : 40; // own portrait has the wider gold ring
-  const pt = deg => [R * Math.cos(deg * Math.PI / 180), R * Math.sin(deg * Math.PI / 180)];
-  const arc = (d1, d2, col, w, op) => { const [x1, y1] = pt(d1), [x2, y2] = pt(d2); return `<path d="M${x1.toFixed(2)} ${y1.toFixed(2)} A${R} ${R} 0 0 1 ${x2.toFixed(2)} ${y2.toFixed(2)}" fill="none" stroke="${col}" stroke-width="${w}" stroke-opacity="${op}"/>`; };
-  // segment i spans -90 + 180*i/n .. -90 + 180*(i+1)/n degrees (top to bottom along the right side)
-  let svg = arc(-92, 92, "#15121a", 9, .85);
-  svg += mine ? arc(-90, 90, m.col, 6.5, .95) : ord.map((x, i) => arc(-90 + 180 * i / n + .8, -90 + 180 * (i + 1) / n - .8, MARK[x].col, 6.5, .75)).join("");
-  const [kx, ky] = pt(-90 + 180 * (ord.indexOf(k) + .5) / n);
-  return `<div class="pill ${mine ? "own" : ""}" data-pill="${slot}"><svg viewBox="-50 -50 100 100">${svg}</svg>
-    <span class="knob" style="left:${50 + kx}%;top:${50 + ky}%;background:${m.col}">${icon(m.ic)}</span></div>`;
-}
 function setSus(slot, k) {
   const N = ls(notesKey()) || {text: "", sus: {}}; N.sus = N.sus || {};
   N.sus[slot] = k; ls(notesKey(), N);
-  const el = document.querySelector(`[data-pill="${slot}"]`); if (el) el.outerHTML = pillHTML(slot, false);
-  bindPills(); drawTray();
+  const el = document.querySelector(`[data-mk="${slot}"]`); if (el) el.outerHTML = markHTML(slot, false);
+  document.querySelectorAll("#modal [data-sus]").forEach(b => b.classList.toggle("on", b.dataset.sus === k));
+  drawTray();
 }
-// tap on a band picks that state
-function bindPills() { document.querySelectorAll(".pill:not(.own)").forEach(p => p.onclick = e => {
-  e.stopPropagation(); const r = p.getBoundingClientRect(), ord = susOrder();
-  const ang = Math.atan2(e.clientY - (r.top + r.height / 2), Math.max(1, e.clientX - (r.left + r.width / 2))) * 180 / Math.PI;
-  setSus(+p.dataset.pill, ord[Math.max(0, Math.min(ord.length - 1, Math.floor((ang + 90) / 180 * ord.length)))]);
-}); }
+const SUSLAB = {N: "Ártatlan", S: "Szemtanú", Q: "Nem tudom", B: "Bűntárs", G: "Gyilkos"};
+// small icon by the name on the scene: your verdict on them, or your own role
+function markHTML(slot, mine) { const m = MARK[mine ? ME.role : susOf(slot)]; return `<i class="mk" data-mk="${slot}" style="--c:${m.col}">${icon(m.ic)}</i>`; }
+// verdict picker at the bottom of another player's popup (Márk 2026-10-18: easier than the slider on the scene)
+function susPicker(slot) {
+  const cur = susOf(slot);
+  return `<div class="suspick"><b>Szerinted ő:</b><div class="opts">${susOrder().map(k => `<button data-sus="${k}" class="${k === cur ? "on" : ""}" style="--c:${MARK[k].col}"><i>${icon(MARK[k].ic)}</i><span>${SUSLAB[k]}</span></button>`).join("")}</div></div>`;
+}
 function drawTray() {
   const t = $("#tray"); if (!t) return;
   const used = {N: 0, S: 0, B: 0, G: 0}; used[ME.role]++;
@@ -743,13 +739,12 @@ function sceneView(t) {
   slots.forEach((slot, i) => {
     const ang = -Math.PI / 2 + (i + .5) * 2 * Math.PI / n;
     const x = 50 + 33 * Math.cos(ang), y = 50 + 38 * Math.sin(ang);
-    h += `<div class="ch ${i === P.p ? "me" : ""}" data-slot="${slot}" style="left:${x}%;top:${y}%"><div class="avw"><div class="av">${pimg(S, slot)}</div>${pillHTML(slot, i === P.p)}</div><span>${esc(S.chars[slot].name)}</span></div>`;
+    h += `<div class="ch ${i === P.p ? "me" : ""}" data-slot="${slot}" style="left:${x}%;top:${y}%"><div class="avw"><div class="av">${pimg(S, slot)}</div></div><span>${markHTML(slot, i === P.p)}${esc(S.chars[slot].name)}</span></div>`;
   });
   h += `</div>${trayHTML}</div>`;
   app.innerHTML = h; drawTray();
   const bg = new Image(); bg.onload = () => { $("#bg").style.backgroundImage = `url(${bg.src})`; $(".victim").classList.add("img"); }; bg.onerror = () => $("#bg").classList.add("none"); bg.src = `assets/${S.id}/scene.jpg`;
   app.querySelectorAll(".ch").forEach(e => e.onclick = () => charModal(+e.dataset.slot));
-  bindPills();
   $("#mapb").onclick = mapModal; $("#storyb").onclick = storyModal; $("#setb").onclick = settingsModal;
   if (P.p === 0) { ensureAudio(); startMusic(S); }
 }
@@ -771,8 +766,9 @@ function charModal(slot) {
     ${slot === SLOT ? `<div class="mine"><div class="row" style="align-items:center"><h3 style="margin:0">${icon("lock", "inl")} Csak neked</h3><div class="role ${ME.role}" style="font-size:1.15rem;text-align:right">${ME.roleName}</div></div>
       <details><summary>A szereped és hogyan nyersz</summary>${myRole()}</details>
       <details><summary>Amit tudsz</summary>${myCard(true)}</details>
-      <details><summary>Mini küldetés (opcionális)</summary><div class="panel">${esc(ME.mission)}</div></details></div>` : ""}`);
+      <details><summary>Mini küldetés (opcionális)</summary><div class="panel">${esc(ME.mission)}</div></details></div>` : susPicker(slot)}`);
   $("#zoomb").onclick = () => photoView(S, slot, null, null, true);
+  document.querySelectorAll("#modal [data-sus]").forEach(b => b.onclick = () => setSus(slot, b.dataset.sus));
 }
 // zoomed: open straight in the zoomed-in view (magnifier button, Márk 2026-10-18); a blinking 4-way arrow shows the image can be dragged
 function photoView(story, slot, html, caption, zoomed) {
