@@ -452,7 +452,7 @@ function lobby() {
   stopNarration();
   let h = `<div class="row" style="align-items:center;gap:12px;margin-top:4px"><button class="hbtn" id="setb" title="Beállítások" style="flex:0 0 auto;width:46px;height:46px;font-size:1.3rem">${icon("gear")}</button><h1 style="margin:0;flex:1">Éjféli Tanú</h1></div><p class="muted">Válassz egy rejtélyt. Koppints rá, és hallgassátok meg a történetet.</p><div class="cat">`;
   STORIES.forEach(s => h += `<div class="tile" data-st="${s.id}"><img src="${coverSrc(s)}" onerror="this.onerror=null;this.src='${coverFallback(s)}'" alt="">
-    <div class="tt"><b>${esc(s.title)}</b>${s.full ? '<span class="badge gold">teszt</span>' : ""}</div></div>`);
+    <div class="tt"><b>${esc(s.title)}</b></div></div>`);
   app.innerHTML = h + `</div>`;
   app.querySelectorAll(".tile").forEach(e => e.onclick = () => coverView(e.dataset.st, e.getBoundingClientRect()));
   $("#setb").onclick = settingsModal;
