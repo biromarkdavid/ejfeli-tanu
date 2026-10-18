@@ -610,7 +610,7 @@ function syncListen() {
       try {
         const d = JSON.parse(ev.data), m = JSON.parse(d.message || "{}");
         if (m.start && (!ST.start || m.start < ST.start)) { ST.start = m.start; saveST(); ST.key = ""; loop(); }
-        if ((m.v || m.g || m.s) && !SYNC.msgs.some(x => x.id === d.id)) SYNC.msgs.push({id: d.id, t: d.time * 1000, m});
+        if ((m.v || m.g || m.s || m.l) && !SYNC.msgs.some(x => x.id === d.id)) SYNC.msgs.push({id: d.id, t: d.time * 1000, m});
       } catch (e) {}
     };
   } catch (e) {}
@@ -695,9 +695,9 @@ function myRole() {
 // order requested by Márk, unnumbered: public -> appearance -> where -> victim -> observations (incl. the 30 s observations received)
 function myCard(skipPublic) {
   const obs = (ST.obs || []).map(o => o.lie !== undefined
-    ? `<li><span class="muted">Választott hazugság (${o.n}. kör):</span> ${esc(o.lie)}</li>`
+    ? `<li><span class="muted">Választott hazugság (${o.n}. kör):</span> „${esc(o.lie)}”</li>`
     : o.lies ? `<li><span class="muted">${o.n}. kör:</span> nem választottál hazugságot.</li>`
-    : `<li><span class="muted">${o.n}. megfigyelés:</span> ${esc(o.text)}</li>`).join("");
+    : `<li><span class="muted">${o.n}. megfigyelés:</span> „${esc(o.text)}”</li>`).join("");
   // only the murderer and the accomplice get to prepare their story about how they look (Márk 2026-10-18);
   // the others should be caught off guard when somebody points at their sleeve
   const evil = ME.role === "G" || ME.role === "B";
@@ -715,7 +715,7 @@ function readView(step) {
       <div class="role ${ME.role}">${ME.roleName}</div></div></div>${myRole()}`;
   } else if (step === 1) {
     h += `<h2>Te és ${esc(S.victim.split(",")[0])}</h2>${myCard()}
-      <p class="small muted">A játék alatt időnként 30 másodpercre új megfigyelést kapsz. Ezek ide, a Megfigyeléseid részbe kerülnek. Senki más nem látja őket: hazudhatsz róluk. A lapodat a játék alatt is megnézheted: koppints a saját képedre.</p>`;
+      <p class="small muted">A játék alatt időnként 30 másodpercre új megfigyelést kapsz, utána az nyilvános lesz: mindenki látja a karaktered lapján. A lapodat a játék alatt is megnézheted: koppints a saját képedre.</p>`;
   } else if (step === 2) {
     h += `<p class="badge gold" style="margin-top:6px">Csak neked</p><h2>Személyes titok</h2><div class="panel" style="font-size:1.12rem">${esc(ME.secret)}</div>
       <p class="small muted">A saját kis ármánykodásod a történetben. Nem ér pontot, de ebből lesznek a jó viták: őrizd, használd ki, vagy fordítsd a többiek ellen.</p>`;
@@ -733,7 +733,8 @@ function readView(step) {
 // A tray at the bottom shows every role in play; each mark you hand out (and your own role) greys one out.
 const MARK = {N: {col: "#4caf7a", ic: "ok"}, S: {col: "#5b9bd5", ic: "eye"}, Q: {col: "#8a8590", ic: "q"}, B: {col: "#e8913a", ic: "hands"}, G: {col: "#d2554d", ic: "knife"}};
 const roleOfSlot = sl => S.chars[sl].role;
-const susOrder = () => P.ch.some(sl => roleOfSlot(sl) === "B") ? ["N", "S", "Q", "B", "G"] : ["N", "S", "Q", "G"];
+// only the roles that are in play this game: no witness at 4-5 players, no accomplice at 4
+const susOrder = () => ["N", "S", "Q", "B", "G"].filter(k => k === "Q" || P.ch.some(sl => roleOfSlot(sl) === k));
 function notesKey() { return "notes-" + P.t0 + "-" + P.p; }
 function susOf(slot) { const v = ((ls(notesKey()) || {}).sus || {})[slot]; return susOrder().includes(v) ? v : "Q"; }
 function setSus(slot, k) {
@@ -846,7 +847,7 @@ function charModal(slot) {
   const c = S.chars[slot];
   modal(`<div class="chead"><div class="av">${pimg(S, slot)}</div><div style="flex:1"><h2 style="margin:0">${esc(c.name)}</h2><p class="muted small" style="margin:2px 0 0">${esc(c.title)}</p></div>
     <button class="hbtn zoomb" id="zoomb" title="Nagyítás">${icon("zoom")}</button></div>
-    <div class="kv"><b>Mindenki látta</b>${esc(c.dispute)}</div><div class="kv"><b>Mindenki tudja</b>${esc(c.weapon)}</div>
+    <div class="kv"><b>Mindenki látta</b>${esc(c.dispute)}</div><div class="kv"><b>Mindenki tudja</b>${esc(c.weapon)}</div>${slot === SLOT ? "" : publicObs(slot)}
     ${slot === SLOT ? `<div class="mine"><div class="row" style="align-items:center"><h3 style="margin:0">${icon("lock", "inl")} Csak neked</h3><div class="role ${ME.role}" style="font-size:1.15rem;text-align:right">${ME.roleName}</div></div>
       <details><summary>A szereped és hogyan nyersz</summary>${myRole()}</details>
       <details><summary>Amit tudsz</summary>${myCard(true)}</details>
@@ -895,29 +896,53 @@ function notesModal() {
   bind();
 }
 
-/* ---------- private 30 s tip ---------- */
-// Murderer and accomplice: 3 lies to pick from, each showing whom it steers suspicion to; the one tapped is kept
-// on their card as the chosen lie (Márk 2026-10-18). Lies never name somebody out of play or the liar himself.
-function myLies(tip) { return tip.filter(x => x.r.every(r => P.ch.includes(r)) && !x.to.includes(SLOT)).slice(0, 3); }
+/* ---------- 30 s observation, then public ---------- */
+// Murderer and accomplice: 3 lies to pick from, each showing whom it steers suspicion to (Márk 2026-10-18).
+// Lies never name somebody out of play or the liar himself. After the 30 s every observation goes onto that
+// character's public sheet on every phone (the evil ones' chosen lie, unmarked), since it gets talked about anyway.
+function liesFor(slot, i) { const t = S.tips[ROUND[i]][slot]; return Array.isArray(t) ? t.filter(x => x.r.every(r => P.ch.includes(r)) && !x.to.includes(slot)).slice(0, 3) : null; }
+function chosenLie(slot, i) {
+  const j = P.ch.indexOf(slot); let k = 0;
+  if (slot === SLOT) { const o = ST.obs.find(o => o.n === i + 1); if (o && o.k !== undefined) k = o.k; }
+  else SYNC.msgs.forEach(x => { const l = x.m.l; if (l && l.p === j && l.n === i) k = l.k; });   // the last choice counts
+  return k;
+}
+function obsText(slot, i) {
+  const lies = liesFor(slot, i);
+  if (lies) return (lies[chosenLie(slot, i)] || lies[0]).t;
+  const last = i === TIPS_AT[P.m].length - 1, acc = last && P.ch.length >= 5 && S.accTo === slot ? " " + S.accTip : "";
+  return S.tips[ROUND[i]][slot] + acc;
+}
+// how many observation rounds are over (their 30 s ended)
+function tipsDone() {
+  if (!ST.start) return 0;
+  const e = (NOW() - ST.start) / 1000 * P.x - INTRO, D = P.m * 60, T = TIPS_AT[P.m];
+  return T.filter((r, i) => e >= (D - r) + TIP * i + TIP).length;
+}
+function publicObs(slot) {
+  const n = tipsDone(); if (!n) return "";
+  return `<div class="kv"><b>Megfigyelései</b>${[...Array(n).keys()].map(i => `<p style="margin:4px 0">„${esc(obsText(slot, i))}”</p>`).join("")}</div>`;
+}
 function tipView(i) {
-  const raw = S.tips[ROUND[i]][SLOT], last = i === TIPS_AT[P.m].length - 1, lies = Array.isArray(raw);
-  const acc = !lies && last && P.ch.length >= 5 && S.accTo === SLOT ? S.accTip : "";
-  const opts = lies ? myLies(raw) : [];
-  const chosen = () => (ST.obs.find(o => o.n === i + 1) || {}).lie;
-  const body = lies
-    ? `<p>Neked nincs valódi megfigyelésed. Koppints arra a hazugságra, amelyiket választod, és mondd el úgy, mintha te láttad volna. Alatta látod, kire tereli a gyanút.</p><div class="lies">${opts.map((x, k) =>
-        `<button class="lie ${chosen() === x.t ? "on" : ""}" data-k="${k}"><span>${esc(x.t)}</span><small>Gyanú: ${x.to.map(t => esc(S.chars[t].name)).join(", ")}</small></button>`).join("")}</div>`
-    : `<p style="font-size:1.15rem">${esc(raw)}</p>${acc ? `<p style="font-size:1.05rem;border-top:1px solid var(--line);padding-top:10px">${esc(acc)}</p>` : ""}`;
-  const m = modal(`<h2>${icon("eye", "inl")} Új megfigyelés</h2>${body}<div class="bar" style="margin-top:12px"><i id="tbar"></i></div><p class="small muted">Az óra áll. 30 másodperc múlva eltűnik, és bekerül a lapod Megfigyeléseid részébe.${lies ? "" : " Hazudhatsz róla."}</p>`, "tipbox");
-  m.querySelector(".x").remove(); m.onclick = null;
-  m.querySelectorAll(".lie").forEach(b => b.onclick = () => {
-    const o = ST.obs.find(o => o.n === i + 1); if (o) o.lie = opts[+b.dataset.k].t; saveST();
-    m.querySelectorAll(".lie").forEach(x => x.classList.toggle("on", x === b)); tone(520, .1);
-  });
+  const lies = liesFor(SLOT, i), last = i === TIPS_AT[P.m].length - 1;
   if (!ST.tipSeen[i]) {
     ST.tipSeen[i] = 1;
-    ST.obs.push(lies ? {n: i + 1, lies: opts.map(x => x.t)} : {n: i + 1, text: raw + (acc ? " " + acc : "")});
-    saveST(); ensureAudio(); chime(); if (navigator.vibrate) navigator.vibrate([120, 80, 120]); }
+    ST.obs.push(lies ? {n: i + 1, lies: lies.map(x => x.t), k: 0, lie: lies[0].t} : {n: i + 1, text: obsText(SLOT, i)});
+    saveST(); ensureAudio(); chime(); if (navigator.vibrate) navigator.vibrate([120, 80, 120]);
+    if (lies) syncPost({l: {p: P.p, n: i, k: 0}});
+  }
+  const cur = chosenLie(SLOT, i);
+  const body = lies
+    ? `<p>Neked nincs valódi megfigyelésed. Válassz egy hazugságot: 30 másodperc múlva ez kerül ki mindenkinek a lapodra, mintha valóban láttad volna. Alatta látod, kire tereli a gyanút.</p><div class="lies">${lies.map((x, k) =>
+        `<button class="lie ${k === cur ? "on" : ""}" data-k="${k}"><span>„${esc(x.t)}”</span><small>Gyanú: ${x.to.map(t => esc(S.chars[t].name)).join(", ")}</small></button>`).join("")}</div>`
+    : `<p style="font-size:1.15rem">„${esc(obsText(SLOT, i))}”</p>`;
+  const m = modal(`<h2>${icon("eye", "inl")} Új megfigyelés</h2>${body}<div class="bar" style="margin-top:12px"><i id="tbar"></i></div><p class="small muted">Az óra áll. 30 másodperc múlva ${lies ? "a választott mondat" : "ez"} nyilvános lesz: mindenki látja a karaktered lapján. Gondold végig, mit jelent!</p>`, "tipbox");
+  m.querySelector(".x").remove(); m.onclick = null;
+  m.querySelectorAll(".lie").forEach(b => b.onclick = () => {
+    const k = +b.dataset.k, o = ST.obs.find(o => o.n === i + 1); if (o) { o.k = k; o.lie = lies[k].t; } saveST();
+    syncPost({l: {p: P.p, n: i, k}});
+    m.querySelectorAll(".lie").forEach(x => x.classList.toggle("on", x === b)); tone(520, .1);
+  });
 }
 
 /* ---------- end: everyone votes on their own phone (Márk 2026-10-18) ----------
