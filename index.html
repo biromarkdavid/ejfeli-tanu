@@ -175,6 +175,11 @@ textarea{width:100%;min-height:42vh;padding:12px;border-radius:12px;border:1px s
 .pwrap .pimg{max-width:100%;max-height:100%;object-fit:contain;cursor:zoom-in}
 .pwrap.z{display:block}.pwrap.z .pimg{max-width:none;max-height:none;width:260%;cursor:zoom-out}
 .pcap{padding:10px 16px calc(34px + env(safe-area-inset-bottom));font-size:.9rem;color:#ddd;background:#111}
+.movehint{position:absolute;left:50%;top:50%;width:92px;height:92px;margin:-46px 0 0 -46px;border-radius:50%;background:#000a;border:2px solid #fff;display:grid;place-items:center;color:#fff;pointer-events:none;z-index:3;
+  animation:moveblink .55s ease-in-out 4 both,movefade .4s ease 2.2s forwards}
+.movehint .ic{width:58px;height:58px;stroke-width:2}
+@keyframes moveblink{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.15;transform:scale(.88)}}
+@keyframes movefade{to{opacity:0;visibility:hidden}}
 .phint{position:absolute;bottom:calc(10px + env(safe-area-inset-bottom));left:0;right:0;text-align:center;color:#fff9;font-size:.8rem;margin:0;pointer-events:none}
 .big{font:800 2rem "Playfair Display",serif;text-align:center;margin:10px 0}
 </style>
@@ -225,6 +230,7 @@ const ICON = {
   scroll: `<path d="M7 4h11a2 2 0 0 1 2 2v1h-4"/><path d="M16 7v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-1h10"/><path d="M7 4a2 2 0 0 0-2 2v11"/><path d="M9 9h4"/><path d="M9 12.5h4"/>`,
   lock: `<rect x="4.5" y="10.5" width="15" height="10" rx="2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/><circle cx="12" cy="15.5" r="1.2" fill="currentColor"/>`,
   exit: `<path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4"/><path d="M10 16l-4-4 4-4"/><path d="M6 12h10"/>`,
+  move: `<path d="M12 3v18"/><path d="M3 12h18"/><path d="M9 6l3-3 3 3"/><path d="M9 18l3 3 3-3"/><path d="M6 9l-3 3 3 3"/><path d="M18 9l3 3-3 3"/>`,
   close: `<path d="M6 6l12 12"/><path d="M18 6 6 18"/>`,
   cross: `<path d="M12 3v18"/><path d="M6.5 8.5h11"/>`,
   drum: `<ellipse cx="12" cy="9" rx="8" ry="3.5"/><path d="M4 9v6.5C4 17.4 7.6 19 12 19s8-1.6 8-3.5V9"/><path d="M8 4.5l3 4"/><path d="M16 4.5l-3 4"/>`,
@@ -687,15 +693,24 @@ function charModal(slot) {
       <details><summary>A szereped és hogyan nyersz</summary>${myRole()}</details>
       <details><summary>Amit tudsz</summary>${myCard(true)}</details>
       <details><summary>Mini küldetés (opcionális)</summary><div class="panel">${esc(ME.mission)}</div></details></div>` : ""}`);
-  $("#zoomb").onclick = () => photoView(S, slot);
+  $("#zoomb").onclick = () => photoView(S, slot, null, null, true);
 }
-function photoView(story, slot, html, caption) {
+// zoomed: open straight in the zoomed-in view (magnifier button, Márk 2026-10-18); a blinking 4-way arrow shows the image can be dragged
+function photoView(story, slot, html, caption, zoomed) {
   const v = document.createElement("div"); v.className = "photo"; v.id = "photo";
-  v.innerHTML = `<button class="hbtn" id="phx" style="position:absolute;right:12px;top:calc(10px + env(safe-area-inset-top));z-index:2">${icon("close")}</button>
+  v.innerHTML = `<button class="hbtn" id="phx" style="position:absolute;right:12px;top:calc(10px + env(safe-area-inset-top));z-index:4">${icon("close")}</button>
     <div class="pwrap" id="pwrap">${html || pimg(story, slot, {cls: "pimg"})}</div>${caption ? `<div class="pcap">${caption}</div>` : ""}<p class="phint">Csippents vagy koppints a nagyításhoz</p>`;
   document.body.appendChild(v);
-  const w = $("#pwrap");
-  w.onclick = e => { const z = w.classList.toggle("z"); if (z) { const r = w.getBoundingClientRect(); requestAnimationFrame(() => { w.scrollLeft = (e.clientX - r.left) * 1.6 - r.width / 2 + w.scrollLeft; w.scrollTop = (e.clientY - r.top) * 1.6; }); } };
+  const w = $("#pwrap"), img = w.querySelector("img");
+  const hint = () => { const o = v.querySelector(".movehint"); if (o) o.remove(); const h = document.createElement("div"); h.className = "movehint"; h.innerHTML = icon("move"); v.appendChild(h); };
+  // fx, fy: point of the image (0-1) to bring to the middle of the screen
+  const ph = v.querySelector(".phint"), setHint = z => ph.textContent = z ? "Húzd a képet a mozgatáshoz, koppints a kicsinyítéshez" : "Csippents vagy koppints a nagyításhoz";
+  const zoomTo = (fx, fy) => { w.classList.add("z"); setHint(true); requestAnimationFrame(() => { w.scrollLeft = w.scrollWidth * fx - w.clientWidth / 2; w.scrollTop = w.scrollHeight * fy - w.clientHeight / 2; }); hint(); };
+  w.onclick = e => {
+    if (w.classList.contains("z")) { w.classList.remove("z"); setHint(false); return; }
+    const r = (img || w).getBoundingClientRect(); zoomTo(Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)), Math.min(1, Math.max(0, (e.clientY - r.top) / r.height)));
+  };
+  if (zoomed) { const go = () => zoomTo(.5, .35); if (img && !img.complete) img.addEventListener("load", go, {once: true}); else go(); }
   $("#phx").onclick = () => v.remove();
 }
 function mapModal() {
