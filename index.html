@@ -586,17 +586,17 @@ function readHead(step) {
 function myRole() {
   return `<div class="panel"><div class="kv"><b>Mi történt veled</b>${esc(ME.roleText)}</div><div class="kv"><b>Hogyan nyersz</b>${esc(ME.win)}</div></div>`;
 }
-// order requested by Márk: public -> appearance -> where -> victim -> observations (incl. the 30 s observations received)
-function myCard() {
+// order requested by Márk, unnumbered: public -> appearance -> where -> victim -> observations (incl. the 30 s observations received)
+function myCard(skipPublic) {
   const obs = (ST.obs || []).map(o => o.lies
     ? `<li><span class="muted">Hazugság-ötletek (${o.n}. kör):</span> ${o.lies.map(esc).join(" / ")}</li>`
     : `<li><span class="muted">${o.n}. megfigyelés:</span> ${esc(o.text)}</li>`).join("");
   return `<div class="panel">
-    <div class="kv"><b>1. Ezt mindenki tudja rólad</b>${esc(ME.dispute)} ${esc(ME.weapon)}</div>
-    <div class="kv"><b>2. A megjelenéseden látszik</b>${esc(ME.traits.join(", "))}. Ha rákérdeznek, találj ki rá magyarázatot!</div>
-    <div class="kv"><b>3. Hol voltál a gyilkosság idején</b>${esc(ME.hol)}${ME.miert ? `<br><span class="muted">Miért:</span> ${esc(ME.miert)}` : ""}${ME.kivel ? `<br><span class="muted">Kivel:</span> ${esc(ME.kivel)}` : ""}</div>
-    <div class="kv"><b>4. A kapcsolatod az áldozattal</b>${ME.rel ? esc(ME.rel) + " " : ""}<span class="muted">A titkos okod:</span> ${esc(ME.motive)}</div>
-    <div class="kv"><b>5. Megfigyeléseid</b>${ME.role !== "S" && ME.seen ? esc(ME.seen) : ME.role === "S" ? "Lásd a szerepednél, mit láttál." : ""}${obs ? `<ul style="margin:6px 0 0;padding-left:18px">${obs}</ul>` : ""}</div></div>`;
+    ${skipPublic ? "" : `<div class="kv"><b>Ezt mindenki tudja rólad</b>${esc(ME.dispute)} ${esc(ME.weapon)}</div>`}
+    <div class="kv"><b>A megjelenéseden látszik</b>${esc(ME.traits.join(", "))}. Ha rákérdeznek, találj ki rá magyarázatot!</div>
+    <div class="kv"><b>Hol voltál a gyilkosság idején</b>${esc(ME.hol)}${ME.miert ? `<br><span class="muted">Miért:</span> ${esc(ME.miert)}` : ""}${ME.kivel ? `<br><span class="muted">Kivel:</span> ${esc(ME.kivel)}` : ""}</div>
+    <div class="kv"><b>A kapcsolatod az áldozattal</b>${ME.rel ? esc(ME.rel) + " " : ""}<span class="muted">A titkos okod:</span> ${esc(ME.motive)}</div>
+    <div class="kv"><b>Megfigyeléseid</b>${ME.role !== "S" && ME.seen ? esc(ME.seen) : ME.role === "S" ? "Lásd a szerepednél, mit láttál." : ""}${obs ? `<ul style="margin:6px 0 0;padding-left:18px">${obs}</ul>` : ""}</div></div>`;
 }
 function readView(step) {
   let h = readHead(Math.min(step, 2));
@@ -685,7 +685,7 @@ function charModal(slot) {
     <div class="kv"><b>Mindenki látta</b>${esc(c.dispute)}</div><div class="kv"><b>Mindenki tudja</b>${esc(c.weapon)}</div>
     ${slot === SLOT ? `<div class="mine"><div class="row" style="align-items:center"><h3 style="margin:0">${icon("lock", "inl")} Csak neked</h3><div class="role ${ME.role}" style="font-size:1.15rem;text-align:right">${ME.roleName}</div></div>
       <details><summary>A szereped és hogyan nyersz</summary>${myRole()}</details>
-      <details><summary>Amit tudsz (1-5)</summary>${myCard()}</details>
+      <details><summary>Amit tudsz</summary>${myCard(true)}</details>
       <details><summary>Mini küldetés (opcionális)</summary><div class="panel">${esc(ME.mission)}</div></details></div>` : ""}`);
   $("#zoomb").onclick = () => photoView(S, slot);
 }
