@@ -272,7 +272,7 @@ function coverView(id, rect) {
     <div class="cbot"><button class="btn" id="cstart">Kezdés</button></div></div>`;
   document.body.appendChild(el);
   const bg = new Image(); bg.onload = () => { $("#cbg").style.backgroundImage = `url(${bg.src})`; };
-  bg.onerror = () => { $("#cbg").style.backgroundImage = `url(${coverFallback(s)})`; }; bg.src = `assets/${s.id}/scene.jpg`;
+  bg.onerror = () => { $("#cbg").style.backgroundImage = `url(${coverFallback(s)})`; }; bg.src = coverSrc(s);
   narrate(s);
   $("#cnarr").onclick = () => narrate(s);
   $("#cback").onclick = () => { window.speechSynthesis && speechSynthesis.cancel(); el.remove(); };
