@@ -149,6 +149,10 @@ textarea{width:100%;min-height:42vh;padding:12px;border-radius:12px;border:1px s
 .mine summary{cursor:pointer;font-weight:600;color:var(--gold2);list-style:none;display:flex;justify-content:space-between;align-items:center;padding:4px 0}
 .mine summary::after{content:"▾";transition:transform .2s}.mine details:not([open]) summary::after{transform:rotate(-90deg)}
 .mine summary::-webkit-details-marker{display:none}
+.tog{border-top:1px solid var(--line);margin-top:12px;padding-top:6px}
+.tog summary{cursor:pointer;font-weight:600;color:var(--gold2);list-style:none;display:flex;justify-content:space-between;align-items:center;padding:8px 0}
+.tog summary::after{content:"▾";transition:transform .2s}.tog:not([open]) summary::after{transform:rotate(-90deg)}
+.tog summary::-webkit-details-marker{display:none}
 .mine .panel{margin:8px 0 2px}
 .ic{width:24px;height:24px;display:inline-block;vertical-align:middle;flex:0 0 auto}
 .hbtn .ic{width:26px;height:26px}
@@ -682,12 +686,12 @@ function mapModal() {
     `${esc(S.mapNote)}${S.common ? `<br><span style="color:var(--gold2)">${icon("eye", "inl")} ${esc(S.common)}</span>` : ""}`);
 }
 function storyModal() {
-  modal(`<h2>${esc(S.title)}</h2><p class="muted small">${esc(S.world)}</p><p class="storytxt" id="mtyped"></p>
+  // in-game: just the key facts; the full story sits in a collapsed toggle, no typewriter replay (Márk 2026-10-18)
+  const parts = storyParts(S), full = parts.map(t => tokHTML(t, plainOf(t).length)).join(" ");
+  modal(`<h2>${esc(S.title)}</h2><p class="muted small">${esc(S.world)}</p>
     <div class="kv"><b>Az áldozat</b>${esc(S.victim)}</div><div class="kv"><b>A tetthely</b>${esc(S.scene)}</div><div class="kv"><b>A halál oka</b>${esc(S.weapon)}</div>
-    ${S.common ? `<div class="kv"><b>Közösen megállapítottátok</b>${esc(S.common)}</div>` : ""}
-    <button class="btn ghost" id="replay">${icon("sound", "inl")} Narráció újra</button>`);
-  narrate(S, $("#mtyped"));
-  $("#replay").onclick = () => { ensureAudio(); narrate(S, $("#mtyped")); };
+    ${S.common ? `<div class="kv"><b>Közösen megállapítottátok</b>${esc(S.common.replace(/^Közösen megállapítjátok:\s*/, ""))}</div>` : ""}
+    <details class="tog"><summary>A teljes történet</summary><p class="storytxt" style="cursor:default">${full}</p></details>`);
 }
 function notesModal() {
   const k = notesKey(), N = ls(k) || {text: "", sus: {}};
@@ -739,8 +743,8 @@ function voteFlow() {
     app.querySelectorAll(".grid .c").forEach(e => e.onclick = () => { V.i = +e.dataset.j; V.stage = "pick"; save(); voteFlow(); });
   } else if (V.stage === "pick") {
     let sel = null;
-    app.innerHTML = `<h2>${esc(lab(V.i))}, ki a gyilkos?</h2><p class="small muted">A szavazatodat senki nem látja.${V.round2 ? " Második kör: csak a döntetlenben érintettek közül választhatsz." : ""}</p><div class="grid">` +
-      P.ch.map((sl, j) => j === V.i || (V.round2 && !V.cands.includes(j)) ? "" : `<div class="c" data-j="${j}">${pimg(S, sl)}<b>${esc(S.chars[sl].name)}</b></div>`).join("") +
+    app.innerHTML = `<h2>${esc(lab(V.i))}, ki a gyilkos?</h2><p class="small muted">A szavazatodat senki nem látja.${V.round2 ? " Második kör: csak a döntetlenben érintettek közül választhatsz." : V.outB !== undefined ? " A bűntárs már lebukott, őt nem jelölheted." : ""}</p><div class="grid">` +
+      P.ch.map((sl, j) => j === V.i || j === V.outB || (V.round2 && !V.cands.includes(j)) ? "" : `<div class="c" data-j="${j}">${pimg(S, sl)}<b>${esc(S.chars[sl].name)}</b></div>`).join("") +
       `</div><button class="btn" id="cast" disabled>Leadom a szavazatom</button>`;
     app.querySelectorAll(".grid .c").forEach(e => e.onclick = () => { sel = +e.dataset.j; app.querySelectorAll(".grid .c").forEach(x => x.classList.toggle("on", x === e)); $("#cast").disabled = false; });
     $("#cast").onclick = () => { V.votes[V.i] = sel; V.stage = "pass"; save(); tone(520, .15); voteFlow(); };
@@ -772,7 +776,9 @@ function voteFlow() {
       const j = top[0], r = roleOf(j), sl = P.ch[j], evil = r === "G" || r === "B";
       h += `<div class="center flip">${pimg(S, sl, {cls: "pfp", evil})}</div><p class="big">${esc(S.chars[sl].name)}</p><p class="center muted">${max} szavazat</p>`;
       if (r === "G") { h += `<p class="big" style="color:var(--red)">A GYILKOS volt!</p><p class="center">Utolsó esély: ha kitalálja, ki a szemtanú, mégis a gonoszok nyernek.</p><button class="btn" id="g">${esc(lab(j))}, tippelj a szemtanúra</button>`; V.conv = j; }
-      else if (r === "B") { h += `<p class="big" style="color:var(--red)">A BŰNTÁRS volt!</p><p class="big" style="color:var(--green)">Az ártatlanok nyertek!</p>`; V.outcome = "good"; }
+      else if (r === "B") { h += `<p class="big" style="color:var(--red)">A BŰNTÁRS volt!</p><p class="center"><b>„Volt egy társam.”</b> A gyilkos még köztetek van.</p>
+        <p class="center">Még <b>3 perc</b> érvelés, aztán új titkos szavazás. A bűntárs már nem jelölhető, de ő is szavaz.</p><button class="btn" id="extra">Indul a 3 perc</button>`;
+        V.outB = j; V.cands = P.ch.map((_, x) => x).filter(x => x !== j); V.revote = 1; }
       else { h += `<p class="big" style="color:var(--green)">ÁRTATLAN volt.</p><p class="big" style="color:var(--red)">A gonoszok nyertek!</p>`; V.outcome = "evil"; }
     }
     h += `<div class="panel small"><b>Szavazatok:</b> ${P.ch.map((sl, j) => `${esc(lab(j))}: ${tally[j]}`).join(" · ")}</div>`;
@@ -783,9 +789,9 @@ function voteFlow() {
     if ($("#g")) $("#g").onclick = () => { V.stage = "guess"; save(); voteFlow(); };
     if ($("#fin")) $("#fin").onclick = () => { V.stage = "final"; save(); voteFlow(); };
   } else if (V.stage === "extra") {
-    app.innerHTML = `<div class="center" style="padding-top:4vh"><h1>Még 3 perc!</h1><p>Győzzétek meg egymást: ${V.cands.map(j => `<b>${esc(S.chars[P.ch[j]].name)}</b>`).join(" vagy ")}?</p>
+    app.innerHTML = `<div class="center" style="padding-top:4vh"><h1>Még 3 perc!</h1><p>${V.revote ? "A gyilkos még köztetek van. Ki az?" : `Győzzétek meg egymást: ${V.cands.map(j => `<b>${esc(S.chars[P.ch[j]].name)}</b>`).join(" vagy ")}?`}</p>
       <svg id="clock" viewBox="0 0 100 100" style="width:60vw;max-width:260px;height:auto"></svg><button class="btn" id="now">Kész, szavazzunk most</button></div>`;
-    const go = () => { clearInterval(V._t); V.stage = "pass"; V.votes = {}; V.round2 = 1; save(); voteFlow(); };
+    const go = () => { clearInterval(V._t); V.stage = "pass"; V.votes = {}; if (V.revote) { V.revote = 0; V.round2 = 0; delete V.lot; delete V.noteShown; } else V.round2 = 1; save(); voteFlow(); };
     $("#now").onclick = go;
     let last = -1;
     V._t = setInterval(() => {
