@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<script src="data.js"></script>
+<script src="catalog.js"></script>
 <style>
 :root{
   --bg:#121016; --panel:#1c1922; --panel2:#25212d; --line:#3a3444;
@@ -150,6 +150,8 @@ textarea{width:100%;min-height:42vh;padding:12px;border-radius:12px;border:1px s
 .flip{animation:flip 1.2s ease}
 @keyframes flip{0%{transform:rotateY(90deg)}100%{transform:rotateY(0)}}
 .cat{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+a.btn{text-decoration:none;display:block;text-align:center}
+.tile.locked img{filter:grayscale(.75) brightness(.5)}
 .tile{position:relative;aspect-ratio:1/1;border-radius:16px;overflow:hidden;cursor:pointer;border:1px solid var(--line);box-shadow:0 6px 18px #0008}
 .tile img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .3s}
 .tile:active img{transform:scale(1.05)}
@@ -237,6 +239,22 @@ textarea{width:100%;min-height:42vh;padding:12px;border-radius:12px;border:1px s
 const TIP = 30;                     // seconds a private tip stays on screen, clock paused
 const TIPS_AT = {15: [450], 30: [1200, 600], 60: [2700, 1800, 900]};  // remaining seconds
 const ROUND = "ABC";
+/* ===================== shop API: story texts only for the logged-in owner or a host's 24 h token ===================== */
+const API = "https://nuvugames.net/wp-json/et/v1", SHOP = "https://nuvugames.net";
+const STORIES = window.CATALOG, FULL = {}, TOK = {};
+const BUG = SHOP + "/ejfeli-tanu/#kapcsolat";  // bug report / feedback form (goes to hello@nuvugames.net)
+const bugLink = () => `<a class="btn ghost small" href="${BUG}" target="_blank" rel="noopener" style="margin-top:10px;opacity:.75">Hibát találtál vagy véleményed van? Írd meg nekünk</a>`;
+let LIB = {logged: false, owned: [], name: ""};
+async function apiStory(id, t) {
+  if (FULL[id]) return FULL[id];
+  const r = await fetch(`${API}/story/${id}` + (t ? `?t=${encodeURIComponent(t)}` : ""), {credentials: "include"});
+  if (!r.ok) { const e = new Error("locked"); e.status = r.status; throw e; }
+  const d = await r.json(); FULL[id] = d.story; TOK[id] = d.token; return d.story;
+}
+async function apiLibrary() {
+  try { const r = await fetch(`${API}/library`, {credentials: "include"}); if (r.ok) LIB = await r.json(); } catch (e) {}
+  return LIB;
+}
 const STORE = "et3-";
 
 /* ===================== helpers ===================== */
@@ -314,6 +332,7 @@ function settingsModal() {
   modal(`<h2>Beállítások</h2>
     ${row("music", "Zene")}${row("narration", "Narráció")}${row("sfx", "Hangjelzések")}
     <label class="tg"><b>Nyelv</b><select class="langsel"><option value="hu" selected>Magyar</option><option value="en" disabled>English (hamarosan)</option></select></label>
+    ${bugLink()}
     ${inGame ? `<button class="btn ghost" id="quit" style="margin-top:18px;color:#f19a92;border-color:#f19a9255">${icon("exit", "inl")} Kilépés: feladom a játékot</button>` : ""}`);
   document.querySelectorAll("#modal [data-k]").forEach(e => e.onchange = () => {
     CFG[e.dataset.k] = e.checked; saveCFG(); if (!CFG.narration && window.speechSynthesis) speechSynthesis.cancel();
@@ -452,13 +471,20 @@ function coverFallback(s) {
   const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 400'><defs><radialGradient id='g' cx='50%' cy='40%' r='75%'><stop offset='0' stop-color='hsl(${hue},35%,32%)'/><stop offset='1' stop-color='#0d0b10'/></radialGradient></defs><rect width='400' height='400' fill='url(#g)'/><path d='M200 130v150M160 175h80' stroke='#d9b46a' stroke-opacity='.35' stroke-width='14' stroke-linecap='round'/></svg>`;
   return "data:image/svg+xml," + encodeURIComponent(svg).replace(/'/g, "%27");
 }
-function lobby() {
+async function lobby() {
   stopNarration();
-  let h = `<div class="row" style="align-items:center;gap:12px;margin-top:4px"><button class="hbtn" id="setb" title="Beállítások" style="flex:0 0 auto;width:46px;height:46px;font-size:1.3rem">${icon("gear")}</button><h1 style="margin:0;flex:1">Éjféli Tanú</h1></div><p class="muted">Válassz egy rejtélyt. Koppints rá, és hallgassátok meg a történetet.</p><div class="cat">`;
-  STORIES.forEach(s => h += `<div class="tile" data-st="${s.id}"><img src="${coverSrc(s)}" onerror="this.onerror=null;this.src='${coverFallback(s)}'" alt="">
-    <div class="tt"><b>${esc(s.title)}</b></div></div>`);
+  app.innerHTML = `<div class="center" style="padding-top:30vh"><p class="muted">Betöltés...</p></div>`;
+  await apiLibrary();
+  let h = `<div class="row" style="align-items:center;gap:12px;margin-top:4px"><button class="hbtn" id="setb" title="Beállítások" style="flex:0 0 auto;width:46px;height:46px;font-size:1.3rem">${icon("gear")}</button><h1 style="margin:0;flex:1">Éjféli Tanú</h1>${LIB.logged ? `<a class="btn ghost small" href="${SHOP}/fiokom/" style="flex:0 0 auto;width:auto;margin:0;max-width:44vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(LIB.name || "Fiókom")}</a>` : `<a class="btn ghost small" href="${SHOP}/fiokom/?et_return=1" style="flex:0 0 auto;width:auto;margin:0">Belépés</a>`}</div><p class="muted">Válassz egy rejtélyt. Koppints rá, és hallgassátok meg a történetet.</p><div class="cat">`;
+  if (!LIB.logged) h = h.replace('<div class="cat">', `<div class="panel" style="margin:6px 0 12px"><b>Jelentkezz be</b> azzal a fiókkal, amivel a játékot megrendelted. <a class="btn" style="margin-top:10px" href="${SHOP}/fiokom/?et_return=1">Belépés</a></div><div class="cat">`);
+  else if (!LIB.owned.length) h = h.replace('<div class="cat">', `<div class="panel" style="margin:6px 0 12px">Még nincs játékod. Az első rejtélyt mi álljuk: <a href="${STORIES[0].url}">Méreg Camelotban, ingyen</a>.</div><div class="cat">`);
+  STORIES.forEach(s => { const own = LIB.owned.includes(s.id); h += `<div class="tile${own ? "" : " locked"}" data-st="${s.id}"><img src="${coverSrc(s)}" onerror="this.onerror=null;this.src='${coverFallback(s)}'" alt="">
+    <div class="tt"><b>${esc(s.title)}</b>${own ? "" : `<small style="display:block;opacity:.8">${icon("lock", "inl")} Megnézem a boltban</small>`}</div></div>`; });
   app.innerHTML = h + `</div>`;
-  app.querySelectorAll(".tile").forEach(e => e.onclick = () => coverView(e.dataset.st, e.getBoundingClientRect()));
+  app.querySelectorAll(".tile").forEach(e => e.onclick = () => {
+    if (!LIB.owned.includes(e.dataset.st)) { location.href = STORIES.find(x => x.id === e.dataset.st).url; return; }
+    coverView(e.dataset.st, e.getBoundingClientRect());
+  });
   $("#setb").onclick = settingsModal;
 }
 // crime music under the opening narration and the setup dials (Pixabay, Márk 2026-10-18)
@@ -473,8 +499,9 @@ function introMusic(on) {
     const t = setInterval(() => { a.volume = Math.max(0, a.volume - .03); if (a.volume <= 0) { clearInterval(t); a.pause(); } }, 60);
   }
 }
-function coverView(id, rect) {
-  const s = STORIES.find(x => x.id === id);
+async function coverView(id, rect) {
+  let s;
+  try { s = await apiStory(id); } catch (e) { location.href = e.status === 401 ? `${SHOP}/fiokom/?et_return=1` : STORIES.find(x => x.id === id).url; return; }
   ensureAudio();
   const el = document.createElement("div"); el.id = "cover"; el.className = "cover";
   el.style.transformOrigin = rect ? `${rect.left + rect.width / 2}px ${rect.top + rect.height / 2}px` : "50% 50%";
@@ -553,7 +580,7 @@ function settingsView(s) {
     for (let i = n - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [pick[i], pick[j]] = [pick[j], pick[i]]; }
     const x = +(new URLSearchParams(location.search).get("x") || 1);
     const g = Math.random().toString(36).slice(2, 10);
-    const base = {v: 4, s: s.id, m: L.mode, n, ch: pick, t0: Date.now(), g, x};
+    const base = {v: 4, s: s.id, m: L.mode, n, ch: pick, t0: Date.now(), g, x, k: TOK[s.id]};
     removeEventListener("resize", layout); $("#cover").remove(); // the intro music keeps playing into the game
     deal(base, 1);
   };
@@ -633,10 +660,14 @@ function TL() {
   const rem = D - (e - TIP * T.length);
   return rem > 0 ? {ph: "play", rem} : {ph: "end"};
 }
-function startGame(hash) {
+async function startGame(hash) {
   try { P = decodeCard(hash); } catch (e) { app.innerHTML = `<h2>Hibás kód</h2><p>Olvasd be újra a QR-kódot.</p>`; return; }
+  let raw;
+  try { raw = await apiStory(P.s, P.k); } catch (e) {
+    app.innerHTML = `<div class="center" style="padding-top:20vh"><h2>Lejárt a játék linkje</h2><p>A meghívó 24 óráig érvényes. Kérd meg a házigazdát, hogy indítson új játékot, és olvasd be újra a QR-kódot.</p></div>`; return;
+  }
   if (typeof P.n === "number") P.n = Array.from({length: P.n}, (_, i) => `${i + 1}. játékos`);
-  S = resolveStory(STORIES.find(s => s.id === P.s), P.ch); SLOT = P.ch[P.p]; ME = S.chars[SLOT];
+  S = resolveStory(raw, P.ch); SLOT = P.ch[P.p]; ME = S.chars[SLOT];
   const saved = ls("st-" + P.t0 + "-" + P.p); if (saved) Object.assign(ST, saved);
   ST.obs = ST.obs || [];
   ST.key = "";
@@ -694,10 +725,9 @@ function myRole() {
 }
 // order requested by Márk, unnumbered: public -> appearance -> where -> victim -> observations (incl. the 30 s observations received)
 function myCard(skipPublic) {
-  const obs = (ST.obs || []).map(o => o.lie !== undefined
-    ? `<li><span class="muted">Választott hazugság (${o.n}. kör):</span> „${esc(o.lie)}”</li>`
-    : o.lies ? `<li><span class="muted">${o.n}. kör:</span> nem választottál hazugságot.</li>`
-    : `<li><span class="muted">${o.n}. megfigyelés:</span> „${esc(o.text)}”</li>`).join("");
+  const obs = (ST.obs || []).map(o => o.lie !== undefined || o.liar
+    ? `<li><span class="muted">Választott hazugság (${o.n}. kör):</span> „${esc(o.lie ?? o.text)}”</li>`
+    : `<li><span class="muted">Eszedbe jutott (${o.n}. kör):</span> „${esc(o.text)}”</li>`).join("");
   // only the murderer and the accomplice get to prepare their story about how they look (Márk 2026-10-18);
   // the others should be caught off guard when somebody points at their sleeve
   const evil = ME.role === "G" || ME.role === "B";
@@ -715,7 +745,7 @@ function readView(step) {
       <div class="role ${ME.role}">${ME.roleName}</div></div></div>${myRole()}`;
   } else if (step === 1) {
     h += `<h2>Te és ${esc(S.victim.split(",")[0])}</h2>${myCard()}
-      <p class="small muted">A játék alatt időnként 30 másodpercre új megfigyelést kapsz, utána az nyilvános lesz: mindenki látja a karaktered lapján. A lapodat a játék alatt is megnézheted: koppints a saját képedre.</p>`;
+      <p class="small muted">A játék alatt időnként eszedbe jut valami: 30 másodperced van kiválasztani, melyiket mondod el, utána az nyilvános lesz, mindenki látja a karaktered lapján. A lapodat a játék alatt is megnézheted: koppints a saját képedre.</p>`;
   } else if (step === 2) {
     h += `<p class="badge gold" style="margin-top:6px">Csak neked</p><h2>Személyes titok</h2><div class="panel" style="font-size:1.12rem">${esc(ME.secret)}</div>
       <p class="small muted">A saját kis ármánykodásod a történetben. Nem ér pontot, de ebből lesznek a jó viták: őrizd, használd ki, vagy fordítsd a többiek ellen.</p>`;
@@ -896,24 +926,34 @@ function notesModal() {
   bind();
 }
 
-/* ---------- 30 s observation, then public ---------- */
-// Murderer and accomplice: 3 lies to pick from, each showing whom it steers suspicion to (Márk 2026-10-18).
-// Lies never name somebody out of play or the liar himself. After the 30 s every observation goes onto that
-// character's public sheet on every phone (the evil ones' chosen lie, unmarked), since it gets talked about anyway.
-function liesFor(slot, i) { const t = S.tips[ROUND[i]][slot]; return Array.isArray(t) ? t.filter(x => x.r.every(r => P.ch.includes(r)) && !x.to.includes(slot)).slice(0, 3) : null; }
-function chosenLie(slot, i) {
+/* ---------- 30 s "eszembe jutott", then public ---------- */
+// Márk 2026-10-22: everybody chooses. The murderer picks from 3 lies, the accomplice from 2 lies, every innocent
+// (the witness too) from 2 true memories. Lies are a bit vaguer, truths a bit more concrete, so read aloud they sound alike.
+// Lies never name somebody out of play or the liar himself; each shows whom it steers suspicion to.
+// After the 30 s the chosen line goes onto that character's public sheet on every phone (unmarked).
+const isLiar = slot => S.chars[slot].role === "G" || S.chars[slot].role === "B";
+function optsFor(slot, i) {
+  const t = S.tips[ROUND[i]][slot];
+  if (!Array.isArray(t)) return [{t, to: []}];
+  if (typeof t[0] === "string") return t.map(x => ({t: x, to: []}));
+  // the murderer and the accomplice know each other (Márk 2026-10-22), so neither lie points at the evil side
+  return t.filter(x => x.r.every(r => P.ch.includes(r)) && !x.to.some(isLiar)).slice(0, S.chars[slot].role === "B" ? 2 : 3);
+}
+function chosenOpt(slot, i) {
   const j = P.ch.indexOf(slot); let k = 0;
   if (slot === SLOT) { const o = ST.obs.find(o => o.n === i + 1); if (o && o.k !== undefined) k = o.k; }
   else SYNC.msgs.forEach(x => { const l = x.m.l; if (l && l.p === j && l.n === i) k = l.k; });   // the last choice counts
   return k;
 }
-function obsText(slot, i) {
-  const lies = liesFor(slot, i);
-  if (lies) return (lies[chosenLie(slot, i)] || lies[0]).t;
-  const last = i === TIPS_AT[P.m].length - 1, acc = last && P.ch.length >= 5 && S.accTo === slot ? " " + S.accTip : "";
-  return S.tips[ROUND[i]][slot] + acc;
+function accExtra(slot, i) {
+  const last = i === TIPS_AT[P.m].length - 1;
+  return last && P.ch.length >= 5 && S.accTo === slot && !isLiar(slot) ? S.accTip : "";
 }
-// how many observation rounds are over (their 30 s ended)
+function obsText(slot, i) {
+  const o = optsFor(slot, i), a = accExtra(slot, i);
+  return (o[chosenOpt(slot, i)] || o[0]).t + (a ? " " + a : "");
+}
+// how many rounds are over (their 30 s ended)
 function tipsDone() {
   if (!ST.start) return 0;
   const e = (NOW() - ST.start) / 1000 * P.x - INTRO, D = P.m * 60, T = TIPS_AT[P.m];
@@ -921,25 +961,27 @@ function tipsDone() {
 }
 function publicObs(slot) {
   const n = tipsDone(); if (!n) return "";
-  return `<div class="kv"><b>Megfigyelései</b>${[...Array(n).keys()].map(i => `<p style="margin:4px 0">„${esc(obsText(slot, i))}”</p>`).join("")}</div>`;
+  return `<div class="kv"><b>Ami eszébe jutott</b>${[...Array(n).keys()].map(i => `<p style="margin:4px 0">„${esc(obsText(slot, i))}”</p>`).join("")}</div>`;
 }
 function tipView(i) {
-  const lies = liesFor(SLOT, i), last = i === TIPS_AT[P.m].length - 1;
+  const opts = optsFor(SLOT, i), liar = isLiar(SLOT), extra = accExtra(SLOT, i);
   if (!ST.tipSeen[i]) {
     ST.tipSeen[i] = 1;
-    ST.obs.push(lies ? {n: i + 1, lies: lies.map(x => x.t), k: 0, lie: lies[0].t} : {n: i + 1, text: obsText(SLOT, i)});
+    ST.obs.push({n: i + 1, k: 0, liar, text: opts[0].t + (extra ? " " + extra : "")});
     saveST(); ensureAudio(); chime(); if (navigator.vibrate) navigator.vibrate([120, 80, 120]);
-    if (lies) syncPost({l: {p: P.p, n: i, k: 0}});
+    syncPost({l: {p: P.p, n: i, k: 0}});
   }
-  const cur = chosenLie(SLOT, i);
-  const body = lies
-    ? `<p>Neked nincs valódi megfigyelésed. Válassz egy hazugságot: 30 másodperc múlva ez kerül ki mindenkinek a lapodra, mintha valóban láttad volna. Alatta látod, kire tereli a gyanút.</p><div class="lies">${lies.map((x, k) =>
-        `<button class="lie ${k === cur ? "on" : ""}" data-k="${k}"><span>„${esc(x.t)}”</span><small>Gyanú: ${x.to.map(t => esc(S.chars[t].name)).join(", ")}</small></button>`).join("")}</div>`
-    : `<p style="font-size:1.15rem">„${esc(obsText(SLOT, i))}”</p>`;
-  const m = modal(`<h2>${icon("eye", "inl")} Új megfigyelés</h2>${body}<div class="bar" style="margin-top:12px"><i id="tbar"></i></div><p class="small muted">Az óra áll. 30 másodperc múlva ${lies ? "a választott mondat" : "ez"} nyilvános lesz: mindenki látja a karaktered lapján. Gondold végig, mit jelent!</p>`, "tipbox");
+  const cur = chosenOpt(SLOT, i);
+  const intro = liar
+    ? `Neked nincs valódi emléked. Válassz egy hazugságot: 30 másodperc múlva ez kerül ki mindenkinek a lapodra, mintha valóban így lett volna. Alatta látod, kire tereli a gyanút.`
+    : opts.length > 1 ? `Két dolog jutott eszedbe, mindkettő igaz. Válaszd ki, melyiket mondod el: 30 másodperc múlva ez kerül ki mindenkinek a lapodra.` : "";
+  const body = `${intro ? `<p>${intro}</p>` : ""}<div class="lies">${opts.map((x, k) =>
+      `<button class="lie ${k === cur ? "on" : ""}" data-k="${k}"><span>„${esc(x.t)}”</span>${liar ? `<small>Gyanú: ${x.to.map(t => esc(S.chars[t].name)).join(", ")}</small>` : ""}</button>`).join("")}</div>` +
+    (extra ? `<p class="small">És ezt is hozzáteszed: „${esc(extra)}”</p>` : "");
+  const m = modal(`<h2>${icon("eye", "inl")} Eszembe jutott...</h2>${body}<div class="bar" style="margin-top:12px"><i id="tbar"></i></div><p class="small muted">Az óra áll. 30 másodperc múlva a választott mondat nyilvános lesz: mindenki látja a karaktered lapján. Gondold végig, mit jelent!</p>`, "tipbox");
   m.querySelector(".x").remove(); m.onclick = null;
   m.querySelectorAll(".lie").forEach(b => b.onclick = () => {
-    const k = +b.dataset.k, o = ST.obs.find(o => o.n === i + 1); if (o) { o.k = k; o.lie = lies[k].t; } saveST();
+    const k = +b.dataset.k, o = ST.obs.find(o => o.n === i + 1); if (o) { o.k = k; o.text = opts[k].t + (extra ? " " + extra : ""); } saveST();
     syncPost({l: {p: P.p, n: i, k}});
     m.querySelectorAll(".lie").forEach(x => x.classList.toggle("on", x === b)); tone(520, .1);
   });
@@ -1054,7 +1096,7 @@ function voteRender(st, revealing, iVoted, guess) {
     } else if (r === "G" && guess === null) {
       // the murderer guesses the witness: on his own phone, or on the host phone passed to him
       const mine = st.j === P.p, host = P.p === 0;
-      h = wrap(st.j, `${note}<p class="rvrole" style="color:#e8574a">A GYILKOS volt!</p><p>Elkaptátok. Most még tippelhet, ki a szemtanú: ha eltalálja, a gonoszok nyernek.</p>
+      h = wrap(st.j, `${note}<p class="rvrole" style="color:#e8574a">A GYILKOS volt!</p><p>Elkaptátok. Most még a bűntársával összesúgva tippelhet, ki a szemtanú: ha eltalálja, a gonoszok nyernek.</p>
         ${mine ? pickList("Ki a szemtanú?") : host ? `<p class="small">Add oda ezt a telefont neki, vagy a saját telefonján tippel.</p>${pickList(nm(st.j) + ": ki a szemtanú?")}` : ""}`);
     } else if (r === "G") {
       const ok = roleOf(guess) === "S"; VOTE.outcome = ok ? "evil" : "good";
@@ -1071,7 +1113,7 @@ function voteRender(st, revealing, iVoted, guess) {
       // one closing screen instead of 2-3 steps: verdict, true roles, solution and missions (as toggles), new game
       const more = `<div class="rvmore"><details class="tog"><summary>Mi történt valójában</summary><p>${esc(S.solution)}</p></details>
         <details class="tog"><summary>Személyes titkok</summary>${P.ch.map(sl => `<p class="small"><b>${esc(S.chars[sl].name)}</b>: ${esc(S.chars[sl].secret)}</p>`).join("")}<p class="small muted">Meséljétek el, ki mit titkolt!</p></details></div>`;
-      h = h.replace('<div class="reveal">', '<div class="reveal done">').replace(/<\/div><\/div>$/, `${roles}${more}<button class="btn" id="new">Új játék</button></div></div>`);
+      h = h.replace('<div class="reveal">', '<div class="reveal done">').replace(/<\/div><\/div>$/, `${roles}${more}<button class="btn" id="new">Új játék</button>${bugLink()}</div></div>`);
     }
   }
   app.innerHTML = h; window.scrollTo(0, 0);
@@ -1089,7 +1131,7 @@ function finalView(outcome) {
     <div class="panel"><h3>Mi történt valójában</h3><p>${esc(S.solution)}</p></div><h3>Ki kicsoda volt</h3><div class="grid">`;
   P.ch.forEach(sl => { const c = S.chars[sl], ev = c.role === "G" || c.role === "B"; h += `<div class="c">${pimg(S, sl, {evil: ev})}<b>${esc(c.name)}</b><br><span class="badge ${ev ? "red" : c.role === "S" ? "blue" : ""}">${c.roleName}</span></div>`; });
   h += `</div><div class="panel"><h3>Személyes titkok</h3><p class="small muted">Meséljétek el, ki mit titkolt!</p>` +
-    P.ch.map(sl => `<p class="small"><b>${esc(S.chars[sl].name)}</b>: ${esc(S.chars[sl].secret)}</p>`).join("") + `</div><button class="btn" id="new">Új játék</button>`;
+    P.ch.map(sl => `<p class="small"><b>${esc(S.chars[sl].name)}</b>: ${esc(S.chars[sl].secret)}</p>`).join("") + `</div><button class="btn" id="new">Új játék</button>${bugLink()}`;
   app.innerHTML = h; window.scrollTo(0, 0);
   $("#new").onclick = () => { location.hash = ""; location.reload(); };
 }
@@ -1143,7 +1185,7 @@ function voteFlow() {
       const j = top[0], r = roleOf(j), sl = P.ch[j], evil = r === "G" || r === "B";
       h += `<div class="center flip">${pimg(S, sl, {cls: "pfp", evil})}</div><p class="big">${esc(S.chars[sl].name)}</p><p class="center muted">${max} szavazat</p>`;
       if (r === "G" && !hasS) { h += `<p class="big" style="color:var(--red)">A GYILKOS volt!</p><p class="big" style="color:var(--green)">Az ártatlanok nyertek!</p>`; V.outcome = "good"; }
-      else if (r === "G") { h += `<p class="big" style="color:var(--red)">A GYILKOS volt!</p><p class="center">Utolsó esély: ha kitalálja, ki a szemtanú, mégis a gonoszok nyernek.</p><button class="btn" id="g">${esc(lab(j))}, tippelj a szemtanúra</button>`; V.conv = j; }
+      else if (r === "G") { h += `<p class="big" style="color:var(--red)">A GYILKOS volt!</p><p class="center">Utolsó esély: ha a bűntársával összesúgva kitalálja, ki a szemtanú, mégis a gonoszok nyernek.</p><button class="btn" id="g">${esc(lab(j))}, tippelj a szemtanúra</button>`; V.conv = j; }
       else if (r === "B") { h += `<p class="big" style="color:#f0a35e">A BŰNTÁRS volt!</p><p class="center">Ő csak segített. A gyilkos megúszta, és egyedül nyert.</p>`; V.outcome = "evil"; }
       else { h += `<p class="big" style="color:var(--green)">ÁRTATLAN volt.</p><p class="big" style="color:var(--red)">A gonoszok nyertek!</p>`; V.outcome = "evil"; }
     }
@@ -1186,7 +1228,7 @@ function voteFlow() {
     P.ch.forEach((sl, j) => { const c = S.chars[sl], ev = c.role === "G" || c.role === "B"; h += `<div class="c">${pimg(S, sl, {evil: ev})}<b>${esc(c.name)}</b><br><span class="badge ${ev ? "red" : c.role === "S" ? "blue" : ""}">${c.roleName}</span></div>`; });
     h += `</div><div class="panel"><h3>Személyes titkok</h3><p class="small muted">Meséljétek el, ki mit titkolt!</p>` +
       P.ch.map((sl, j) => `<p class="small"><b>${esc(S.chars[sl].name)}</b>: ${esc(S.chars[sl].secret)}</p>`).join("") +
-      `</div><button class="btn" id="new">Új játék</button>`;
+      `</div><button class="btn" id="new">Új játék</button>${bugLink()}`;
     app.innerHTML = h;
     $("#new").onclick = () => { location.hash = ""; location.reload(); };
   }
@@ -1194,9 +1236,13 @@ function voteFlow() {
 }
 
 /* ===================== router ===================== */
-function route() {
+async function route() {
   const m = location.hash.match(/^#c=(.+)$/);
-  if (m) startGame(m[1]); else lobby();
+  if (m) return startGame(m[1]);
+  // Márk 2026-10-22: no deep link straight into a story (its narration ran while the page was still loading);
+  // every entry lands on the picker, and the story starts only when it is tapped there
+  if (location.hash) history.replaceState(null, "", location.pathname);
+  await lobby();
 }
 window.addEventListener("hashchange", () => location.reload());
 route();
